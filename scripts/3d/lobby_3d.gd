@@ -1,0 +1,297 @@
+extends Control
+
+# Constants for Among Us-style room codes (No ambiguous 0, O, 1, I)
+const CODE_CHARS: String = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+
+# ── Views ───────────────────────────────────────────────────────────────────
+@onready var browser_view: Control = $BrowserView
+@onready var room_view: Control = $RoomView
+
+# ── Browser View Nodes ──────────────────────────────────────────────────────
+@onready var room_list_vbox: VBoxContainer = $BrowserView/HBox/RoomListCard/Scroll/RoomList
+@onready var create_room_name_input: LineEdit = $BrowserView/HBox/CreateRoomCard/RoomNameInput
+@onready var create_room_btn: Button = $BrowserView/HBox/CreateRoomCard/CreateBtn
+@onready var join_code_input: LineEdit = $BrowserView/HBox/JoinCodeCard/CodeInput
+@onready var join_code_btn: Button = $BrowserView/HBox/JoinCodeCard/JoinCodeBtn
+@onready var code_error_lbl: Label = $BrowserView/HBox/JoinCodeCard/ErrorLabel
+@onready var back_to_menu_btn: Button = $BackButton
+
+# ── In-Room Waiting Lobby Nodes (Host & Players) ─────────────────────────────
+@onready var room_header_lbl: Label = $RoomView/Header/RoomTitle
+@onready var room_code_lbl: Label = $RoomView/Header/CodeBox/CodeLabel
+@onready var copy_code_btn: Button = $RoomView/Header/CodeBox/CopyBtn
+@onready var player_list_vbox: VBoxContainer = $RoomView/HBox/PlayerListCard/Scroll/PlayerList
+@onready var player_count_header: Label = $RoomView/HBox/PlayerListCard/Header
+
+# Host Live Customization Controls
+@onready var host_settings_title: Label = $RoomView/HBox/HostSettingsCard/SettingsTitle
+@onready var max_players_slider: HSlider = $RoomView/HBox/HostSettingsCard/MaxPlayersRow/Slider
+@onready var max_players_val_lbl: Label = $RoomView/HBox/HostSettingsCard/MaxPlayersRow/ValLabel
+@onready var rounds_opt: OptionButton = $RoomView/HBox/HostSettingsCard/RoundsRow/RoundsOpt
+@onready var map_preview_lbl: Label = $RoomView/HBox/HostSettingsCard/MapPreview/MapName
+@onready var map_grid: GridContainer = $RoomView/HBox/MapSelectionCard/Grid
+
+# Action Buttons
+@onready var action_btn: Button = $RoomView/BottomBar/ActionBtn
+@onready var leave_btn: Button = $RoomView/BottomBar/LeaveBtn
+
+# ── Dynamic Room State ──────────────────────────────────────────────────────
+# Active rooms dictionary: room_code -> { "name": String, "code": String, "host": String, "max_players": int, "rounds": int, "map": String, "players": Array }
+static var active_rooms: Dictionary = {}
+var current_room_code: String = ""
+var is_host: bool = false
+var is_ready: bool = false
+var my_player_name: String = "Player 1"
+
+func _ready() -> void:
+	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+	code_error_lbl.text = ""
+	
+	# Setup rounds options
+	rounds_opt.clear()
+	rounds_opt.add_item("1 Round", 1)
+	rounds_opt.add_item("3 Rounds", 3)
+	rounds_opt.add_item("5 Rounds", 5)
+	rounds_opt.selected = 1 # Default 3 rounds
+	
+	# Connect Browser events
+	create_room_btn.pressed.connect(_on_create_room_pressed)
+	join_code_btn.pressed.connect(_on_join_by_code_pressed)
+	back_to_menu_btn.pressed.connect(_on_back_to_menu_pressed)
+	
+	# Connect Room events
+	max_players_slider.value_changed.connect(_on_max_players_changed)
+	rounds_opt.item_selected.connect(_on_rounds_selected)
+	copy_code_btn.pressed.connect(_on_copy_code_pressed)
+	action_btn.pressed.connect(_on_action_pressed)
+	leave_btn.pressed.connect(_on_leave_room_pressed)
+	
+	_setup_map_grid_buttons()
+	
+	# Initially show Browser View
+	_show_browser_view()
+
+# ── Room Code Generator (Like Among Us / CPFreezetag) ────────────────────────
+func generate_unique_code() -> String:
+	while true:
+		var code = ""
+		for i in range(6):
+			code += CODE_CHARS[randi() % CODE_CHARS.length()]
+		if not active_rooms.has(code):
+			return code
+	return "ROOM01"
+
+# ── View Switching ──────────────────────────────────────────────────────────
+func _show_browser_view() -> void:
+	browser_view.visible = true
+	room_view.visible = false
+	back_to_menu_btn.visible = true
+	code_error_lbl.text = ""
+	_update_room_list_browser()
+
+func _show_room_view() -> void:
+	browser_view.visible = false
+	room_view.visible = true
+	back_to_menu_btn.visible = false
+	_update_room_lobby_ui()
+
+# ── Browser UI ──────────────────────────────────────────────────────────────
+func _update_room_list_browser() -> void:
+	for child in room_list_vbox.get_children():
+		child.queue_free()
+	
+	if active_rooms.is_empty():
+		var empty_lbl = Label.new()
+		empty_lbl.text = "(ยังไม่มีห้องเปิดอยู่)\nสร้างห้องใหม่ หรือกรอก PIN เพื่อเข้าร่วม"
+		empty_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		empty_lbl.modulate = Color(0.7, 0.8, 0.9, 0.7)
+		empty_lbl.add_theme_font_size_override("font_size", 13)
+		room_list_vbox.add_child(empty_lbl)
+		return
+	
+	for code in active_rooms:
+		var r = active_rooms[code]
+		var item_btn = Button.new()
+		var p_count = r["players"].size()
+		var max_p = r["max_players"]
+		item_btn.text = "%s   [%s]   (%d/%d)   %s" % [r["name"], r["code"], p_count, max_p, r["map"]]
+		item_btn.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		item_btn.add_theme_font_size_override("font_size", 13)
+		
+		if p_count >= max_p:
+			item_btn.disabled = true
+			item_btn.text += " [FULL]"
+		else:
+			item_btn.pressed.connect(func(): _join_room_by_code(code))
+		
+		room_list_vbox.add_child(item_btn)
+
+# ── Create Room (1 Player = 1 Room Only) ────────────────────────────────────
+func _on_create_room_pressed() -> void:
+	# Check if already in a room
+	if not current_room_code.is_empty() and active_rooms.has(current_room_code):
+		return
+	
+	var r_name = create_room_name_input.text.strip_edges()
+	if r_name.is_empty():
+		r_name = "Room " + str(randi_range(101, 999))
+	
+	var new_code = generate_unique_code()
+	
+	active_rooms[new_code] = {
+		"name": r_name,
+		"code": new_code,
+		"host": my_player_name,
+		"max_players": 8, # Default 8, customizable 4-8 by host!
+		"rounds": 3,
+		"map": "CASTLE",
+		"players": [my_player_name + " 👑 (Host)"]
+	}
+	
+	current_room_code = new_code
+	is_host = true
+	is_ready = true
+	_show_room_view()
+
+# ── Join by Code (Among Us Style) ───────────────────────────────────────────
+func _on_join_by_code_pressed() -> void:
+	var code = join_code_input.text.strip_edges().to_upper()
+	if code.length() != 6:
+		code_error_lbl.text = "รหัสห้องต้องมี 6 ตัวอักษร"
+		return
+	
+	_join_room_by_code(code)
+
+func _join_room_by_code(code: String) -> void:
+	if not active_rooms.has(code):
+		code_error_lbl.text = "ไม่พบห้องรหัส: " + code
+		return
+	
+	var r = active_rooms[code]
+	if r["players"].size() >= r["max_players"]:
+		code_error_lbl.text = "ห้องนี้เต็มแล้ว (%d/%d)" % [r["players"].size(), r["max_players"]]
+		return
+	
+	current_room_code = code
+	is_host = false
+	is_ready = false
+	
+	var guest_name = "Player " + str(r["players"].size() + 1)
+	r["players"].append(guest_name)
+	
+	_show_room_view()
+
+# ── In-Room UI & Customization ──────────────────────────────────────────────
+func _update_room_lobby_ui() -> void:
+	if not active_rooms.has(current_room_code):
+		_show_browser_view()
+		return
+	
+	var r = active_rooms[current_room_code]
+	
+	# Header
+	room_header_lbl.text = r["name"].to_upper()
+	room_code_lbl.text = r["code"]
+	player_count_header.text = "PLAYERS (%d / %d)" % [r["players"].size(), r["max_players"]]
+	
+	# Player List
+	for child in player_list_vbox.get_children():
+		child.queue_free()
+	
+	for i in range(r["max_players"]):
+		var slot_lbl = Label.new()
+		if i < r["players"].size():
+			slot_lbl.text = "• " + r["players"][i]
+			slot_lbl.modulate = Color(1.0, 0.9, 0.4) if (i == 0) else Color(0.9, 0.95, 1.0)
+		else:
+			slot_lbl.text = "• [ว่าง / รอผู้เล่นเข้าร่วม...]"
+			slot_lbl.modulate = Color(0.5, 0.6, 0.7, 0.5)
+		slot_lbl.add_theme_font_size_override("font_size", 13)
+		player_list_vbox.add_child(slot_lbl)
+	
+	# Host Customization Controls
+	max_players_slider.value = r["max_players"]
+	max_players_val_lbl.text = "%d Players" % r["max_players"]
+	map_preview_lbl.text = "MAP: " + r["map"]
+	
+	# Only Host can customize room settings and map!
+	max_players_slider.editable = is_host
+	rounds_opt.disabled = not is_host
+	host_settings_title.text = "⚙️ HOST SETTINGS" if is_host else "⚙️ ROOM SETTINGS (Host only)"
+	
+	# Action Button
+	if is_host:
+		action_btn.text = "🚀 START GAME"
+		action_btn.modulate = Color(0.4, 1.0, 0.4)
+		action_btn.disabled = false
+	else:
+		action_btn.text = "✅ READY" if not is_ready else "⏳ WAITING FOR HOST..."
+		action_btn.modulate = Color(0.4, 0.85, 1.0)
+		action_btn.disabled = is_ready
+
+func _on_max_players_changed(value: float) -> void:
+	if not is_host or not active_rooms.has(current_room_code):
+		return
+	var r = active_rooms[current_room_code]
+	var new_max = int(value)
+	# Cannot set max players less than currently joined players
+	if new_max < r["players"].size():
+		new_max = r["players"].size()
+		max_players_slider.value = new_max
+	
+	r["max_players"] = new_max
+	max_players_val_lbl.text = "%d Players" % new_max
+	player_count_header.text = "PLAYERS (%d / %d)" % [r["players"].size(), new_max]
+	_update_room_lobby_ui()
+
+func _on_rounds_selected(index: int) -> void:
+	if not is_host or not active_rooms.has(current_room_code):
+		return
+	var rounds = rounds_opt.get_item_id(index)
+	active_rooms[current_room_code]["rounds"] = rounds
+
+func _setup_map_grid_buttons() -> void:
+	for child in map_grid.get_children():
+		if child is Button:
+			child.pressed.connect(func():
+				if not is_host or not active_rooms.has(current_room_code):
+					return
+				var clean_name = child.text.replace("🏰 ", "").replace("🎓 ", "").replace("🌀 ", "").replace("🏭 ", "").replace("❄️ ", "").replace("🚀 ", "")
+				active_rooms[current_room_code]["map"] = clean_name
+				map_preview_lbl.text = "MAP: " + clean_name
+			)
+
+func _on_copy_code_pressed() -> void:
+	if not current_room_code.is_empty():
+		DisplayServer.clipboard_set(current_room_code)
+		copy_code_btn.text = "COPIED!"
+		get_tree().create_timer(1.5).timeout.connect(func(): copy_code_btn.text = "COPY")
+
+func _on_action_pressed() -> void:
+	if is_host:
+		# Launch game with customized settings
+		get_tree().change_scene_to_file("res://scenes/3d/arena_3d.tscn")
+	else:
+		is_ready = true
+		_update_room_lobby_ui()
+
+func _on_leave_room_pressed() -> void:
+	if active_rooms.has(current_room_code):
+		if is_host:
+			# If host leaves, the room is deleted
+			active_rooms.erase(current_room_code)
+		else:
+			# If guest leaves, remove from player list
+			var r = active_rooms[current_room_code]
+			for i in range(r["players"].size() - 1, -1, -1):
+				if r["players"][i].begins_with("Player"):
+					r["players"].remove_at(i)
+					break
+	
+	current_room_code = ""
+	is_host = false
+	is_ready = false
+	_show_browser_view()
+
+func _on_back_to_menu_pressed() -> void:
+	get_tree().change_scene_to_file("res://scenes/3d/main_menu_3d.tscn")

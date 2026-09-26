@@ -1,0 +1,595 @@
+[gd_scene load_steps=16 format=3 uid="uid://b3darena0001"]
+
+[ext_resource type="Script" path="res://scripts/3d/arena_3d.gd" id="1_arena3d"]
+[ext_resource type="Script" path="res://scripts/3d/minimap.gd" id="2_minimap"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sky"]
+sky_top_color = Color(0.2, 0.5, 0.85, 1)
+sky_horizon_color = Color(0.65, 0.8, 0.95, 1)
+ground_bottom_color = Color(0.1, 0.2, 0.35, 1)
+ground_horizon_color = Color(0.55, 0.7, 0.85, 1)
+
+[sub_resource type="Sky" id="Sky_env"]
+sky_material = SubResource("ProceduralSkyMaterial_sky")
+
+[sub_resource type="Environment" id="Environment_main"]
+background_mode = 2
+sky = SubResource("Sky_env")
+ambient_light_source = 2
+ambient_light_color = Color(0.6, 0.75, 0.9, 1)
+ambient_light_energy = 0.6
+tonemap_mode = 2
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_floor"]
+size = Vector3(60, 1, 60)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_floor"]
+albedo_color = Color(0.15, 0.22, 0.35, 1)
+roughness = 0.4
+
+[sub_resource type="BoxMesh" id="BoxMesh_floor"]
+material = SubResource("StandardMaterial3D_floor")
+size = Vector3(60, 1, 60)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_wall"]
+albedo_color = Color(0.12, 0.35, 0.6, 1)
+metallic = 0.1
+roughness = 0.3
+
+[sub_resource type="BoxMesh" id="BoxMesh_wall"]
+material = SubResource("StandardMaterial3D_wall")
+size = Vector3(60, 4, 1)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_wall"]
+size = Vector3(60, 4, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_obstacle"]
+material = SubResource("StandardMaterial3D_wall")
+size = Vector3(4, 3, 4)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_obstacle"]
+size = Vector3(4, 3, 4)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hud"]
+bg_color = Color(0.04, 0.08, 0.18, 0.85)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.3, 0.75, 0.95, 0.6)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hp"]
+bg_color = Color(0.2, 0.8, 0.3, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[node name="Arena3D" type="Node3D"]
+script = ExtResource("1_arena3d")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_main")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.866025, -0.353553, 0.353553, 0, 0.707107, 0.707107, -0.5, -0.612372, 0.612372, 0, 20, 0)
+shadow_enabled = true
+
+[node name="Environment" type="Node3D" parent="."]
+
+[node name="Ground" type="StaticBody3D" parent="Environment"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Environment/Ground"]
+shape = SubResource("BoxShape3D_floor")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Environment/Ground"]
+mesh = SubResource("BoxMesh_floor")
+
+[node name="NorthWall" type="StaticBody3D" parent="Environment"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, -30)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Environment/NorthWall"]
+shape = SubResource("BoxShape3D_wall")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Environment/NorthWall"]
+mesh = SubResource("BoxMesh_wall")
+
+[node name="SouthWall" type="StaticBody3D" parent="Environment"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 30)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Environment/SouthWall"]
+shape = SubResource("BoxShape3D_wall")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Environment/SouthWall"]
+mesh = SubResource("BoxMesh_wall")
+
+[node name="WestWall" type="StaticBody3D" parent="Environment"]
+transform = Transform3D(-4.37114e-08, 0, 1, 0, 1, 0, -1, 0, -4.37114e-08, -30, 2, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Environment/WestWall"]
+shape = SubResource("BoxShape3D_wall")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Environment/WestWall"]
+mesh = SubResource("BoxMesh_wall")
+
+[node name="EastWall" type="StaticBody3D" parent="Environment"]
+transform = Transform3D(-4.37114e-08, 0, 1, 0, 1, 0, -1, 0, -4.37114e-08, 30, 2, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Environment/EastWall"]
+shape = SubResource("BoxShape3D_wall")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Environment/EastWall"]
+mesh = SubResource("BoxMesh_wall")
+
+[node name="Obstacle1" type="StaticBody3D" parent="Environment"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8, 1.5, -8)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Environment/Obstacle1"]
+shape = SubResource("BoxShape3D_obstacle")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Environment/Obstacle1"]
+mesh = SubResource("BoxMesh_obstacle")
+
+[node name="Obstacle2" type="StaticBody3D" parent="Environment"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 1.5, 8)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Environment/Obstacle2"]
+shape = SubResource("BoxShape3D_obstacle")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Environment/Obstacle2"]
+mesh = SubResource("BoxMesh_obstacle")
+
+[node name="Obstacle3" type="StaticBody3D" parent="Environment"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8, 1.5, 8)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Environment/Obstacle3"]
+shape = SubResource("BoxShape3D_obstacle")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Environment/Obstacle3"]
+mesh = SubResource("BoxMesh_obstacle")
+
+[node name="Obstacle4" type="StaticBody3D" parent="Environment"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 1.5, -8)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Environment/Obstacle4"]
+shape = SubResource("BoxShape3D_obstacle")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Environment/Obstacle4"]
+mesh = SubResource("BoxMesh_obstacle")
+
+[node name="Items" type="Node3D" parent="."]
+
+[node name="Traps" type="Node3D" parent="."]
+
+[node name="Players" type="Node3D" parent="."]
+
+[node name="HUD" type="CanvasLayer" parent="."]
+
+[node name="MenuButton" type="Button" parent="HUD"]
+offset_left = 24.0
+offset_top = 20.0
+offset_right = 110.0
+offset_bottom = 54.0
+text = "⚙️ MENU"
+
+[node name="PracticeRoleBtn" type="Button" parent="HUD"]
+offset_left = 118.0
+offset_top = 20.0
+offset_right = 295.0
+offset_bottom = 54.0
+theme_override_font_sizes/font_size = 13
+text = "ROLE: 🎲 RANDOM"
+
+[node name="MinimapPanel" type="Panel" parent="HUD"]
+offset_left = 24.0
+offset_top = 70.0
+offset_right = 164.0
+offset_bottom = 210.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_hud")
+
+[node name="Minimap" type="Control" parent="HUD/MinimapPanel"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -64.0
+offset_top = -64.0
+offset_right = 64.0
+offset_bottom = 64.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("2_minimap")
+
+[node name="TopBar" type="HBoxContainer" parent="HUD"]
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -280.0
+offset_top = 16.0
+offset_right = 280.0
+offset_bottom = 76.0
+grow_horizontal = 2
+theme_override_constants/separation = 24
+alignment = 1
+
+[node name="RunnersBox" type="Panel" parent="HUD/TopBar"]
+custom_minimum_size = Vector2(130, 60)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_hud")
+
+[node name="Label" type="Label" parent="HUD/TopBar/RunnersBox"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -55.0
+offset_top = 6.0
+offset_right = 55.0
+offset_bottom = 26.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(0.4, 0.85, 1, 1)
+theme_override_font_sizes/font_size = 12
+text = "RUNNERS"
+horizontal_alignment = 1
+
+[node name="Count" type="Label" parent="HUD/TopBar/RunnersBox"]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -30.0
+offset_top = -36.0
+offset_right = 30.0
+offset_bottom = -4.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_font_sizes/font_size = 24
+text = "3"
+horizontal_alignment = 1
+
+[node name="TimerBox" type="Panel" parent="HUD/TopBar"]
+custom_minimum_size = Vector2(180, 60)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_hud")
+
+[node name="TimerLabel" type="Label" parent="HUD/TopBar/TimerBox"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -60.0
+offset_top = 4.0
+offset_right = 60.0
+offset_bottom = 36.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(1, 0.9, 0.4, 1)
+theme_override_font_sizes/font_size = 26
+text = "02:45"
+horizontal_alignment = 1
+
+[node name="RoundLabel" type="Label" parent="HUD/TopBar/TimerBox"]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -60.0
+offset_top = -24.0
+offset_right = 60.0
+offset_bottom = -4.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_colors/font_color = Color(0.7, 0.85, 1, 1)
+theme_override_font_sizes/font_size = 12
+text = "ROUND 1 / 3"
+horizontal_alignment = 1
+
+[node name="TaggersBox" type="Panel" parent="HUD/TopBar"]
+custom_minimum_size = Vector2(130, 60)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_hud")
+
+[node name="Label" type="Label" parent="HUD/TopBar/TaggersBox"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -55.0
+offset_top = 6.0
+offset_right = 55.0
+offset_bottom = 26.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(1, 0.4, 0.4, 1)
+theme_override_font_sizes/font_size = 12
+text = "TAGGERS"
+horizontal_alignment = 1
+
+[node name="Count" type="Label" parent="HUD/TopBar/TaggersBox"]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -30.0
+offset_top = -36.0
+offset_right = 30.0
+offset_bottom = -4.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_font_sizes/font_size = 24
+text = "1"
+horizontal_alignment = 1
+
+[node name="PlayerStatusPanel" type="Panel" parent="HUD"]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -210.0
+offset_top = 20.0
+offset_right = -20.0
+offset_bottom = 220.0
+grow_horizontal = 0
+theme_override_styles/panel = SubResource("StyleBoxFlat_hud")
+
+[node name="Title" type="Label" parent="HUD/PlayerStatusPanel"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -85.0
+offset_top = 8.0
+offset_right = 85.0
+offset_bottom = 28.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(0.3, 0.8, 1, 1)
+theme_override_font_sizes/font_size = 13
+text = "PLAYER STATUS"
+horizontal_alignment = 1
+
+[node name="Scroll" type="ScrollContainer" parent="HUD/PlayerStatusPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 10.0
+offset_top = 34.0
+offset_right = -10.0
+offset_bottom = -10.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBox" type="VBoxContainer" parent="HUD/PlayerStatusPanel/Scroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="GameLogPanel" type="Panel" parent="HUD"]
+anchors_preset = 6
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = -230.0
+offset_top = -20.0
+offset_right = -20.0
+offset_bottom = 140.0
+grow_horizontal = 0
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_hud")
+
+[node name="Title" type="Label" parent="HUD/GameLogPanel"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -85.0
+offset_top = 6.0
+offset_right = 85.0
+offset_bottom = 24.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(1, 0.88, 0.4, 1)
+theme_override_font_sizes/font_size = 12
+text = "GAME LOG"
+horizontal_alignment = 1
+
+[node name="LogContent" type="RichTextLabel" parent="HUD/GameLogPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 8.0
+offset_top = 28.0
+offset_right = -8.0
+offset_bottom = -6.0
+grow_horizontal = 2
+grow_vertical = 2
+bbcode_enabled = true
+scroll_following = true
+
+[node name="BottomHUD" type="HBoxContainer" parent="HUD"]
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -260.0
+offset_top = -85.0
+offset_right = 260.0
+offset_bottom = -20.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_constants/separation = 40
+alignment = 1
+
+[node name="HPBox" type="VBoxContainer" parent="HUD/BottomHUD"]
+layout_mode = 2
+alignment = 1
+
+[node name="Label" type="Label" parent="HUD/BottomHUD/HPBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "❤️ HP ผู้เล่น"
+
+[node name="ProgressBar" type="ProgressBar" parent="HUD/BottomHUD/HPBox"]
+custom_minimum_size = Vector2(170, 18)
+layout_mode = 2
+theme_override_styles/fill = SubResource("StyleBoxFlat_hp")
+value = 100.0
+show_percentage = false
+
+[node name="HPLabel" type="Label" parent="HUD/BottomHUD/HPBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "100 / 100"
+horizontal_alignment = 1
+
+[node name="SingleItemSlot" type="VBoxContainer" parent="HUD/BottomHUD"]
+layout_mode = 2
+alignment = 1
+
+[node name="Label" type="Label" parent="HUD/BottomHUD/SingleItemSlot"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "🎒 ช่องเก็บไอเทม"
+horizontal_alignment = 1
+
+[node name="ItemButton" type="Button" parent="HUD/BottomHUD/SingleItemSlot"]
+custom_minimum_size = Vector2(150, 42)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_hud")
+
+[node name="Icon" type="Label" parent="HUD/BottomHUD/SingleItemSlot/ItemButton"]
+layout_mode = 1
+anchors_preset = 4
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_left = 12.0
+offset_top = -14.0
+offset_right = 38.0
+offset_bottom = 14.0
+grow_vertical = 2
+theme_override_font_sizes/font_size = 18
+text = "✖"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Name" type="Label" parent="HUD/BottomHUD/SingleItemSlot/ItemButton"]
+layout_mode = 1
+anchors_preset = 6
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = -110.0
+offset_top = -12.0
+offset_right = -10.0
+offset_bottom = 12.0
+grow_horizontal = 0
+grow_vertical = 2
+theme_override_font_sizes/font_size = 12
+text = "ITEM: NONE"
+vertical_alignment = 1
+
+[node name="GameOverPanel" type="Panel" parent="HUD"]
+visible = false
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -240.0
+offset_top = -150.0
+offset_right = 240.0
+offset_bottom = 150.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_hud")
+
+[node name="Title" type="Label" parent="HUD/GameOverPanel"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -200.0
+offset_top = 22.0
+offset_right = 200.0
+offset_bottom = 62.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(1, 0.88, 0.4, 1)
+theme_override_font_sizes/font_size = 24
+text = "ROUND OVER"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ScoreLabel" type="Label" parent="HUD/GameOverPanel"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -200.0
+offset_top = 70.0
+offset_right = 200.0
+offset_bottom = 105.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(0.85, 0.95, 1, 1)
+theme_override_font_sizes/font_size = 18
+text = "SCORE: Runners 0  -  Taggers 0"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="MVPLabel" type="Label" parent="HUD/GameOverPanel"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -220.0
+offset_top = 115.0
+offset_right = 220.0
+offset_bottom = 155.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(1, 0.9, 0.3, 1)
+theme_override_font_sizes/font_size = 16
+text = "👑 MVP: Player 1 (You)"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Buttons" type="HBoxContainer" parent="HUD/GameOverPanel"]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -180.0
+offset_top = -65.0
+offset_right = 180.0
+offset_bottom = -25.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_constants/separation = 16
+alignment = 1
+
+[node name="NextButton" type="Button" parent="HUD/GameOverPanel/Buttons"]
+custom_minimum_size = Vector2(170, 40)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 1, 0.4, 1)
+theme_override_font_sizes/font_size = 15
+text = "NEXT ROUND"
+
+[node name="ExitButton" type="Button" parent="HUD/GameOverPanel/Buttons"]
+custom_minimum_size = Vector2(120, 40)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.5, 0.5, 1)
+theme_override_font_sizes/font_size = 15
+text = "EXIT"

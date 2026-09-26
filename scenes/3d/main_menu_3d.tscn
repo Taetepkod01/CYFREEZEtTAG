@@ -1,0 +1,402 @@
+[gd_scene format=3 uid="uid://b3dmenu00001"]
+
+[ext_resource type="Script" path="res://scripts/3d/main_menu_3d.gd" id="1_menu3d"]
+
+[sub_resource type="Curve" id="Curve_particles"]
+_data = [Vector2(0, 0.4), 0.0, 0.0, 0, 0, Vector2(0.5, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
+point_count = 3
+
+[sub_resource type="Gradient" id="Gradient_particles"]
+colors = PackedColorArray(0.8, 0.95, 1, 0.7, 0.3, 0.7, 1, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
+bg_color = Color(0.04, 0.08, 0.18, 0.92)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.3, 0.75, 0.95, 0.7)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[node name="MainMenu3D" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_menu3d")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.04, 0.09, 0.22, 1)
+
+[node name="Snowflakes" type="CPUParticles2D" parent="."]
+position = Vector2(640, -20)
+amount = 40
+lifetime = 7.0
+preprocess = 3.0
+emission_shape = 3
+emission_rect_extents = Vector2(640, 10)
+direction = Vector2(0.2, 1)
+spread = 20.0
+gravity = Vector2(0, 18)
+initial_velocity_min = 25.0
+initial_velocity_max = 55.0
+scale_amount_min = 2.0
+scale_amount_max = 4.5
+scale_amount_curve = SubResource("Curve_particles")
+color_ramp = SubResource("Gradient_particles")
+
+[node name="Title" type="Label" parent="."]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -300.0
+offset_top = 80.0
+offset_right = 300.0
+offset_bottom = 160.0
+grow_horizontal = 2
+pivot_offset = Vector2(300, 40)
+theme_override_colors/font_color = Color(0.4, 0.85, 1, 1)
+theme_override_colors/font_shadow_color = Color(0.02, 0.04, 0.12, 0.9)
+theme_override_constants/shadow_offset_x = 4
+theme_override_constants/shadow_offset_y = 5
+theme_override_font_sizes/font_size = 58
+text = "❄ FREEZE TAG* ❄"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Subtitle" type="Label" parent="."]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -250.0
+offset_top = 165.0
+offset_right = 250.0
+offset_bottom = 195.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(1, 0.88, 0.4, 1)
+theme_override_font_sizes/font_size = 18
+text = "MULTIPLAYER REAL-TIME 3D GAME"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="RolesLegendPanel" type="Panel" parent="."]
+layout_mode = 1
+anchors_preset = 4
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_left = 60.0
+offset_top = -140.0
+offset_right = 290.0
+offset_bottom = 140.0
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="VBox" type="VBoxContainer" parent="RolesLegendPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 16.0
+offset_top = 16.0
+offset_right = -16.0
+offset_bottom = -16.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 14
+
+[node name="Title" type="Label" parent="RolesLegendPanel/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.88, 0.4, 1)
+theme_override_font_sizes/font_size = 14
+text = "ROLES & RULES"
+horizontal_alignment = 1
+
+[node name="HSeparator" type="HSeparator" parent="RolesLegendPanel/VBox"]
+layout_mode = 2
+
+[node name="TaggerRow" type="VBoxContainer" parent="RolesLegendPanel/VBox"]
+layout_mode = 2
+
+[node name="Name" type="Label" parent="RolesLegendPanel/VBox/TaggerRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.35, 0.35, 1)
+theme_override_font_sizes/font_size = 13
+text = "🔴 TAGGER"
+
+[node name="Desc" type="Label" parent="RolesLegendPanel/VBox/TaggerRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.85, 0.9, 0.8)
+theme_override_font_sizes/font_size = 11
+text = "ไล่จับผู้เล่นคนอื่นให้แข็ง"
+
+[node name="RunnerRow" type="VBoxContainer" parent="RolesLegendPanel/VBox"]
+layout_mode = 2
+
+[node name="Name" type="Label" parent="RolesLegendPanel/VBox/RunnerRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 0.9, 0.4, 1)
+theme_override_font_sizes/font_size = 13
+text = "🟢 RUNNER"
+
+[node name="Desc" type="Label" parent="RolesLegendPanel/VBox/RunnerRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.85, 0.9, 0.8)
+theme_override_font_sizes/font_size = 11
+text = "หนีและหลบการจับ"
+
+[node name="FrozenRow" type="VBoxContainer" parent="RolesLegendPanel/VBox"]
+layout_mode = 2
+
+[node name="Name" type="Label" parent="RolesLegendPanel/VBox/FrozenRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.3, 0.8, 1, 1)
+theme_override_font_sizes/font_size = 13
+text = "❄️ FROZEN"
+
+[node name="Desc" type="Label" parent="RolesLegendPanel/VBox/FrozenRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.85, 0.9, 0.8)
+theme_override_font_sizes/font_size = 11
+text = "ถูกแช่แข็ง รอการช่วยเหลือ"
+
+[node name="RescuingRow" type="VBoxContainer" parent="RolesLegendPanel/VBox"]
+layout_mode = 2
+
+[node name="Name" type="Label" parent="RolesLegendPanel/VBox/RescuingRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.9, 0.3, 1)
+theme_override_font_sizes/font_size = 13
+text = "🟡 RESCUING"
+
+[node name="Desc" type="Label" parent="RolesLegendPanel/VBox/RescuingRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.85, 0.9, 0.8)
+theme_override_font_sizes/font_size = 11
+text = "วิ่งเข้าไปแตะช่วยเพื่อน"
+
+[node name="MenuButtons" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -150.0
+offset_top = -40.0
+offset_right = 150.0
+offset_bottom = 210.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 16
+
+[node name="PlayOnlineBtn" type="Button" parent="MenuButtons"]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 1, 0.4, 1)
+theme_override_font_sizes/font_size = 18
+text = "🌐 PLAY ONLINE (LOBBY)"
+
+[node name="PracticeBtn" type="Button" parent="MenuButtons"]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.88, 0.4, 1)
+theme_override_font_sizes/font_size = 18
+text = "🤖 PRACTICE 3D ARENA (BOTS)"
+
+[node name="HowToPlayBtn" type="Button" parent="MenuButtons"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "📖 HOW TO PLAY"
+
+[node name="QuitBtn" type="Button" parent="MenuButtons"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.5, 0.5, 1)
+theme_override_font_sizes/font_size = 16
+text = "❌ QUIT"
+
+[node name="RulesPanel" type="Panel" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -300.0
+offset_top = -220.0
+offset_right = 300.0
+offset_bottom = 220.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="Title" type="Label" parent="RulesPanel"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -150.0
+offset_top = 18.0
+offset_right = 150.0
+offset_bottom = 48.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(1, 0.88, 0.4, 1)
+theme_override_font_sizes/font_size = 20
+text = "📖 GMAE INSTRUCTIONS"
+horizontal_alignment = 1
+
+[node name="Content" type="RichTextLabel" parent="RulesPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 24.0
+offset_top = 60.0
+offset_right = -24.0
+offset_bottom = -65.0
+grow_horizontal = 2
+grow_vertical = 2
+bbcode_enabled = true
+text = "[color=#ffe066]🎯 OBJECTIVE & RULES:[/color]
+• 🔴 [color=#ff4c4c]TAGGERS[/color] must tag all runners to encase them in 3D ice cubes!
+• 🟢 [color=#4fc3f7]RUNNERS[/color] must survive until time runs out, or touch frozen teammates to thaw them!
+
+[color=#ffe066]🎒 ITEMS & POWER-UPS (Press [E] to use):[/color]
+• ⚡ [b]Speed Boost[/b]: Move 1.3x faster for 6s
+• 🛡️ [b]Shield[/b]: Blocks 1 freeze attempt
+• 🔥 [b]Heater[/b]: Unfreezes yourself immediately
+• 🍌 [b]Banana Trap[/b]: Drops a banana that slips players for 2.5s
+• 🌀 [b]Black Hole Vortex[/b]: Gravitational field pulling nearby players
+
+[color=#ffe066]🎮 3D CONTROLS:[/color]
+• Mouse: Orbit Camera
+• WASD: Camera-Relative Movement
+• Spacebar: Jump
+• E Key: Use Single Collected Item"
+
+[node name="CloseBtn" type="Button" parent="RulesPanel"]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -70.0
+offset_top = -50.0
+offset_right = 70.0
+offset_bottom = -16.0
+grow_horizontal = 2
+grow_vertical = 0
+text = "Close"
+
+[node name="PracticeModal" type="Panel" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -260.0
+offset_top = -180.0
+offset_right = 260.0
+offset_bottom = 180.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="Title" type="Label" parent="PracticeModal"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -220.0
+offset_top = 20.0
+offset_right = 220.0
+offset_bottom = 50.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(1, 0.88, 0.4, 1)
+theme_override_font_sizes/font_size = 20
+text = "🤖 AI PRACTICE - CHOOSE ROLE"
+horizontal_alignment = 1
+
+[node name="Subtitle" type="Label" parent="PracticeModal"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -220.0
+offset_top = 54.0
+offset_right = 220.0
+offset_bottom = 78.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(0.7, 0.85, 1, 0.8)
+theme_override_font_sizes/font_size = 13
+text = "เลือกบทบาทที่คุณต้องการฝึกซ้อมกับ AI"
+horizontal_alignment = 1
+
+[node name="RoleButtons" type="VBoxContainer" parent="PracticeModal"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -210.0
+offset_top = -80.0
+offset_right = 210.0
+offset_bottom = 100.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 12
+
+[node name="RandomRoleBtn" type="Button" parent="PracticeModal/RoleButtons"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.9, 0.4, 1)
+theme_override_font_sizes/font_size = 15
+text = "🎲 RANDOM (สุ่มบทบาทในแต่ละรอบ)"
+
+[node name="TaggerRoleBtn" type="Button" parent="PracticeModal/RoleButtons"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.4, 0.4, 1)
+theme_override_font_sizes/font_size = 15
+text = "🔴 TAGGER (คนวิ่งไล่แปะแช่แข็งบอท)"
+
+[node name="RunnerRoleBtn" type="Button" parent="PracticeModal/RoleButtons"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 1, 0.4, 1)
+theme_override_font_sizes/font_size = 15
+text = "🟢 RUNNER (คนวิ่งหนีและช่วยเพื่อน)"
+
+[node name="ClosePracticeBtn" type="Button" parent="PracticeModal"]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -70.0
+offset_top = -50.0
+offset_right = 70.0
+offset_bottom = -16.0
+grow_horizontal = 2
+grow_vertical = 0
+text = "Cancel"
