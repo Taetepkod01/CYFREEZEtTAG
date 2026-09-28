@@ -439,7 +439,7 @@ alignment = 1
 [node name="Label" type="Label" parent="HUD/BottomHUD/HPBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 12
-text = "❤️ HP ผู้เล่น"
+text = "HP / HEALTH"
 
 [node name="ProgressBar" type="ProgressBar" parent="HUD/BottomHUD/HPBox"]
 custom_minimum_size = Vector2(170, 18)
@@ -461,7 +461,7 @@ alignment = 1
 [node name="Label" type="Label" parent="HUD/BottomHUD/SingleItemSlot"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 12
-text = "🎒 ช่องเก็บไอเทม"
+text = "ITEM SLOT"
 horizontal_alignment = 1
 
 [node name="ItemButton" type="Button" parent="HUD/BottomHUD/SingleItemSlot"]
@@ -479,8 +479,8 @@ offset_top = -14.0
 offset_right = 38.0
 offset_bottom = 14.0
 grow_vertical = 2
-theme_override_font_sizes/font_size = 18
-text = "✖"
+theme_override_font_sizes/font_size = 14
+text = "-"
 horizontal_alignment = 1
 vertical_alignment = 1
 
@@ -560,7 +560,7 @@ offset_bottom = 155.0
 grow_horizontal = 2
 theme_override_colors/font_color = Color(1, 0.9, 0.3, 1)
 theme_override_font_sizes/font_size = 16
-text = "👑 MVP: Player 1 (You)"
+text = "MVP: Player 1 (You)"
 horizontal_alignment = 1
 vertical_alignment = 1
 

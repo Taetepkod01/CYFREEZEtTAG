@@ -32,32 +32,32 @@ func _setup_visuals() -> void:
 	
 	match item_type:
 		"speed":
-			label.text = "⚡ SPEED"
+			label.text = "SPEED"
 			label.modulate = Color(1.0, 0.9, 0.2)
 			mat.albedo_color = Color(1.0, 0.85, 0.1)
 			mat.emission = Color(1.0, 0.8, 0.1)
 		"shield":
-			label.text = "🛡️ SHIELD"
+			label.text = "SHIELD"
 			label.modulate = Color(0.3, 1.0, 0.4)
 			mat.albedo_color = Color(0.2, 0.9, 0.3)
 			mat.emission = Color(0.2, 0.9, 0.3)
 		"heater":
-			label.text = "🔥 HEATER"
+			label.text = "HEATER"
 			label.modulate = Color(1.0, 0.4, 0.2)
 			mat.albedo_color = Color(1.0, 0.3, 0.1)
 			mat.emission = Color(1.0, 0.3, 0.1)
 		"banana":
-			label.text = "🍌 BANANA"
+			label.text = "BANANA"
 			label.modulate = Color(1.0, 0.95, 0.0)
 			mat.albedo_color = Color(1.0, 0.9, 0.0)
 			mat.emission = Color(1.0, 0.9, 0.0)
 		"vortex":
-			label.text = "🌀 VORTEX"
+			label.text = "VORTEX"
 			label.modulate = Color(0.7, 0.3, 1.0)
 			mat.albedo_color = Color(0.6, 0.2, 0.9)
 			mat.emission = Color(0.6, 0.2, 0.9)
 		"tackle":
-			label.text = "💥 TACKLE"
+			label.text = "TACKLE"
 			label.modulate = Color(1.0, 0.5, 0.1)
 			mat.albedo_color = Color(1.0, 0.4, 0.0)
 			mat.emission = Color(1.0, 0.4, 0.0)

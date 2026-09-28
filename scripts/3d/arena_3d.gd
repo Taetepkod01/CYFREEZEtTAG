@@ -224,7 +224,7 @@ func _spawn_match_players() -> void:
 	p1.item_used.connect(_on_player_item_used)
 	p1.item_picked_up.connect(_on_player_item_picked_up)
 	p1.item_changed.connect(_update_item_slot)
-	p1.player_damaged.connect(func(target, amt): add_game_log("💥 [color=#ff9800]%s tackled %s! (-%d HP)[/color]" % [p1.player_name, target.player_name, amt]); _update_hud())
+	p1.player_damaged.connect(func(target, amt): add_game_log(">> [color=#ff9800]%s tackled %s! (-%d HP)[/color]" % [p1.player_name, target.player_name, amt]); _update_hud())
 	
 	# 3 Bots
 	var bot_names = ["Player 2 (Bot)", "Player 3 (Bot)", "Player 4 (Bot)"]
@@ -240,7 +240,7 @@ func _spawn_match_players() -> void:
 		bot.tagged.connect(_on_player_tagged)
 		bot.rescued.connect(_on_player_rescued)
 		bot.item_used.connect(func(item): add_game_log("%s used [color=#ffe066]%s[/color]!" % [bot.player_name, item]))
-		bot.player_damaged.connect(func(target, amt): add_game_log("💥 [color=#ff9800]%s tackled %s! (-%d HP)[/color]" % [bot.player_name, target.player_name, amt]); _update_hud())
+		bot.player_damaged.connect(func(target, amt): add_game_log(">> [color=#ff9800]%s tackled %s! (-%d HP)[/color]" % [bot.player_name, target.player_name, amt]); _update_hud())
 	
 	_update_hud()
 
@@ -299,9 +299,9 @@ func spawn_banana_trap(pos: Vector3) -> void:
 	trap.add_child(col)
 	
 	var lbl = Label3D.new()
-	lbl.text = "🍌"
+	lbl.text = "BANANA"
 	lbl.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-	lbl.font_size = 28
+	lbl.font_size = 20
 	trap.add_child(lbl)
 	
 	trap.position = pos + Vector3(0, 0.2, 0)
@@ -313,12 +313,12 @@ func spawn_banana_trap(pos: Vector3) -> void:
 				body.slip_on_banana()
 			else:
 				body.freeze()
-			add_game_log("🍌 [color=#ffe066]%s[/color] slipped on a banana peel! 💫 Dizzy!" % body.player_name)
+			add_game_log("[color=#ffe066]%s[/color] slipped on a banana peel! (Dizzy)" % body.player_name)
 			trap.queue_free()
 	)
 
 func spawn_vortex(pos: Vector3) -> void:
-	add_game_log("🌀 [color=#b388ff]Black Hole Vortex activated![/color]")
+	add_game_log("[color=#b388ff]Black Hole Vortex activated![/color]")
 	var timer = get_tree().create_timer(4.0)
 	var pull_func = func():
 		for p in player_nodes:
@@ -398,18 +398,18 @@ func _on_net_round_ended(data: Dictionary) -> void:
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 	
 	if winner == "TAGGERS":
-		game_over_title.text = "🔥 TAGGERS WIN ROUND! 🔥"
+		game_over_title.text = "TAGGERS WIN ROUND!"
 		game_over_title.modulate = Color(1.0, 0.4, 0.4)
 	else:
-		game_over_title.text = "❄️ RUNNERS WIN ROUND! ❄️"
+		game_over_title.text = "RUNNERS WIN ROUND!"
 		game_over_title.modulate = Color(0.4, 0.9, 1.0)
 	
 	score_lbl.text = "SCORE: Runners %d  -  Taggers %d" % [runners_score, taggers_score]
 	
 	if mvp and typeof(mvp) == TYPE_DICTIONARY:
-		mvp_lbl.text = "👑 MVP: %s (%d Tags / %d Rescues)" % [mvp.get("name", "Player"), mvp.get("freezeCount", 0), mvp.get("rescueCount", 0)]
+		mvp_lbl.text = "MVP: %s (%d Tags / %d Rescues)" % [mvp.get("name", "Player"), mvp.get("freezeCount", 0), mvp.get("rescueCount", 0)]
 	else:
-		mvp_lbl.text = "👑 MVP: Match Complete"
+		mvp_lbl.text = "MVP: Match Complete"
 	
 	if Network.is_host:
 		next_round_btn.visible = true
@@ -450,29 +450,29 @@ func add_game_log(msg: String) -> void:
 # ── Single Item Slot UI Update ──────────────────────────────────────────────
 func _update_item_slot(item_name: String) -> void:
 	if item_name.is_empty():
-		item_icon.text = "✖"
+		item_icon.text = "-"
 		item_name_lbl.text = "ITEM: NONE"
 		item_btn.modulate = Color(0.7, 0.7, 0.7, 0.6)
 	else:
 		item_btn.modulate = Color(1.0, 1.0, 1.0, 1.0)
 		match item_name:
 			"speed":
-				item_icon.text = "⚡"
+				item_icon.text = "SPD"
 				item_name_lbl.text = "[E] SPEED"
 			"shield":
-				item_icon.text = "🛡️"
+				item_icon.text = "SHD"
 				item_name_lbl.text = "[E] SHIELD"
 			"heater":
-				item_icon.text = "🔥"
+				item_icon.text = "HTR"
 				item_name_lbl.text = "[E] HEATER"
 			"banana":
-				item_icon.text = "🍌"
+				item_icon.text = "BAN"
 				item_name_lbl.text = "[E] BANANA"
 			"vortex":
-				item_icon.text = "🌀"
+				item_icon.text = "VTX"
 				item_name_lbl.text = "[E] VORTEX"
 			"tackle":
-				item_icon.text = "💥"
+				item_icon.text = "TCK"
 				item_name_lbl.text = "[E] TACKLE (1.5x)"
 
 # ── HUD Update ──────────────────────────────────────────────────────────────
@@ -549,9 +549,9 @@ func _end_round(winner: String) -> void:
 			best_player = p
 	
 	if best_player:
-		mvp_lbl.text = "👑 MVP: %s (%d Tags / %d Rescues)" % [best_player.player_name, best_player.freeze_count, best_player.rescue_count]
+		mvp_lbl.text = "MVP: %s (%d Tags / %d Rescues)" % [best_player.player_name, best_player.freeze_count, best_player.rescue_count]
 	else:
-		mvp_lbl.text = "👑 MVP: Player 1 (You)"
+		mvp_lbl.text = "MVP: Player 1 (You)"
 	
 	if current_round >= max_rounds:
 		next_round_btn.text = "PLAY AGAIN"

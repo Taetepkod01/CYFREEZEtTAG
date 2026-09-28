@@ -72,7 +72,7 @@ theme_override_colors/font_shadow_color = Color(0.02, 0.04, 0.12, 0.9)
 theme_override_constants/shadow_offset_x = 4
 theme_override_constants/shadow_offset_y = 5
 theme_override_font_sizes/font_size = 58
-text = "❄ FREEZE TAG* ❄"
+text = "FREEZE TAG 3D"
 horizontal_alignment = 1
 vertical_alignment = 1
 
@@ -134,7 +134,7 @@ layout_mode = 2
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.35, 0.35, 1)
 theme_override_font_sizes/font_size = 13
-text = "🔴 TAGGER"
+text = "[RED] TAGGER"
 
 [node name="Desc" type="Label" parent="RolesLegendPanel/VBox/TaggerRow"]
 layout_mode = 2
@@ -149,7 +149,7 @@ layout_mode = 2
 layout_mode = 2
 theme_override_colors/font_color = Color(0.4, 0.9, 0.4, 1)
 theme_override_font_sizes/font_size = 13
-text = "🟢 RUNNER"
+text = "[GRN] RUNNER"
 
 [node name="Desc" type="Label" parent="RolesLegendPanel/VBox/RunnerRow"]
 layout_mode = 2
@@ -164,7 +164,7 @@ layout_mode = 2
 layout_mode = 2
 theme_override_colors/font_color = Color(0.3, 0.8, 1, 1)
 theme_override_font_sizes/font_size = 13
-text = "❄️ FROZEN"
+text = "[ICE] FROZEN"
 
 [node name="Desc" type="Label" parent="RolesLegendPanel/VBox/FrozenRow"]
 layout_mode = 2
@@ -179,7 +179,7 @@ layout_mode = 2
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.9, 0.3, 1)
 theme_override_font_sizes/font_size = 13
-text = "🟡 RESCUING"
+text = "[YEL] RESCUING"
 
 [node name="Desc" type="Label" parent="RolesLegendPanel/VBox/RescuingRow"]
 layout_mode = 2
@@ -273,22 +273,22 @@ grow_horizontal = 2
 grow_vertical = 2
 bbcode_enabled = true
 text = "[color=#ffe066]OBJECTIVE & RULES:[/color]
-• [color=#ff4c4c][TAGGERS][/color] must tag all runners to encase them in 3D ice cubes!
-• [color=#4fc3f7][RUNNERS][/color] must survive until time runs out, or touch frozen teammates to thaw them!
+- [color=#ff4c4c][TAGGERS][/color] must tag all runners to encase them in 3D ice cubes!
+- [color=#4fc3f7][RUNNERS][/color] must survive until time runs out, or touch frozen teammates to thaw them!
 
 [color=#ffe066]ITEMS & POWER-UPS (Press [E] to use):[/color]
-• [b]Speed Boost[/b]: Move 1.3x faster for 6s
-• [b]Blue Shield Domain[/b]: Absorbs 1 freeze attack, pops on impact
-• [b]Heater[/b]: Unfreezes yourself immediately (Runners only)
-• [b]Banana Trap[/b]: Drops a banana peel; slips players into dizzy stars for 2.5s
-• [b]Black Hole Vortex[/b]: Teleports user to a random safe location on the map
-• [b]Dash Tackle[/b]: Runner dashes forward at 1.5x speed; deals -20 HP to Taggers!
+- [b]Speed Boost[/b]: Move 1.3x faster for 6s
+- [b]Blue Shield Domain[/b]: Absorbs 1 freeze attack, pops on impact
+- [b]Heater[/b]: Unfreezes yourself immediately (Runners only)
+- [b]Banana Trap[/b]: Drops a banana peel; slips players into dizzy stars for 2.5s
+- [b]Black Hole Vortex[/b]: Teleports user to a random safe location on the map
+- [b]Dash Tackle[/b]: Runner dashes forward at 1.5x speed; deals -20 HP to Taggers!
 
 [color=#ffe066]3D CONTROLS:[/color]
-• Mouse Look: Orbit Camera (Left Click anywhere to capture mouse)
-• WASD: Camera-Relative Movement
-• Spacebar: Jump
-• E Key: Use Single Collected Item"
+- Mouse Look: Orbit Camera (Left Click anywhere to capture mouse)
+- WASD: Camera-Relative Movement
+- Spacebar: Jump
+- E Key: Use Single Collected Item"
 
 [node name="CloseBtn" type="Button" parent="RulesPanel"]
 layout_mode = 1

@@ -32,6 +32,6 @@ mesh = SubResource("BoxMesh_crystal")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0)
 billboard = 1
 double_sided = false
-text = "⚡ SPEED"
+text = "SPEED"
 font_size = 18
 outline_size = 3

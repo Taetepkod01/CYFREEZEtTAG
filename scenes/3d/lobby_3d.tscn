@@ -76,7 +76,7 @@ offset_bottom = 80.0
 grow_horizontal = 2
 theme_override_colors/font_color = Color(1, 0.88, 0.4, 1)
 theme_override_font_sizes/font_size = 32
-text = "❄ MULTIPLAYER LOBBY BROWSER ❄"
+text = "MULTIPLAYER LOBBY BROWSER"
 horizontal_alignment = 1
 
 [node name="HBox" type="HBoxContainer" parent="BrowserView"]
@@ -223,7 +223,7 @@ grow_horizontal = 2
 grow_vertical = 0
 theme_override_colors/font_color = Color(0.4, 1, 0.4, 1)
 theme_override_font_sizes/font_size = 17
-text = "🎮 CREATE ROOM"
+text = "CREATE ROOM"
 
 [node name="JoinCodeCard" type="Panel" parent="BrowserView/HBox"]
 custom_minimum_size = Vector2(340, 480)
@@ -242,7 +242,7 @@ offset_bottom = 44.0
 grow_horizontal = 2
 theme_override_colors/font_color = Color(0.4, 0.85, 1, 1)
 theme_override_font_sizes/font_size = 16
-text = "🔑 JOIN BY ROOM PIN"
+text = "JOIN BY ROOM PIN"
 horizontal_alignment = 1
 
 [node name="HSeparator" type="HSeparator" parent="BrowserView/HBox/JoinCodeCard"]
@@ -307,7 +307,7 @@ grow_horizontal = 2
 grow_vertical = 0
 theme_override_colors/font_color = Color(0.4, 0.85, 1, 1)
 theme_override_font_sizes/font_size = 17
-text = "🚀 JOIN ROOM"
+text = "JOIN ROOM"
 
 [node name="ErrorLabel" type="Label" parent="BrowserView/HBox/JoinCodeCard"]
 layout_mode = 1
@@ -486,7 +486,7 @@ offset_bottom = 40.0
 grow_horizontal = 2
 theme_override_colors/font_color = Color(1, 0.88, 0.4, 1)
 theme_override_font_sizes/font_size = 16
-text = "⚙️ HOST CUSTOMIZATION"
+text = "HOST CUSTOMIZATION"
 horizontal_alignment = 1
 
 [node name="HSeparator" type="HSeparator" parent="RoomView/HBox/HostSettingsCard"]
@@ -595,7 +595,7 @@ grow_horizontal = 2
 grow_vertical = 0
 theme_override_colors/font_color = Color(0.7, 0.85, 1, 0.9)
 theme_override_font_sizes/font_size = 12
-text = "Team Freeze Tag • Real-Time 3D
+text = "Team Freeze Tag - Real-Time 3D
 Friendly Fire: Off"
 horizontal_alignment = 1
 
@@ -613,8 +613,8 @@ grow_horizontal = 2
 grow_vertical = 0
 theme_override_colors/font_color = Color(0.6, 0.8, 1, 0.7)
 theme_override_font_sizes/font_size = 11
-text = "👑 Host สามารถปรับแต่งจำนวนคนและเลือกแผนที่
-ทางด้านขวาได้แบบ Real-time ก่อนกดเริ่มเกม"
+text = "Host can customize max players and map
+on the right side in real-time before starting."
 horizontal_alignment = 1
 
 [node name="MapSelectionCard" type="Panel" parent="RoomView/HBox"]
@@ -634,7 +634,7 @@ offset_bottom = 40.0
 grow_horizontal = 2
 theme_override_colors/font_color = Color(0.4, 0.85, 1, 1)
 theme_override_font_sizes/font_size = 16
-text = "เลือกแผนที่ (MAP SELECTION)"
+text = "MAP SELECTION"
 horizontal_alignment = 1
 
 [node name="HSeparator" type="HSeparator" parent="RoomView/HBox/MapSelectionCard"]
@@ -666,37 +666,37 @@ columns = 2
 custom_minimum_size = Vector2(145, 105)
 layout_mode = 2
 theme_override_font_sizes/font_size = 13
-text = "🏰 CASTLE"
+text = "CASTLE"
 
 [node name="CollegeBtn" type="Button" parent="RoomView/HBox/MapSelectionCard/Grid"]
 custom_minimum_size = Vector2(145, 105)
 layout_mode = 2
 theme_override_font_sizes/font_size = 13
-text = "🎓 COLLEGE"
+text = "COLLEGE"
 
 [node name="LabyrinthBtn" type="Button" parent="RoomView/HBox/MapSelectionCard/Grid"]
 custom_minimum_size = Vector2(145, 105)
 layout_mode = 2
 theme_override_font_sizes/font_size = 13
-text = "🌀 LABYRINTH"
+text = "LABYRINTH"
 
 [node name="FactoryBtn" type="Button" parent="RoomView/HBox/MapSelectionCard/Grid"]
 custom_minimum_size = Vector2(145, 105)
 layout_mode = 2
 theme_override_font_sizes/font_size = 13
-text = "🏭 FACTORY"
+text = "FACTORY"
 
 [node name="SnowTownBtn" type="Button" parent="RoomView/HBox/MapSelectionCard/Grid"]
 custom_minimum_size = Vector2(145, 105)
 layout_mode = 2
 theme_override_font_sizes/font_size = 13
-text = "❄️ SNOW TOWN"
+text = "SNOW TOWN"
 
 [node name="SpaceStationBtn" type="Button" parent="RoomView/HBox/MapSelectionCard/Grid"]
 custom_minimum_size = Vector2(145, 105)
 layout_mode = 2
 theme_override_font_sizes/font_size = 13
-text = "🚀 SPACE STATION"
+text = "SPACE STATION"
 
 [node name="BottomBar" type="HBoxContainer" parent="RoomView"]
 layout_mode = 1
@@ -719,14 +719,14 @@ custom_minimum_size = Vector2(220, 44)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.4, 1, 0.4, 1)
 theme_override_font_sizes/font_size = 17
-text = "🚀 START GAME"
+text = "START GAME"
 
 [node name="LeaveBtn" type="Button" parent="RoomView/BottomBar"]
 custom_minimum_size = Vector2(150, 44)
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.5, 0.5, 1)
 theme_override_font_sizes/font_size = 15
-text = "🚪 LEAVE ROOM"
+text = "LEAVE ROOM"
 
 [node name="BackButton" type="Button" parent="."]
 layout_mode = 1
@@ -738,4 +738,4 @@ offset_top = -55.0
 offset_right = 160.0
 offset_bottom = -20.0
 grow_vertical = 0
-text = "← Main Menu"
+text = "< Main Menu"

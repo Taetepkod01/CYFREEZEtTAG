@@ -190,7 +190,7 @@ func _on_create_room_pressed() -> void:
 			"max_players": 8,
 			"rounds": 3,
 			"map": selected_map,
-			"players": [my_player_name + " 👑 (Host)"]
+			"players": [my_player_name + " (Host)"]
 		}
 		current_room_code = new_code
 		is_host = true
@@ -236,7 +236,7 @@ func _on_network_room_created(data: Dictionary) -> void:
 	
 	var r_players = []
 	for p in data.get("players", []):
-		r_players.append(str(p.get("name", "Player")) + (" 👑 (Host)" if p.get("isHost", false) else ""))
+		r_players.append(str(p.get("name", "Player")) + (" (Host)" if p.get("isHost", false) else ""))
 	
 	active_rooms[current_room_code] = {
 		"name": str(data.get("name", "Room")),
@@ -257,7 +257,7 @@ func _on_network_room_joined(data: Dictionary) -> void:
 	
 	var r_players = []
 	for p in data.get("players", []):
-		r_players.append(str(p.get("name", "Player")) + (" 👑 (Host)" if p.get("isHost", false) else ""))
+		r_players.append(str(p.get("name", "Player")) + (" (Host)" if p.get("isHost", false) else ""))
 	
 	active_rooms[current_room_code] = {
 		"name": str(data.get("name", "Room")),
@@ -340,10 +340,10 @@ func _update_room_lobby_ui() -> void:
 	for i in range(r["max_players"]):
 		var slot_lbl = Label.new()
 		if i < r["players"].size():
-			slot_lbl.text = "• " + str(r["players"][i])
+			slot_lbl.text = "- " + str(r["players"][i])
 			slot_lbl.modulate = Color(1.0, 0.9, 0.4) if (i == 0) else Color(0.9, 0.95, 1.0)
 		else:
-			slot_lbl.text = "• [Open / Waiting for player...]"
+			slot_lbl.text = "- [Open / Waiting for player...]"
 			slot_lbl.modulate = Color(0.5, 0.6, 0.7, 0.5)
 		slot_lbl.add_theme_font_size_override("font_size", 13)
 		player_list_vbox.add_child(slot_lbl)
@@ -355,15 +355,15 @@ func _update_room_lobby_ui() -> void:
 	
 	max_players_slider.editable = is_host
 	rounds_opt.disabled = not is_host
-	host_settings_title.text = "⚙️ HOST SETTINGS" if is_host else "⚙️ ROOM SETTINGS (Host only)"
+	host_settings_title.text = "HOST SETTINGS" if is_host else "ROOM SETTINGS (Host only)"
 	
 	# Action Button
 	if is_host:
-		action_btn.text = "🚀 START GAME"
+		action_btn.text = "START GAME"
 		action_btn.modulate = Color(0.4, 1.0, 0.4)
 		action_btn.disabled = false
 	else:
-		action_btn.text = "✅ READY" if not is_ready else "⏳ WAITING FOR HOST..."
+		action_btn.text = "READY" if not is_ready else "WAITING FOR HOST..."
 		action_btn.modulate = Color(0.4, 0.85, 1.0)
 		action_btn.disabled = is_ready
 
@@ -398,7 +398,7 @@ func _setup_map_grid_buttons() -> void:
 			child.pressed.connect(func():
 				if not is_host or not active_rooms.has(current_room_code):
 					return
-				var clean_name = child.text.replace("🏰 ", "").replace("🎓 ", "").replace("🌀 ", "").replace("🏭 ", "").replace("❄️ ", "").replace("🚀 ", "")
+				var clean_name = child.text.strip_edges()
 				selected_map = clean_name
 				active_rooms[current_room_code]["map"] = clean_name
 				map_preview_lbl.text = "MAP: " + clean_name
