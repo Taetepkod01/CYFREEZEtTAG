@@ -5,7 +5,6 @@
   "description": "CPFreezeTag-3D Game & Server",
   "scripts": {
     "build": "npm install --prefix server && npm run --prefix server build",
-    "start": "npm run --prefix server start",
-    "prestart": "npm install --prefix server && npm run --prefix server build"
+    "start": "node server/build/index.js"
   }
 }
