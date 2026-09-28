@@ -144,7 +144,7 @@ func _update_room_list_browser() -> void:
 	
 	if active_rooms.is_empty():
 		var empty_lbl = Label.new()
-		empty_lbl.text = "(ยังไม่มีห้องเปิดอยู่)\nสร้างห้องใหม่ หรือกรอก PIN เพื่อเข้าร่วม"
+		empty_lbl.text = "(No rooms online yet)\nCreate a room or enter PIN to join"
 		empty_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		empty_lbl.modulate = Color(0.7, 0.8, 0.9, 0.7)
 		empty_lbl.add_theme_font_size_override("font_size", 13)
@@ -178,7 +178,7 @@ func _on_create_room_pressed() -> void:
 		r_name = "Room " + str(randi_range(101, 999))
 	
 	if Network and Network.is_connected_to_server:
-		code_error_lbl.text = "กำลังสร้างห้องบนเซิร์ฟเวอร์..."
+		code_error_lbl.text = "Creating room on server..."
 		Network.create_room(r_name, 8, 3, selected_map)
 	else:
 		# Local fallback
@@ -201,23 +201,23 @@ func _on_create_room_pressed() -> void:
 func _on_join_by_code_pressed() -> void:
 	var code = join_code_input.text.strip_edges().to_upper()
 	if code.length() != 6:
-		code_error_lbl.text = "รหัสห้องต้องมี 6 ตัวอักษร"
+		code_error_lbl.text = "Room code must be 6 characters"
 		return
 	
 	_join_room_by_code(code)
 
 func _join_room_by_code(code: String) -> void:
 	if Network and Network.is_connected_to_server:
-		code_error_lbl.text = "กำลังเชื่อมต่อไปยังห้อง " + code + "..."
+		code_error_lbl.text = "Connecting to room " + code + "..."
 		Network.join_room(code)
 	else:
 		# Local fallback
 		if not active_rooms.has(code):
-			code_error_lbl.text = "ไม่พบห้องรหัส: " + code
+			code_error_lbl.text = "Room not found: " + code
 			return
 		var r = active_rooms[code]
 		if r["players"].size() >= r["max_players"]:
-			code_error_lbl.text = "ห้องนี้เต็มแล้ว (%d/%d)" % [r["players"].size(), r["max_players"]]
+			code_error_lbl.text = "Room is full (%d/%d)" % [r["players"].size(), r["max_players"]]
 			return
 		
 		current_room_code = code
@@ -343,7 +343,7 @@ func _update_room_lobby_ui() -> void:
 			slot_lbl.text = "• " + str(r["players"][i])
 			slot_lbl.modulate = Color(1.0, 0.9, 0.4) if (i == 0) else Color(0.9, 0.95, 1.0)
 		else:
-			slot_lbl.text = "• [ว่าง / รอผู้เล่นเข้าร่วม...]"
+			slot_lbl.text = "• [Open / Waiting for player...]"
 			slot_lbl.modulate = Color(0.5, 0.6, 0.7, 0.5)
 		slot_lbl.add_theme_font_size_override("font_size", 13)
 		player_list_vbox.add_child(slot_lbl)

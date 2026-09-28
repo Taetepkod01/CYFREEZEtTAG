@@ -5,6 +5,7 @@ signal rescued(rescuer: CharacterBody3D, victim: CharacterBody3D)
 signal item_used(item_name: String)
 signal item_picked_up(item_name: String)
 signal item_changed(item_name: String)
+signal player_damaged(target: CharacterBody3D, amount: int)
 
 @export var player_name: String = "Player"
 @export var role: String = "runner" # "tagger" or "runner"
@@ -33,9 +34,20 @@ var speed_boost_timer: float = 0.0
 var shield_timer: float = 0.0
 var hp: int = 100
 
+# Tackle Dash Attack (1.5x Speed, deals 20 damage to opposing Tagger)
+var is_tackling: bool = false
+var tackle_timer: float = 0.0
+var tackle_direction: Vector3 = Vector3.FORWARD
+
+# Dizzy Stars on Banana Slip
+var is_dizzy: bool = false
+var dizzy_timer: float = 0.0
+
 # Remote Interpolation
 var target_remote_pos: Vector3 = Vector3.ZERO
 var target_remote_rot_y: float = 0.0
+var last_sent_pos: Vector3 = Vector3.ZERO
+var last_sent_rot_y: float = 0.0
 
 # Camera & Pivot
 @onready var spring_arm: SpringArm3D = $SpringArm3D
@@ -44,6 +56,8 @@ var target_remote_rot_y: float = 0.0
 @onready var body_mesh: MeshInstance3D = $Visuals/BodyMesh
 @onready var role_ring: MeshInstance3D = $Visuals/RoleRing
 @onready var ice_block: MeshInstance3D = $Visuals/IceBlock
+@onready var shield_domain: MeshInstance3D = $Visuals/ShieldDomain
+@onready var dizzy_stars: Label3D = $Visuals/DizzyStars
 @onready var name_tag: Label3D = $Visuals/NameTag
 @onready var interaction_area: Area3D = $InteractionArea3D
 
@@ -75,14 +89,23 @@ func update_remote_transform(pos: Vector3, rot_y: float) -> void:
 	target_remote_rot_y = rot_y
 
 func _unhandled_input(event: InputEvent) -> void:
-	if not is_local_player() or is_frozen:
+	if not is_local_player():
 		return
 	
-	# Mouse look
+	# Left-click to recapture mouse if lost by Alt / Alt-Tab
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+		if Input.get_mouse_mode() != Input.MOUSE_MODE_CAPTURED:
+			Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
+			return
+
+	if is_frozen:
+		return
+	
+	# Third-Person Mouse Look
 	if event is InputEventMouseMotion and Input.get_mouse_mode() == Input.MOUSE_MODE_CAPTURED:
 		rotate_y(-event.relative.x * mouse_sensitivity)
 		spring_arm.rotate_x(-event.relative.y * mouse_sensitivity)
-		spring_arm.rotation.x = clamp(spring_arm.rotation.x, deg_to_rad(-70.0), deg_to_rad(50.0))
+		spring_arm.rotation.x = clamp(spring_arm.rotation.x, deg_to_rad(-65.0), deg_to_rad(45.0))
 	
 	# Release / capture mouse with Escape
 	if event.is_action_pressed("ui_cancel"):
@@ -119,6 +142,19 @@ func _physics_process(delta: float) -> void:
 		move_and_slide()
 		_send_network_position(delta)
 		return
+
+	# Handle Tackle Dash
+	if is_tackling:
+		tackle_timer -= delta
+		if tackle_timer <= 0.0:
+			is_tackling = false
+		else:
+			var dash_speed = run_speed * 1.5
+			velocity.x = tackle_direction.x * dash_speed
+			velocity.z = tackle_direction.z * dash_speed
+			move_and_slide()
+			_send_network_position(delta)
+			return
 
 	# Check rescuing proximity for runners
 	if role == "runner" and not is_frozen:
@@ -173,13 +209,27 @@ func _send_network_position(delta: float) -> void:
 		return
 	Network.move_throttle_timer -= delta
 	if Network.move_throttle_timer <= 0.0:
-		Network.move_throttle_timer = Network.MOVE_SEND_RATE
-		Network.send_move(global_position, visuals.rotation.y + rotation.y)
+		# Only send if position or rotation has actually changed to save bandwidth & reduce lag
+		var rot = visuals.rotation.y + rotation.y
+		if global_position.distance_to(last_sent_pos) > 0.04 or abs(rot - last_sent_rot_y) > 0.05:
+			Network.move_throttle_timer = Network.MOVE_SEND_RATE
+			last_sent_pos = global_position
+			last_sent_rot_y = rot
+			Network.send_move(global_position, rot)
 
 # ── Item Pickup & Use ───────────────────────────────────────────────────────
 func pick_up_item(type: String) -> void:
 	if not held_item.is_empty():
 		return
+	
+	# REQUIREMENT: Chaser (Tagger) CANNOT pick up heater!
+	if type == "heater" and role == "tagger":
+		return
+	
+	# REQUIREMENT: Tackle is for Runners
+	if type == "tackle" and role == "tagger":
+		return
+	
 	held_item = type
 	item_picked_up.emit(type)
 	item_changed.emit(type)
@@ -201,14 +251,14 @@ func use_held_item() -> void:
 			item_used.emit("SPEED BOOST")
 		"shield":
 			has_shield = true
-			shield_timer = 10.0
+			shield_timer = 15.0 # Stay active until hit or 15s
 			_update_role_visuals()
-			item_used.emit("SHIELD")
+			item_used.emit("BLUE SHIELD DOMAIN")
 		"heater":
 			if is_frozen:
 				unfreeze()
 			has_shield = true
-			shield_timer = 4.0
+			shield_timer = 5.0
 			_update_role_visuals()
 			item_used.emit("HEATER")
 		"banana":
@@ -217,10 +267,36 @@ func use_held_item() -> void:
 				arena.spawn_banana_trap(global_position)
 			item_used.emit("BANANA TRAP")
 		"vortex":
-			var arena = get_parent().get_parent() if get_parent() else null
-			if arena and arena.has_method("spawn_vortex"):
-				arena.spawn_vortex(global_position)
-			item_used.emit("VORTEX")
+			# REQUIREMENT: Black Hole teleports the user to a random position on the map!
+			var rx = randf_range(-22.0, 22.0)
+			var rz = randf_range(-22.0, 22.0)
+			global_position = Vector3(rx, 0.5, rz)
+			item_used.emit("BLACK HOLE TELEPORT")
+		"tackle":
+			# REQUIREMENT: Runner tackles forward at 1.5x speed, deals 20 damage to Tagger
+			is_tackling = true
+			tackle_timer = 1.0
+			# Forward vector relative to visuals or player orientation
+			tackle_direction = -transform.basis.z.normalized()
+			item_used.emit("DASH TACKLE (1.5x)")
+
+func take_damage(amount: int) -> void:
+	hp = max(0, hp - amount)
+	# Flash red
+	if body_mesh:
+		var flash_mat = StandardMaterial3D.new()
+		flash_mat.albedo_color = Color(1.0, 0.1, 0.1)
+		flash_mat.emission_enabled = true
+		flash_mat.emission = Color(1.0, 0.2, 0.2)
+		body_mesh.set_surface_override_material(0, flash_mat)
+		get_tree().create_timer(0.2).timeout.connect(func(): _update_role_visuals())
+
+func slip_on_banana() -> void:
+	freeze()
+	is_dizzy = true
+	dizzy_timer = 2.5
+	if dizzy_stars:
+		dizzy_stars.visible = true
 
 func _process_buffs(delta: float) -> void:
 	if speed_boost_timer > 0.0:
@@ -230,13 +306,28 @@ func _process_buffs(delta: float) -> void:
 		if shield_timer <= 0.0:
 			has_shield = false
 			_update_role_visuals()
+	
+	if is_dizzy:
+		dizzy_timer -= delta
+		if dizzy_stars:
+			dizzy_stars.rotate_y(6.0 * delta)
+		if dizzy_timer <= 0.0:
+			is_dizzy = false
+			if dizzy_stars:
+				dizzy_stars.visible = false
+			if is_frozen:
+				unfreeze()
 
 # ── Freeze & Tag Mechanics ──────────────────────────────────────────────────
 func freeze() -> void:
+	# REQUIREMENT: Blue Shield Domain absorbs tag, then pops and disappears!
 	if has_shield:
 		has_shield = false
+		shield_timer = 0.0
 		_update_role_visuals()
+		item_used.emit("SHIELD BROKE!")
 		return
+	
 	is_frozen = true
 	is_rescuing = false
 	_update_role_visuals()
@@ -244,6 +335,9 @@ func freeze() -> void:
 func unfreeze() -> void:
 	is_frozen = false
 	is_rescuing = false
+	is_dizzy = false
+	if dizzy_stars:
+		dizzy_stars.visible = false
 	_update_role_visuals()
 
 func _update_role_visuals() -> void:
@@ -251,6 +345,9 @@ func _update_role_visuals() -> void:
 		return
 	
 	ice_block.visible = is_frozen
+	if shield_domain:
+		# Blue glowing domain sphere around player
+		shield_domain.visible = has_shield
 	
 	var body_mat = StandardMaterial3D.new()
 	var ring_mat = StandardMaterial3D.new()
@@ -281,16 +378,18 @@ func _update_role_visuals() -> void:
 		body_mat.albedo_color = Color(0.2, 0.6, 0.95)
 		ring_mat.albedo_color = Color(0.2, 0.8, 1.0)
 	
-	if has_shield:
-		ring_mat.albedo_color = Color(0.4, 1.0, 0.4)
-		ring_mat.emission_enabled = true
-		ring_mat.emission = Color(0.4, 1.0, 0.4)
-	
 	body_mesh.set_surface_override_material(0, body_mat)
 	role_ring.set_surface_override_material(0, ring_mat)
 
 func _on_interaction_body_entered(other: Node3D) -> void:
 	if other == self or not (other is CharacterBody3D):
+		return
+	
+	# Tackle hit check: If tackling runner hits opposing tagger
+	if is_tackling and role == "runner" and other.role == "tagger":
+		is_tackling = false
+		other.take_damage(20)
+		player_damaged.emit(other, 20)
 		return
 	
 	# Online game collision: authoritatively notify server

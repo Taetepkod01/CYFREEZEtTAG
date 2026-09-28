@@ -443,6 +443,7 @@ wss.on("connection", (ws: WebSocket) => {
           const itemId = String(msg.itemId);
           const item = currentRoom.items.get(itemId);
           if (!p || !item || p.heldItem !== "") return;
+          if ((item.type === "heater" || item.type === "tackle") && p.role === "tagger") return;
 
           p.heldItem = item.type;
           currentRoom.items.delete(itemId);
@@ -474,7 +475,13 @@ wss.on("connection", (ws: WebSocket) => {
           if (itemType === "banana") {
             broadcastToRoom(currentRoom, "banana_placed", { x: p.x, y: p.y, z: p.z });
           } else if (itemType === "vortex") {
-            broadcastToRoom(currentRoom, "vortex_spawned", { x: p.x, y: p.y, z: p.z });
+            // Teleport user to random location on map
+            p.x = Math.round((Math.random() * 40 - 20) * 10) / 10;
+            p.z = Math.round((Math.random() * 40 - 20) * 10) / 10;
+            broadcastToRoom(currentRoom, "player_moved", { id: p.id, x: p.x, y: p.y, z: p.z, rotY: p.rotY });
+            broadcastToRoom(currentRoom, "chat_message", { msg: `🌀 ${p.name} teleported across the arena!` });
+          } else if (itemType === "tackle") {
+            broadcastToRoom(currentRoom, "chat_message", { msg: `💥 ${p.name} dashed with a tackle attack!` });
           } else if (itemType === "heater") {
             if (p.frozen) {
               p.frozen = false;
@@ -540,7 +547,7 @@ function start3DRound(room: Active3DRoom) {
 
   // Spawn initial items
   room.items.clear();
-  const types = ["speed", "shield", "heater", "banana", "vortex"];
+  const types = ["speed", "shield", "heater", "banana", "vortex", "tackle"];
   for (let i = 0; i < 4; i++) {
     const id = `item_${++room.itemCounter}`;
     const t = types[Math.floor(Math.random() * types.length)];

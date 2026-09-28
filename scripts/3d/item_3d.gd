@@ -1,6 +1,6 @@
 extends Area3D
 
-@export var item_type: String = "speed" # "speed", "shield", "heater", "banana", "vortex"
+@export var item_type: String = "speed" # "speed", "shield", "heater", "banana", "vortex", "tackle"
 @export var item_id: String = ""
 
 @onready var mesh_instance: MeshInstance3D = $MeshInstance3D
@@ -56,6 +56,11 @@ func _setup_visuals() -> void:
 			label.modulate = Color(0.7, 0.3, 1.0)
 			mat.albedo_color = Color(0.6, 0.2, 0.9)
 			mat.emission = Color(0.6, 0.2, 0.9)
+		"tackle":
+			label.text = "💥 TACKLE"
+			label.modulate = Color(1.0, 0.5, 0.1)
+			mat.albedo_color = Color(1.0, 0.4, 0.0)
+			mat.emission = Color(1.0, 0.4, 0.0)
 	
 	mesh_instance.set_surface_override_material(0, mat)
 
@@ -67,10 +72,16 @@ func _process(delta: float) -> void:
 
 func _on_body_entered(body: Node3D) -> void:
 	if body is CharacterBody3D and body.has_method("pick_up_item"):
+		# REQUIREMENT: Chaser (Tagger) CANNOT pick up heater!
+		if item_type == "heater" and body.role == "tagger":
+			return
+		# Tackle is for Runners only
+		if item_type == "tackle" and body.role == "tagger":
+			return
+		
 		if body.held_item.is_empty():
 			if body.is_local_player() and Network and Network.is_online_game():
 				Network.send_pick_item(item_id)
-				# Local prediction or wait for server confirmation
 				body.pick_up_item(item_type)
 				queue_free()
 			elif not Network or not Network.is_online_game():

@@ -224,6 +224,7 @@ func _spawn_match_players() -> void:
 	p1.item_used.connect(_on_player_item_used)
 	p1.item_picked_up.connect(_on_player_item_picked_up)
 	p1.item_changed.connect(_update_item_slot)
+	p1.player_damaged.connect(func(target, amt): add_game_log("💥 [color=#ff9800]%s tackled %s! (-%d HP)[/color]" % [p1.player_name, target.player_name, amt]); _update_hud())
 	
 	# 3 Bots
 	var bot_names = ["Player 2 (Bot)", "Player 3 (Bot)", "Player 4 (Bot)"]
@@ -239,6 +240,7 @@ func _spawn_match_players() -> void:
 		bot.tagged.connect(_on_player_tagged)
 		bot.rescued.connect(_on_player_rescued)
 		bot.item_used.connect(func(item): add_game_log("%s used [color=#ffe066]%s[/color]!" % [bot.player_name, item]))
+		bot.player_damaged.connect(func(target, amt): add_game_log("💥 [color=#ff9800]%s tackled %s! (-%d HP)[/color]" % [bot.player_name, target.player_name, amt]); _update_hud())
 	
 	_update_hud()
 
@@ -278,7 +280,7 @@ func _spawn_random_item() -> void:
 	if items_container.get_child_count() >= 5:
 		return
 	
-	var item_types = ["speed", "shield", "heater", "banana", "vortex"]
+	var item_types = ["speed", "shield", "heater", "banana", "vortex", "tackle"]
 	var selected = item_types.pick_random()
 	
 	var item = item_3d_scene.instantiate()
@@ -307,9 +309,11 @@ func spawn_banana_trap(pos: Vector3) -> void:
 	
 	trap.body_entered.connect(func(body):
 		if body is CharacterBody3D and not body.is_frozen:
-			body.freeze()
-			add_game_log("🍌 [color=#ffe066]%s[/color] slipped on a banana peel!" % body.player_name)
-			get_tree().create_timer(2.5).timeout.connect(func(): if is_instance_valid(body): body.unfreeze())
+			if body.has_method("slip_on_banana"):
+				body.slip_on_banana()
+			else:
+				body.freeze()
+			add_game_log("🍌 [color=#ffe066]%s[/color] slipped on a banana peel! 💫 Dizzy!" % body.player_name)
 			trap.queue_free()
 	)
 
@@ -467,6 +471,9 @@ func _update_item_slot(item_name: String) -> void:
 			"vortex":
 				item_icon.text = "🌀"
 				item_name_lbl.text = "[E] VORTEX"
+			"tackle":
+				item_icon.text = "💥"
+				item_name_lbl.text = "[E] TACKLE (1.5x)"
 
 # ── HUD Update ──────────────────────────────────────────────────────────────
 func _update_hud() -> void:
