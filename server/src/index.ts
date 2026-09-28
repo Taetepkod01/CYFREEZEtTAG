@@ -14,6 +14,13 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// COOP and COEP headers for Godot 4 WebAssembly / SharedArrayBuffer
+app.use((_req, res, next) => {
+  res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
+  res.setHeader("Cross-Origin-Embedder-Policy", "require-corp");
+  next();
+});
+
 // Health check endpoint for Render.com
 app.get("/health", (_req, res) => {
   res.json({
