@@ -1,0 +1,11 @@
+{
+  "name": "cpfreezetag-3d",
+  "version": "1.0.0",
+  "private": true,
+  "description": "CPFreezeTag-3D Game & Server",
+  "scripts": {
+    "build": "npm install --prefix server && npm run --prefix server build",
+    "start": "npm run --prefix server start",
+    "prestart": "npm install --prefix server && npm run --prefix server build"
+  }
+}
