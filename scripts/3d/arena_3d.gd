@@ -163,13 +163,13 @@ func _update_role_button_ui() -> void:
 		return
 	match practice_role:
 		"tagger":
-			role_btn.text = "ROLE: 🔴 TAGGER"
+			role_btn.text = "ROLE: TAGGER"
 			role_btn.modulate = Color(1.0, 0.45, 0.45)
 		"runner":
-			role_btn.text = "ROLE: 🟢 RUNNER"
+			role_btn.text = "ROLE: RUNNER"
 			role_btn.modulate = Color(0.45, 1.0, 0.45)
 		"random", _:
-			role_btn.text = "ROLE: 🎲 RANDOM"
+			role_btn.text = "ROLE: RANDOM"
 			role_btn.modulate = Color(1.0, 0.9, 0.4)
 
 # ── Spawning Players & Items ────────────────────────────────────────────────
@@ -499,16 +499,16 @@ func _update_hud() -> void:
 		var status_badge = Label.new()
 		status_badge.add_theme_font_size_override("font_size", 13)
 		if p.is_frozen:
-			status_badge.text = "❄️ FROZEN"
+			status_badge.text = "[FROZEN]"
 			status_badge.modulate = Color(0.3, 0.9, 1.0)
 		elif p.is_rescuing:
-			status_badge.text = "🟡 RESCUING"
+			status_badge.text = "[RESCUING]"
 			status_badge.modulate = Color(1.0, 0.9, 0.2)
 		elif p.role == "tagger":
-			status_badge.text = "🔴 *TAGGER"
+			status_badge.text = "[TAGGER]"
 			status_badge.modulate = Color(1.0, 0.35, 0.35)
 		else:
-			status_badge.text = "🟢 RUNNER"
+			status_badge.text = "[RUNNER]"
 			status_badge.modulate = Color(0.4, 0.95, 0.4)
 		
 		row.add_child(name_lbl)
@@ -531,11 +531,11 @@ func _end_round(winner: String) -> void:
 	
 	if winner == "TAGGERS":
 		taggers_score += 1
-		game_over_title.text = "🔥 TAGGERS WIN ROUND! 🔥"
+		game_over_title.text = "TAGGERS WIN ROUND!"
 		game_over_title.modulate = Color(1.0, 0.4, 0.4)
 	else:
 		runners_score += 1
-		game_over_title.text = "❄️ RUNNERS WIN ROUND! ❄️"
+		game_over_title.text = "RUNNERS WIN ROUND!"
 		game_over_title.modulate = Color(0.4, 0.9, 1.0)
 	
 	score_lbl.text = "SCORE: Runners %d  -  Taggers %d" % [runners_score, taggers_score]

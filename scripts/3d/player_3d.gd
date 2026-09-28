@@ -353,12 +353,12 @@ func _update_role_visuals() -> void:
 	var ring_mat = StandardMaterial3D.new()
 	
 	if is_frozen:
-		name_tag.text = player_name + "\n❄️ [FROZEN]"
+		name_tag.text = player_name + "\n[FROZEN]"
 		name_tag.modulate = Color(0.3, 0.9, 1.0)
 		body_mat.albedo_color = Color(0.4, 0.8, 1.0)
 		ring_mat.albedo_color = Color(0.3, 0.9, 1.0)
 	elif role == "tagger":
-		name_tag.text = player_name + "\n🔴 [TAGGER]"
+		name_tag.text = player_name + "\n[TAGGER]"
 		name_tag.modulate = Color(1.0, 0.3, 0.3)
 		body_mat.albedo_color = Color(0.9, 0.25, 0.2)
 		ring_mat.albedo_color = Color(1.0, 0.2, 0.2)
@@ -366,14 +366,14 @@ func _update_role_visuals() -> void:
 		ring_mat.emission = Color(1.0, 0.2, 0.2)
 		ring_mat.emission_energy_multiplier = 2.0
 	elif is_rescuing:
-		name_tag.text = player_name + "\n🟡 [RESCUING]"
+		name_tag.text = player_name + "\n[RESCUING]"
 		name_tag.modulate = Color(1.0, 0.9, 0.2)
 		body_mat.albedo_color = Color(0.9, 0.8, 0.2)
 		ring_mat.albedo_color = Color(1.0, 0.9, 0.2)
 		ring_mat.emission_enabled = true
 		ring_mat.emission = Color(1.0, 0.9, 0.2)
 	else:
-		name_tag.text = player_name + "\n🟢 [RUNNER]"
+		name_tag.text = player_name + "\n[RUNNER]"
 		name_tag.modulate = Color(0.4, 0.9, 0.4)
 		body_mat.albedo_color = Color(0.2, 0.6, 0.95)
 		ring_mat.albedo_color = Color(0.2, 0.8, 1.0)

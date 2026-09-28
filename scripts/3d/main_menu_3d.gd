@@ -45,8 +45,26 @@ func _on_practice_pressed() -> void:
 	practice_modal.visible = true
 
 func _start_practice(role: String) -> void:
+	# Show immediate visual loading feedback on the button
+	match role:
+		"tagger":
+			tagger_role_btn.text = "LOADING 3D ARENA..."
+		"runner":
+			runner_role_btn.text = "LOADING 3D ARENA..."
+		"random", _:
+			random_role_btn.text = "LOADING 3D ARENA..."
+	
+	random_role_btn.disabled = true
+	tagger_role_btn.disabled = true
+	runner_role_btn.disabled = true
+	
 	if Network:
+		Network.is_solo_mode = true
 		Network.selected_practice_role = role
+		Network.disconnect_from_server()
+	
+	# Give the engine 1 frame to render the button change before loading the heavy 3D scene
+	await get_tree().process_frame
 	get_tree().change_scene_to_file("res://scenes/3d/arena_3d.tscn")
 
 func _on_how_to_play_pressed() -> void:

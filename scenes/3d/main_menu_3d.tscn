@@ -207,27 +207,27 @@ custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.4, 1, 0.4, 1)
 theme_override_font_sizes/font_size = 18
-text = "🌐 PLAY ONLINE (LOBBY)"
+text = "PLAY ONLINE (LOBBY)"
 
 [node name="PracticeBtn" type="Button" parent="MenuButtons"]
 custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.88, 0.4, 1)
 theme_override_font_sizes/font_size = 18
-text = "🤖 PRACTICE 3D ARENA (BOTS)"
+text = "PRACTICE (VS BOTS)"
 
 [node name="HowToPlayBtn" type="Button" parent="MenuButtons"]
 custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
 theme_override_font_sizes/font_size = 16
-text = "📖 HOW TO PLAY"
+text = "HOW TO PLAY"
 
 [node name="QuitBtn" type="Button" parent="MenuButtons"]
 custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.5, 0.5, 1)
 theme_override_font_sizes/font_size = 16
-text = "❌ QUIT"
+text = "QUIT"
 
 [node name="RulesPanel" type="Panel" parent="."]
 visible = false
@@ -257,7 +257,7 @@ offset_bottom = 48.0
 grow_horizontal = 2
 theme_override_colors/font_color = Color(1, 0.88, 0.4, 1)
 theme_override_font_sizes/font_size = 20
-text = "📖 GMAE INSTRUCTIONS"
+text = "GAME INSTRUCTIONS"
 horizontal_alignment = 1
 
 [node name="Content" type="RichTextLabel" parent="RulesPanel"]
@@ -272,19 +272,20 @@ offset_bottom = -65.0
 grow_horizontal = 2
 grow_vertical = 2
 bbcode_enabled = true
-text = "[color=#ffe066]🎯 OBJECTIVE & RULES:[/color]
-• 🔴 [color=#ff4c4c]TAGGERS[/color] must tag all runners to encase them in 3D ice cubes!
-• 🟢 [color=#4fc3f7]RUNNERS[/color] must survive until time runs out, or touch frozen teammates to thaw them!
+text = "[color=#ffe066]OBJECTIVE & RULES:[/color]
+• [color=#ff4c4c][TAGGERS][/color] must tag all runners to encase them in 3D ice cubes!
+• [color=#4fc3f7][RUNNERS][/color] must survive until time runs out, or touch frozen teammates to thaw them!
 
-[color=#ffe066]🎒 ITEMS & POWER-UPS (Press [E] to use):[/color]
-• ⚡ [b]Speed Boost[/b]: Move 1.3x faster for 6s
-• 🛡️ [b]Shield[/b]: Blocks 1 freeze attempt
-• 🔥 [b]Heater[/b]: Unfreezes yourself immediately
-• 🍌 [b]Banana Trap[/b]: Drops a banana that slips players for 2.5s
-• 🌀 [b]Black Hole Vortex[/b]: Gravitational field pulling nearby players
+[color=#ffe066]ITEMS & POWER-UPS (Press [E] to use):[/color]
+• [b]Speed Boost[/b]: Move 1.3x faster for 6s
+• [b]Blue Shield Domain[/b]: Absorbs 1 freeze attack, pops on impact
+• [b]Heater[/b]: Unfreezes yourself immediately (Runners only)
+• [b]Banana Trap[/b]: Drops a banana peel; slips players into dizzy stars for 2.5s
+• [b]Black Hole Vortex[/b]: Teleports user to a random safe location on the map
+• [b]Dash Tackle[/b]: Runner dashes forward at 1.5x speed; deals -20 HP to Taggers!
 
-[color=#ffe066]🎮 3D CONTROLS:[/color]
-• Mouse: Orbit Camera
+[color=#ffe066]3D CONTROLS:[/color]
+• Mouse Look: Orbit Camera (Left Click anywhere to capture mouse)
 • WASD: Camera-Relative Movement
 • Spacebar: Jump
 • E Key: Use Single Collected Item"
@@ -332,7 +333,7 @@ offset_bottom = 50.0
 grow_horizontal = 2
 theme_override_colors/font_color = Color(1, 0.88, 0.4, 1)
 theme_override_font_sizes/font_size = 20
-text = "🤖 AI PRACTICE - CHOOSE ROLE"
+text = "AI PRACTICE - CHOOSE ROLE"
 horizontal_alignment = 1
 
 [node name="Subtitle" type="Label" parent="PracticeModal"]
@@ -370,21 +371,21 @@ custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.9, 0.4, 1)
 theme_override_font_sizes/font_size = 15
-text = "🎲 RANDOM (สุ่มบทบาทในแต่ละรอบ)"
+text = "RANDOM (Fair 1-in-4 Pick)"
 
 [node name="TaggerRoleBtn" type="Button" parent="PracticeModal/RoleButtons"]
 custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.4, 0.4, 1)
 theme_override_font_sizes/font_size = 15
-text = "🔴 TAGGER (คนวิ่งไล่แปะแช่แข็งบอท)"
+text = "TAGGER (Chaser / Freeze Bots)"
 
 [node name="RunnerRoleBtn" type="Button" parent="PracticeModal/RoleButtons"]
 custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.4, 1, 0.4, 1)
 theme_override_font_sizes/font_size = 15
-text = "🟢 RUNNER (คนวิ่งหนีและช่วยเพื่อน)"
+text = "RUNNER (Survivor / Thaw Friends)"
 
 [node name="ClosePracticeBtn" type="Button" parent="PracticeModal"]
 layout_mode = 1

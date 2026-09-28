@@ -175,15 +175,15 @@ offset_left = 24.0
 offset_top = 20.0
 offset_right = 110.0
 offset_bottom = 54.0
-text = "⚙️ MENU"
+text = "MENU"
 
 [node name="PracticeRoleBtn" type="Button" parent="HUD"]
 offset_left = 118.0
 offset_top = 20.0
-offset_right = 295.0
+offset_right = 280.0
 offset_bottom = 54.0
 theme_override_font_sizes/font_size = 13
-text = "ROLE: 🎲 RANDOM"
+text = "ROLE: RANDOM"
 
 [node name="MinimapPanel" type="Panel" parent="HUD"]
 offset_left = 24.0
