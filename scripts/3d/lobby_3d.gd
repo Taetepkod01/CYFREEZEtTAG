@@ -36,16 +36,21 @@ const CODE_CHARS: String = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
 @onready var leave_btn: Button = $RoomView/BottomBar/LeaveBtn
 
 # ── Dynamic Room State ──────────────────────────────────────────────────────
-# Active rooms dictionary: room_code -> { "name": String, "code": String, "host": String, "max_players": int, "rounds": int, "map": String, "players": Array }
 static var active_rooms: Dictionary = {}
 var current_room_code: String = ""
 var is_host: bool = false
 var is_ready: bool = false
 var my_player_name: String = "Player 1"
+var selected_map: String = "CASTLE"
+
+var refresh_timer: float = 0.0
 
 func _ready() -> void:
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 	code_error_lbl.text = ""
+	
+	if Network:
+		my_player_name = Network.my_player_name
 	
 	# Setup rounds options
 	rounds_opt.clear()
@@ -67,11 +72,48 @@ func _ready() -> void:
 	leave_btn.pressed.connect(_on_leave_room_pressed)
 	
 	_setup_map_grid_buttons()
+	_connect_network_signals()
 	
-	# Initially show Browser View
+	# Connect to backend WebSocket server if not connected
+	if Network and not Network.is_connected_to_server:
+		Network.connect_to_server()
+	
+	# Initially show Browser View & fetch rooms
 	_show_browser_view()
+	if Network:
+		Network.fetch_public_rooms()
 
-# ── Room Code Generator (Like Among Us / CPFreezetag) ────────────────────────
+func _process(delta: float) -> void:
+	if browser_view.visible:
+		refresh_timer -= delta
+		if refresh_timer <= 0.0:
+			refresh_timer = 3.5
+			if Network:
+				Network.fetch_public_rooms()
+
+# ── Network Signals Connection ──────────────────────────────────────────────
+func _connect_network_signals() -> void:
+	if not Network:
+		return
+	
+	if not Network.room_created.is_connected(_on_network_room_created):
+		Network.room_created.connect(_on_network_room_created)
+	if not Network.room_joined.is_connected(_on_network_room_joined):
+		Network.room_joined.connect(_on_network_room_joined)
+	if not Network.player_joined.is_connected(_on_network_player_joined):
+		Network.player_joined.connect(_on_network_player_joined)
+	if not Network.player_left.is_connected(_on_network_player_left):
+		Network.player_left.connect(_on_network_player_left)
+	if not Network.settings_updated.is_connected(_on_network_settings_updated):
+		Network.settings_updated.connect(_on_network_settings_updated)
+	if not Network.public_rooms_updated.is_connected(_on_network_public_rooms_updated):
+		Network.public_rooms_updated.connect(_on_network_public_rooms_updated)
+	if not Network.round_started.is_connected(_on_network_round_started):
+		Network.round_started.connect(_on_network_round_started)
+	if not Network.connection_error.is_connected(_on_network_error):
+		Network.connection_error.connect(_on_network_error)
+
+# ── Room Code Generator (Local Fallback) ────────────────────────────────────
 func generate_unique_code() -> String:
 	while true:
 		var code = ""
@@ -118,9 +160,9 @@ func _update_room_list_browser() -> void:
 		item_btn.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		item_btn.add_theme_font_size_override("font_size", 13)
 		
-		if p_count >= max_p:
+		if p_count >= max_p or r.get("has_started", false):
 			item_btn.disabled = true
-			item_btn.text += " [FULL]"
+			item_btn.text += " [FULL]" if (p_count >= max_p) else " [IN PROGRESS]"
 		else:
 			item_btn.pressed.connect(func(): _join_room_by_code(code))
 		
@@ -128,7 +170,6 @@ func _update_room_list_browser() -> void:
 
 # ── Create Room (1 Player = 1 Room Only) ────────────────────────────────────
 func _on_create_room_pressed() -> void:
-	# Check if already in a room
 	if not current_room_code.is_empty() and active_rooms.has(current_room_code):
 		return
 	
@@ -136,22 +177,25 @@ func _on_create_room_pressed() -> void:
 	if r_name.is_empty():
 		r_name = "Room " + str(randi_range(101, 999))
 	
-	var new_code = generate_unique_code()
-	
-	active_rooms[new_code] = {
-		"name": r_name,
-		"code": new_code,
-		"host": my_player_name,
-		"max_players": 8, # Default 8, customizable 4-8 by host!
-		"rounds": 3,
-		"map": "CASTLE",
-		"players": [my_player_name + " 👑 (Host)"]
-	}
-	
-	current_room_code = new_code
-	is_host = true
-	is_ready = true
-	_show_room_view()
+	if Network and Network.is_connected_to_server:
+		code_error_lbl.text = "กำลังสร้างห้องบนเซิร์ฟเวอร์..."
+		Network.create_room(r_name, 8, 3, selected_map)
+	else:
+		# Local fallback
+		var new_code = generate_unique_code()
+		active_rooms[new_code] = {
+			"name": r_name,
+			"code": new_code,
+			"host": my_player_name,
+			"max_players": 8,
+			"rounds": 3,
+			"map": selected_map,
+			"players": [my_player_name + " 👑 (Host)"]
+		}
+		current_room_code = new_code
+		is_host = true
+		is_ready = true
+		_show_room_view()
 
 # ── Join by Code (Among Us Style) ───────────────────────────────────────────
 func _on_join_by_code_pressed() -> void:
@@ -163,23 +207,118 @@ func _on_join_by_code_pressed() -> void:
 	_join_room_by_code(code)
 
 func _join_room_by_code(code: String) -> void:
-	if not active_rooms.has(code):
-		code_error_lbl.text = "ไม่พบห้องรหัส: " + code
-		return
+	if Network and Network.is_connected_to_server:
+		code_error_lbl.text = "กำลังเชื่อมต่อไปยังห้อง " + code + "..."
+		Network.join_room(code)
+	else:
+		# Local fallback
+		if not active_rooms.has(code):
+			code_error_lbl.text = "ไม่พบห้องรหัส: " + code
+			return
+		var r = active_rooms[code]
+		if r["players"].size() >= r["max_players"]:
+			code_error_lbl.text = "ห้องนี้เต็มแล้ว (%d/%d)" % [r["players"].size(), r["max_players"]]
+			return
+		
+		current_room_code = code
+		is_host = false
+		is_ready = false
+		var guest_name = "Player " + str(r["players"].size() + 1)
+		r["players"].append(guest_name)
+		_show_room_view()
+
+# ── Network Handlers ────────────────────────────────────────────────────────
+func _on_network_room_created(data: Dictionary) -> void:
+	code_error_lbl.text = ""
+	current_room_code = str(data.get("code", ""))
+	is_host = true
+	is_ready = true
 	
-	var r = active_rooms[code]
-	if r["players"].size() >= r["max_players"]:
-		code_error_lbl.text = "ห้องนี้เต็มแล้ว (%d/%d)" % [r["players"].size(), r["max_players"]]
-		return
+	var r_players = []
+	for p in data.get("players", []):
+		r_players.append(str(p.get("name", "Player")) + (" 👑 (Host)" if p.get("isHost", false) else ""))
 	
-	current_room_code = code
-	is_host = false
+	active_rooms[current_room_code] = {
+		"name": str(data.get("name", "Room")),
+		"code": current_room_code,
+		"host": my_player_name,
+		"max_players": int(data.get("maxPlayers", 8)),
+		"rounds": int(data.get("rounds", 3)),
+		"map": str(data.get("map", "CASTLE")),
+		"players": r_players
+	}
+	_show_room_view()
+
+func _on_network_room_joined(data: Dictionary) -> void:
+	code_error_lbl.text = ""
+	current_room_code = str(data.get("code", ""))
+	is_host = bool(data.get("isHost", false))
 	is_ready = false
 	
-	var guest_name = "Player " + str(r["players"].size() + 1)
-	r["players"].append(guest_name)
+	var r_players = []
+	for p in data.get("players", []):
+		r_players.append(str(p.get("name", "Player")) + (" 👑 (Host)" if p.get("isHost", false) else ""))
 	
+	active_rooms[current_room_code] = {
+		"name": str(data.get("name", "Room")),
+		"code": current_room_code,
+		"host": "Host",
+		"max_players": int(data.get("maxPlayers", 8)),
+		"rounds": int(data.get("rounds", 3)),
+		"map": str(data.get("map", "CASTLE")),
+		"players": r_players
+	}
 	_show_room_view()
+
+func _on_network_player_joined(data: Dictionary) -> void:
+	if active_rooms.has(current_room_code):
+		var r = active_rooms[current_room_code]
+		var p_name = str(data.get("name", "New Player"))
+		r["players"].append(p_name)
+		_update_room_lobby_ui()
+
+func _on_network_player_left(data: Dictionary) -> void:
+	if active_rooms.has(current_room_code):
+		var r = active_rooms[current_room_code]
+		var p_name = str(data.get("name", ""))
+		for i in range(r["players"].size() - 1, -1, -1):
+			if r["players"][i].begins_with(p_name):
+				r["players"].remove_at(i)
+				break
+		_update_room_lobby_ui()
+
+func _on_network_settings_updated(data: Dictionary) -> void:
+	if active_rooms.has(current_room_code):
+		var r = active_rooms[current_room_code]
+		if data.has("maxPlayers"): r["max_players"] = int(data["maxPlayers"])
+		if data.has("rounds"): r["rounds"] = int(data["rounds"])
+		if data.has("map"): r["map"] = str(data["map"])
+		_update_room_lobby_ui()
+
+func _on_network_public_rooms_updated(rooms: Array) -> void:
+	# Update active_rooms from server REST query
+	var new_dict: Dictionary = {}
+	for r in rooms:
+		var code = str(r.get("code", ""))
+		new_dict[code] = {
+			"name": str(r.get("name", "Room")),
+			"code": code,
+			"host": "Host",
+			"max_players": int(r.get("maxPlayers", 8)),
+			"rounds": int(r.get("rounds", 3)),
+			"map": str(r.get("map", "CASTLE")),
+			"players": range(int(r.get("playersCount", 1))),
+			"has_started": bool(r.get("hasStarted", false))
+		}
+	if browser_view.visible:
+		active_rooms = new_dict
+		_update_room_list_browser()
+
+func _on_network_round_started(_data: Dictionary) -> void:
+	get_tree().change_scene_to_file("res://scenes/3d/arena_3d.tscn")
+
+func _on_network_error(msg: String) -> void:
+	code_error_lbl.text = msg
 
 # ── In-Room UI & Customization ──────────────────────────────────────────────
 func _update_room_lobby_ui() -> void:
@@ -201,7 +340,7 @@ func _update_room_lobby_ui() -> void:
 	for i in range(r["max_players"]):
 		var slot_lbl = Label.new()
 		if i < r["players"].size():
-			slot_lbl.text = "• " + r["players"][i]
+			slot_lbl.text = "• " + str(r["players"][i])
 			slot_lbl.modulate = Color(1.0, 0.9, 0.4) if (i == 0) else Color(0.9, 0.95, 1.0)
 		else:
 			slot_lbl.text = "• [ว่าง / รอผู้เล่นเข้าร่วม...]"
@@ -214,7 +353,6 @@ func _update_room_lobby_ui() -> void:
 	max_players_val_lbl.text = "%d Players" % r["max_players"]
 	map_preview_lbl.text = "MAP: " + r["map"]
 	
-	# Only Host can customize room settings and map!
 	max_players_slider.editable = is_host
 	rounds_opt.disabled = not is_host
 	host_settings_title.text = "⚙️ HOST SETTINGS" if is_host else "⚙️ ROOM SETTINGS (Host only)"
@@ -234,7 +372,6 @@ func _on_max_players_changed(value: float) -> void:
 		return
 	var r = active_rooms[current_room_code]
 	var new_max = int(value)
-	# Cannot set max players less than currently joined players
 	if new_max < r["players"].size():
 		new_max = r["players"].size()
 		max_players_slider.value = new_max
@@ -242,6 +379,9 @@ func _on_max_players_changed(value: float) -> void:
 	r["max_players"] = new_max
 	max_players_val_lbl.text = "%d Players" % new_max
 	player_count_header.text = "PLAYERS (%d / %d)" % [r["players"].size(), new_max]
+	
+	if Network and Network.is_connected_to_server:
+		Network.update_room_settings(new_max, r["rounds"], r["map"])
 	_update_room_lobby_ui()
 
 func _on_rounds_selected(index: int) -> void:
@@ -249,6 +389,8 @@ func _on_rounds_selected(index: int) -> void:
 		return
 	var rounds = rounds_opt.get_item_id(index)
 	active_rooms[current_room_code]["rounds"] = rounds
+	if Network and Network.is_connected_to_server:
+		Network.update_room_settings(active_rooms[current_room_code]["max_players"], rounds, active_rooms[current_room_code]["map"])
 
 func _setup_map_grid_buttons() -> void:
 	for child in map_grid.get_children():
@@ -257,8 +399,11 @@ func _setup_map_grid_buttons() -> void:
 				if not is_host or not active_rooms.has(current_room_code):
 					return
 				var clean_name = child.text.replace("🏰 ", "").replace("🎓 ", "").replace("🌀 ", "").replace("🏭 ", "").replace("❄️ ", "").replace("🚀 ", "")
+				selected_map = clean_name
 				active_rooms[current_room_code]["map"] = clean_name
 				map_preview_lbl.text = "MAP: " + clean_name
+				if Network and Network.is_connected_to_server:
+					Network.update_room_settings(active_rooms[current_room_code]["max_players"], active_rooms[current_room_code]["rounds"], clean_name)
 			)
 
 func _on_copy_code_pressed() -> void:
@@ -269,8 +414,10 @@ func _on_copy_code_pressed() -> void:
 
 func _on_action_pressed() -> void:
 	if is_host:
-		# Launch game with customized settings
-		get_tree().change_scene_to_file("res://scenes/3d/arena_3d.tscn")
+		if Network and Network.is_connected_to_server:
+			Network.start_game()
+		else:
+			get_tree().change_scene_to_file("res://scenes/3d/arena_3d.tscn")
 	else:
 		is_ready = true
 		_update_room_lobby_ui()
@@ -278,15 +425,18 @@ func _on_action_pressed() -> void:
 func _on_leave_room_pressed() -> void:
 	if active_rooms.has(current_room_code):
 		if is_host:
-			# If host leaves, the room is deleted
 			active_rooms.erase(current_room_code)
 		else:
-			# If guest leaves, remove from player list
 			var r = active_rooms[current_room_code]
 			for i in range(r["players"].size() - 1, -1, -1):
-				if r["players"][i].begins_with("Player"):
+				if str(r["players"][i]).begins_with("Player"):
 					r["players"].remove_at(i)
 					break
+	
+	if Network:
+		Network.disconnect_from_server()
+		# Reconnect to keep browser alive
+		Network.connect_to_server()
 	
 	current_room_code = ""
 	is_host = false
@@ -294,4 +444,6 @@ func _on_leave_room_pressed() -> void:
 	_show_browser_view()
 
 func _on_back_to_menu_pressed() -> void:
+	if Network:
+		Network.disconnect_from_server()
 	get_tree().change_scene_to_file("res://scenes/3d/main_menu_3d.tscn")

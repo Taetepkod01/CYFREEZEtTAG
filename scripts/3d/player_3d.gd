@@ -11,6 +11,8 @@ signal item_changed(item_name: String)
 @export var is_frozen: bool = false
 @export var is_rescuing: bool = false
 @export var is_bot: bool = false
+@export var is_remote: bool = false
+@export var network_id: String = ""
 
 # Individual stats for MVP
 var freeze_count: int = 0
@@ -25,11 +27,15 @@ var rescue_count: int = 0
 var gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity", 9.8)
 
 # Single Held Item Slot
-var held_item: String = "" # Only gets item by picking up in arena!
+var held_item: String = ""
 var has_shield: bool = false
 var speed_boost_timer: float = 0.0
 var shield_timer: float = 0.0
 var hp: int = 100
+
+# Remote Interpolation
+var target_remote_pos: Vector3 = Vector3.ZERO
+var target_remote_rot_y: float = 0.0
 
 # Camera & Pivot
 @onready var spring_arm: SpringArm3D = $SpringArm3D
@@ -47,11 +53,14 @@ var bot_dir: Vector3 = Vector3.ZERO
 
 func _ready() -> void:
 	name_tag.text = player_name
+	target_remote_pos = global_position
+	target_remote_rot_y = rotation.y
 	_update_role_visuals()
 	
 	if is_local_player():
 		Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 		camera.current = true
+		spring_arm.visible = true
 	else:
 		camera.current = false
 		spring_arm.visible = false
@@ -59,7 +68,11 @@ func _ready() -> void:
 	interaction_area.body_entered.connect(_on_interaction_body_entered)
 
 func is_local_player() -> bool:
-	return not is_bot
+	return not is_bot and not is_remote
+
+func update_remote_transform(pos: Vector3, rot_y: float) -> void:
+	target_remote_pos = pos
+	target_remote_rot_y = rot_y
 
 func _unhandled_input(event: InputEvent) -> void:
 	if not is_local_player() or is_frozen:
@@ -81,6 +94,12 @@ func _unhandled_input(event: InputEvent) -> void:
 func _physics_process(delta: float) -> void:
 	_process_buffs(delta)
 	
+	# If this is a remote online player, smoothly lerp to received network position
+	if is_remote:
+		global_position = global_position.lerp(target_remote_pos, 16.0 * delta)
+		visuals.rotation.y = lerp_angle(visuals.rotation.y, target_remote_rot_y, 16.0 * delta)
+		return
+	
 	# Apply Gravity
 	if not is_on_floor():
 		velocity.y -= gravity * delta
@@ -98,6 +117,7 @@ func _physics_process(delta: float) -> void:
 		velocity.x = move_toward(velocity.x, 0, walk_speed)
 		velocity.z = move_toward(velocity.z, 0, walk_speed)
 		move_and_slide()
+		_send_network_position(delta)
 		return
 
 	# Check rescuing proximity for runners
@@ -110,6 +130,8 @@ func _physics_process(delta: float) -> void:
 		if near_frozen != is_rescuing:
 			is_rescuing = near_frozen
 			_update_role_visuals()
+			if is_local_player() and Network and Network.is_online_game():
+				Network.send_rescuing(is_rescuing)
 
 	# Handle Jump
 	if is_local_player() and is_on_floor() and Input.is_action_just_pressed("jump"):
@@ -144,11 +166,20 @@ func _physics_process(delta: float) -> void:
 		velocity.z = move_toward(velocity.z, 0, current_speed)
 	
 	move_and_slide()
+	_send_network_position(delta)
+
+func _send_network_position(delta: float) -> void:
+	if not is_local_player() or not Network or not Network.is_online_game():
+		return
+	Network.move_throttle_timer -= delta
+	if Network.move_throttle_timer <= 0.0:
+		Network.move_throttle_timer = Network.MOVE_SEND_RATE
+		Network.send_move(global_position, visuals.rotation.y + rotation.y)
 
 # ── Item Pickup & Use ───────────────────────────────────────────────────────
 func pick_up_item(type: String) -> void:
 	if not held_item.is_empty():
-		return # Already holding an item
+		return
 	held_item = type
 	item_picked_up.emit(type)
 	item_changed.emit(type)
@@ -160,6 +191,9 @@ func use_held_item() -> void:
 	var item_to_use = held_item
 	held_item = ""
 	item_changed.emit("")
+	
+	if is_local_player() and Network and Network.is_online_game():
+		Network.send_use_item()
 	
 	match item_to_use:
 		"speed":
@@ -259,6 +293,15 @@ func _on_interaction_body_entered(other: Node3D) -> void:
 	if other == self or not (other is CharacterBody3D):
 		return
 	
+	# Online game collision: authoritatively notify server
+	if is_local_player() and Network and Network.is_online_game():
+		if role == "tagger" and other.role == "runner" and not other.is_frozen:
+			Network.send_tag(other.network_id)
+		elif role == "runner" and not is_frozen and other.role == "runner" and other.is_frozen:
+			Network.send_rescue(other.network_id)
+		return
+	
+	# Offline practice mode collision
 	if role == "tagger" and other.role == "runner" and not other.is_frozen:
 		other.freeze()
 		freeze_count += 1

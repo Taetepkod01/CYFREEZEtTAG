@@ -1,6 +1,7 @@
 extends Area3D
 
 @export var item_type: String = "speed" # "speed", "shield", "heater", "banana", "vortex"
+@export var item_id: String = ""
 
 @onready var mesh_instance: MeshInstance3D = $MeshInstance3D
 @onready var label: Label3D = $Label3D
@@ -13,8 +14,10 @@ func _ready() -> void:
 	body_entered.connect(_on_body_entered)
 	_setup_visuals()
 
-func setup(type: String) -> void:
+func setup(type: String, id: String = "") -> void:
 	item_type = type
+	if not id.is_empty():
+		item_id = id
 	_setup_visuals()
 
 func _setup_visuals() -> void:
@@ -65,5 +68,11 @@ func _process(delta: float) -> void:
 func _on_body_entered(body: Node3D) -> void:
 	if body is CharacterBody3D and body.has_method("pick_up_item"):
 		if body.held_item.is_empty():
-			body.pick_up_item(item_type)
-			queue_free()
+			if body.is_local_player() and Network and Network.is_online_game():
+				Network.send_pick_item(item_id)
+				# Local prediction or wait for server confirmation
+				body.pick_up_item(item_type)
+				queue_free()
+			elif not Network or not Network.is_online_game():
+				body.pick_up_item(item_type)
+				queue_free()

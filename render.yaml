@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: cpfreezetag-3d
+    env: node
+    buildCommand: cd server && npm install && npm run build
+    startCommand: cd server && npm run start
+    envVars:
+      - key: NODE_VERSION
+        value: 20.0.0

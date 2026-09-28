@@ -56,12 +56,19 @@ func _ready() -> void:
 	$HUD/MenuButton.pressed.connect(_on_exit_to_menu_pressed)
 	item_btn.pressed.connect(_on_item_button_pressed)
 	
-	# Load Practice Role setting from Network singleton
-	if Network and "selected_practice_role" in Network:
-		practice_role = Network.selected_practice_role
-	
-	_update_role_button_ui()
-	role_btn.pressed.connect(_on_cycle_role_pressed)
+	if Network and Network.is_online_game():
+		# Online match
+		role_btn.visible = false
+		current_round = Network.current_round
+		max_rounds = Network.max_rounds
+		_connect_network_signals()
+	else:
+		# AI practice mode
+		role_btn.visible = true
+		if Network and "selected_practice_role" in Network:
+			practice_role = Network.selected_practice_role
+		_update_role_button_ui()
+		role_btn.pressed.connect(_on_cycle_role_pressed)
 	
 	# Connect Minimap
 	if minimap and minimap.has_method("setup"):
@@ -71,11 +78,39 @@ func _ready() -> void:
 	_update_hud()
 	_update_item_slot("")
 	
-	# Spawn initial items
-	for i in range(3):
-		_spawn_random_item()
+	if not Network or not Network.is_online_game():
+		for i in range(3):
+			_spawn_random_item()
 	
 	add_game_log("[color=#ffe066]Match started![/color] Round %d / %d" % [current_round, max_rounds])
+
+func _connect_network_signals() -> void:
+	if not Network:
+		return
+	if not Network.player_moved.is_connected(_on_net_player_moved):
+		Network.player_moved.connect(_on_net_player_moved)
+	if not Network.player_tagged.is_connected(_on_net_player_tagged):
+		Network.player_tagged.connect(_on_net_player_tagged)
+	if not Network.player_rescued.is_connected(_on_net_player_rescued):
+		Network.player_rescued.connect(_on_net_player_rescued)
+	if not Network.player_rescuing.is_connected(_on_net_player_rescuing):
+		Network.player_rescuing.connect(_on_net_player_rescuing)
+	if not Network.item_spawned.is_connected(_on_net_item_spawned):
+		Network.item_spawned.connect(_on_net_item_spawned)
+	if not Network.item_picked.is_connected(_on_net_item_picked):
+		Network.item_picked.connect(_on_net_item_picked)
+	if not Network.item_used.is_connected(_on_net_item_used):
+		Network.item_used.connect(_on_net_item_used)
+	if not Network.banana_placed.is_connected(spawn_banana_trap):
+		Network.banana_placed.connect(spawn_banana_trap)
+	if not Network.vortex_spawned.is_connected(spawn_vortex):
+		Network.vortex_spawned.connect(spawn_vortex)
+	if not Network.time_sync.is_connected(_on_net_time_sync):
+		Network.time_sync.connect(_on_net_time_sync)
+	if not Network.round_ended.is_connected(_on_net_round_ended):
+		Network.round_ended.connect(_on_net_round_ended)
+	if not Network.chat_received.is_connected(func(msg): add_game_log(msg)):
+		Network.chat_received.connect(func(msg): add_game_log(msg))
 
 func _process(delta: float) -> void:
 	if not is_game_active:
@@ -84,21 +119,23 @@ func _process(delta: float) -> void:
 	round_time -= delta
 	if round_time <= 0.0:
 		round_time = 0.0
-		_end_round("RUNNERS")
+		if not Network or not Network.is_online_game():
+			_end_round("RUNNERS")
 	
 	var mins = int(round_time) / 60
 	var secs = int(round_time) % 60
 	timer_lbl.text = "%02d:%02d" % [mins, secs]
 	
-	# Item spawn cycle
-	item_spawn_timer -= delta
-	if item_spawn_timer <= 0.0:
-		item_spawn_timer = randf_range(8.0, 14.0)
-		_spawn_random_item()
+	# Item spawn cycle for offline mode
+	if not Network or not Network.is_online_game():
+		item_spawn_timer -= delta
+		if item_spawn_timer <= 0.0:
+			item_spawn_timer = randf_range(8.0, 14.0)
+			_spawn_random_item()
 	
 	_update_hud()
 
-# ── Role Selection & Cycling ────────────────────────────────────────────────
+# ── Role Selection & Cycling (Practice Mode) ────────────────────────────────
 func _on_cycle_role_pressed() -> void:
 	match practice_role:
 		"random":
@@ -141,6 +178,11 @@ func _spawn_match_players() -> void:
 		child.queue_free()
 	player_nodes.clear()
 	
+	if Network and Network.is_online_game():
+		_spawn_online_players()
+		return
+	
+	# Offline Practice Mode (1 Local + 3 Bots)
 	var spawn_positions = [
 		Vector3(0, 0.5, 0),
 		Vector3(-14, 0.5, -14),
@@ -148,9 +190,8 @@ func _spawn_match_players() -> void:
 		Vector3(14, 0.5, -14)
 	]
 	
-	# Determine who is Tagger and who is Runner
 	var p1_is_tagger: bool = false
-	var bot_tagger_idx: int = -1 # which bot (0..2) is tagger if p1 is runner
+	var bot_tagger_idx: int = -1
 	
 	match practice_role:
 		"tagger":
@@ -160,7 +201,6 @@ func _spawn_match_players() -> void:
 			p1_is_tagger = false
 			bot_tagger_idx = randi() % 3
 		"random", _:
-			# Fair 4-player random pick: 1 of 4 players is Tagger
 			var pick = randi() % 4
 			if pick == 0:
 				p1_is_tagger = true
@@ -201,6 +241,38 @@ func _spawn_match_players() -> void:
 		bot.item_used.connect(func(item): add_game_log("%s used [color=#ffe066]%s[/color]!" % [bot.player_name, item]))
 	
 	_update_hud()
+
+func _spawn_online_players() -> void:
+	var online_list = Network.current_match_players
+	for p_data in online_list:
+		var p_id = str(p_data.get("id", ""))
+		var is_me = (p_id == Network.my_peer_id)
+		
+		var p_node = player_3d_scene.instantiate()
+		p_node.network_id = p_id
+		p_node.role = str(p_data.get("role", "runner"))
+		p_node.player_name = str(p_data.get("name", "Player")) + (" (You)" if is_me else "")
+		p_node.is_bot = false
+		p_node.is_remote = not is_me
+		p_node.position = Vector3(float(p_data.get("x", 0)), float(p_data.get("y", 0.5)), float(p_data.get("z", 0)))
+		
+		players_container.add_child(p_node)
+		player_nodes.append(p_node)
+		
+		if is_me:
+			local_player = p_node
+			p_node.item_changed.connect(_update_item_slot)
+			p_node.item_picked_up.connect(_on_player_item_picked_up)
+			p_node.item_used.connect(_on_player_item_used)
+	
+	# Spawn initial server items
+	for child in items_container.get_children():
+		child.queue_free()
+	for it in Network.current_match_items:
+		var item = item_3d_scene.instantiate()
+		item.position = Vector3(float(it.get("x", 0)), float(it.get("y", 0.6)), float(it.get("z", 0)))
+		items_container.add_child(item)
+		item.setup(str(it.get("type", "speed")), str(it.get("id", "")))
 
 func _spawn_random_item() -> void:
 	if items_container.get_child_count() >= 5:
@@ -257,7 +329,91 @@ func spawn_vortex(pos: Vector3) -> void:
 		get_tree().process_frame.disconnect(pull_func)
 	)
 
-# ── Events & Log ────────────────────────────────────────────────────────────
+# ── Network Event Handlers ──────────────────────────────────────────────────
+func _on_net_player_moved(id: String, pos: Vector3, rot_y: float) -> void:
+	for p in player_nodes:
+		if p.network_id == id and p.is_remote:
+			p.update_remote_transform(pos, rot_y)
+			break
+
+func _on_net_player_tagged(_tagger_id: String, tagger_name: String, victim_id: String, victim_name: String) -> void:
+	for p in player_nodes:
+		if p.network_id == victim_id:
+			p.freeze()
+			break
+	add_game_log("[color=#ff4c4c]%s[/color] tagged [color=#4fc3f7]%s[/color]" % [tagger_name, victim_name])
+	_update_hud()
+
+func _on_net_player_rescued(_rescuer_id: String, rescuer_name: String, victim_id: String, victim_name: String) -> void:
+	for p in player_nodes:
+		if p.network_id == victim_id:
+			p.unfreeze()
+			break
+	add_game_log("[color=#69f0ae]%s[/color] rescued [color=#4fc3f7]%s[/color]!" % [rescuer_name, victim_name])
+	_update_hud()
+
+func _on_net_player_rescuing(player_id: String, is_rescuing: bool) -> void:
+	for p in player_nodes:
+		if p.network_id == player_id and p.is_remote:
+			p.is_rescuing = is_rescuing
+			p._update_role_visuals()
+			break
+
+func _on_net_item_spawned(id: String, type: String, pos: Vector3) -> void:
+	var item = item_3d_scene.instantiate()
+	item.position = pos
+	items_container.add_child(item)
+	item.setup(type, id)
+
+func _on_net_item_picked(player_id: String, player_name: String, item_id: String, item_type: String) -> void:
+	for child in items_container.get_children():
+		if "item_id" in child and child.item_id == item_id:
+			child.queue_free()
+			break
+	if local_player and local_player.network_id != player_id:
+		add_game_log("%s picked up [color=#ffe066]%s[/color]" % [player_name, item_type.to_upper()])
+
+func _on_net_item_used(player_id: String, player_name: String, type: String) -> void:
+	if local_player and local_player.network_id != player_id:
+		add_game_log("%s used [color=#ffe066]%s[/color]!" % [player_name, type.to_upper()])
+
+func _on_net_time_sync(time_left: int) -> void:
+	round_time = float(time_left)
+
+func _on_net_round_ended(data: Dictionary) -> void:
+	var winner = str(data.get("winner", "RUNNERS"))
+	runners_score = int(data.get("runnersScore", runners_score))
+	taggers_score = int(data.get("taggersScore", taggers_score))
+	current_round = int(data.get("currentRound", current_round))
+	max_rounds = int(data.get("maxRounds", max_rounds))
+	var is_match_over = bool(data.get("isMatchOver", false))
+	var mvp = data.get("mvp")
+	
+	is_game_active = false
+	game_over_panel.visible = true
+	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+	
+	if winner == "TAGGERS":
+		game_over_title.text = "🔥 TAGGERS WIN ROUND! 🔥"
+		game_over_title.modulate = Color(1.0, 0.4, 0.4)
+	else:
+		game_over_title.text = "❄️ RUNNERS WIN ROUND! ❄️"
+		game_over_title.modulate = Color(0.4, 0.9, 1.0)
+	
+	score_lbl.text = "SCORE: Runners %d  -  Taggers %d" % [runners_score, taggers_score]
+	
+	if mvp and typeof(mvp) == TYPE_DICTIONARY:
+		mvp_lbl.text = "👑 MVP: %s (%d Tags / %d Rescues)" % [mvp.get("name", "Player"), mvp.get("freezeCount", 0), mvp.get("rescueCount", 0)]
+	else:
+		mvp_lbl.text = "👑 MVP: Match Complete"
+	
+	if Network.is_host:
+		next_round_btn.visible = true
+		next_round_btn.text = "PLAY AGAIN" if is_match_over else "NEXT ROUND (%d)" % (current_round + 1)
+	else:
+		next_round_btn.visible = false
+
+# ── Events & Log (Practice / Local) ─────────────────────────────────────────
 func _on_player_tagged(tagger: CharacterBody3D, victim: CharacterBody3D) -> void:
 	add_game_log("[color=#ff4c4c]%s[/color] tagged [color=#4fc3f7]%s[/color]" % [tagger.player_name, victim.player_name])
 	_update_hud()
@@ -360,7 +516,7 @@ func _update_hud() -> void:
 		hp_bar.value = local_player.hp
 		hp_lbl.text = "%d / 100" % local_player.hp
 
-# ── Win / Loss & MVP Summary (Teacher's Card 4 Mockup) ──────────────────────
+# ── Win / Loss & MVP Summary (Offline / Practice Mode) ──────────────────────
 func _end_round(winner: String) -> void:
 	is_game_active = false
 	game_over_panel.visible = true
@@ -375,10 +531,8 @@ func _end_round(winner: String) -> void:
 		game_over_title.text = "❄️ RUNNERS WIN ROUND! ❄️"
 		game_over_title.modulate = Color(0.4, 0.9, 1.0)
 	
-	# Update match score
 	score_lbl.text = "SCORE: Runners %d  -  Taggers %d" % [runners_score, taggers_score]
 	
-	# Calculate MVP
 	var best_player: CharacterBody3D = null
 	var highest_score = -1
 	for p in player_nodes:
@@ -398,6 +552,11 @@ func _end_round(winner: String) -> void:
 		next_round_btn.text = "NEXT ROUND (%d)" % (current_round + 1)
 
 func _on_next_round_pressed() -> void:
+	if Network and Network.is_online_game():
+		if Network.is_host:
+			Network.start_game()
+		return
+	
 	current_round += 1
 	if current_round > max_rounds:
 		current_round = 1
@@ -411,5 +570,7 @@ func _on_next_round_pressed() -> void:
 	_spawn_match_players()
 
 func _on_exit_to_menu_pressed() -> void:
+	if Network and Network.is_online_game():
+		Network.disconnect_from_server()
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 	get_tree().change_scene_to_file("res://scenes/3d/main_menu_3d.tscn")

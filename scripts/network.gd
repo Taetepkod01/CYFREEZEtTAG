@@ -1,159 +1,360 @@
 extends Node
 
+# ── Signals for High-Speed WebSocket Client-to-Server ─────────────────────────
+signal connected_to_server
+signal connection_error(message: String)
+signal server_disconnected
+
+# Room & Lobby Signals
+signal room_created(data: Dictionary)
+signal room_joined(data: Dictionary)
+signal player_joined(data: Dictionary)
+signal player_left(data: Dictionary)
+signal host_changed(new_host_id: String)
+signal settings_updated(data: Dictionary)
+signal public_rooms_updated(rooms: Array)
+
+# 3D Match In-Game Signals
+signal round_started(data: Dictionary)
+signal time_sync(time_left: int)
+signal player_moved(id: String, pos: Vector3, rot_y: float)
+signal player_tagged(tagger_id: String, tagger_name: String, victim_id: String, victim_name: String)
+signal player_rescued(rescuer_id: String, rescuer_name: String, victim_id: String, victim_name: String)
+signal player_rescuing(player_id: String, is_rescuing: bool)
+signal item_spawned(id: String, type: String, pos: Vector3)
+signal item_picked(player_id: String, player_name: String, item_id: String, item_type: String)
+signal item_used(player_id: String, player_name: String, type: String)
+signal banana_placed(pos: Vector3)
+signal vortex_spawned(pos: Vector3)
+signal round_ended(data: Dictionary)
+signal chat_received(msg: String)
+
+# Legacy signals for backwards-compatibility if referenced
 signal player_list_updated
 signal game_started
 signal game_ended(winner: String)
-signal player_tagged(chaser_name: String, runner_name: String)
-signal player_unfrozen(rescuer_name: String, runner_name: String)
-signal item_spawned(item_id: String, item_type: String, pos: Vector2)
-signal item_removed(item_id: String)
 
-const DEFAULT_PORT: int = 7777
-const MAX_PLAYERS: int = 4
+# ── Server Connection Config ──────────────────────────────────────────────────
+# Default to local Node/Colyseus server port 2567, or automatically deduce on Web
+var server_ws_url: String = "ws://127.0.0.1:2567/ws"
+var server_http_url: String = "http://127.0.0.1:2567"
 
-var my_player_name: String = "Player"
+var ws_peer: WebSocketPeer = WebSocketPeer.new()
+var http_request: HTTPRequest = null
+var last_ws_state: int = WebSocketPeer.STATE_CLOSED
+
+# ── State Variables ───────────────────────────────────────────────────────────
+var is_connected_to_server: bool = false
+var my_peer_id: String = ""
+var my_player_name: String = "Player 1"
+var current_room_code: String = ""
+var is_host: bool = false
 var is_solo_mode: bool = false
 var selected_practice_role: String = "random" # "random", "tagger", "runner"
 
-# Player dictionary: peer_id -> { "name": String, "role": String, "frozen": bool, "score": int, "is_bot": bool }
-var players: Dictionary = {}
-var host_id: int = 1
+var room_data: Dictionary = {}
+var current_match_players: Array = []
+var current_match_items: Array = []
+var current_round: int = 1
+var max_rounds: int = 3
+
+# Movement throttling to avoid flooding WebSockets
+var move_throttle_timer: float = 0.0
+const MOVE_SEND_RATE: float = 0.05 # 20 Hz updates
 
 func _ready() -> void:
-	multiplayer.peer_connected.connect(_on_peer_connected)
-	multiplayer.peer_disconnected.connect(_on_peer_disconnected)
-	multiplayer.connected_to_server.connect(_on_connected_to_server)
-	multiplayer.connection_failed.connect(_on_connection_failed)
-	multiplayer.server_disconnected.connect(_on_server_disconnected)
+	_init_urls()
+	
+	http_request = HTTPRequest.new()
+	add_child(http_request)
+	http_request.request_completed.connect(_on_http_request_completed)
 
-# ── Host / Join ─────────────────────────────────────────────────────────────
-func host_game(port: int = DEFAULT_PORT) -> Error:
-	is_solo_mode = false
-	var peer = ENetMultiplayerPeer.new()
-	var error = peer.create_server(port, MAX_PLAYERS)
-	if error != OK:
-		return error
-	multiplayer.multiplayer_peer = peer
-	players.clear()
-	host_id = 1
-	_add_player(1, my_player_name, false)
-	player_list_updated.emit()
+func _init_urls() -> void:
+	if OS.has_feature("web"):
+		# Running on WebGL / Browser (e.g. Render.com deployment)
+		var host = JavaScriptBridge.eval("window.location.host")
+		var proto = JavaScriptBridge.eval("window.location.protocol")
+		if host and host != "":
+			if proto == "https:":
+				server_ws_url = "wss://" + str(host) + "/ws"
+				server_http_url = "https://" + str(host)
+			else:
+				server_ws_url = "ws://" + str(host) + "/ws"
+				server_http_url = "http://" + str(host)
+
+func is_online_game() -> bool:
+	return not is_solo_mode and is_connected_to_server and current_room_code != ""
+
+# ── WebSocket Management ──────────────────────────────────────────────────────
+func connect_to_server(custom_url: String = "") -> Error:
+	if is_connected_to_server:
+		return OK
+	
+	var target_url = custom_url if not custom_url.is_empty() else server_ws_url
+	print("[Network] Connecting to WebSocket: ", target_url)
+	
+	var err = ws_peer.connect_to_url(target_url)
+	if err != OK:
+		print("[Network] Failed to initiate connection: ", err)
+		connection_error.emit("Failed to initiate connection to " + target_url)
+		return err
+	
+	last_ws_state = ws_peer.get_ready_state()
 	return OK
 
-func join_game(ip: String, port: int = DEFAULT_PORT) -> Error:
-	is_solo_mode = false
-	var peer = ENetMultiplayerPeer.new()
-	var error = peer.create_client(ip, port)
-	if error != OK:
-		return error
-	multiplayer.multiplayer_peer = peer
-	players.clear()
-	return OK
+func disconnect_from_server() -> void:
+	if ws_peer.get_ready_state() == WebSocketPeer.STATE_OPEN or ws_peer.get_ready_state() == WebSocketPeer.STATE_CONNECTING:
+		ws_peer.close()
+	is_connected_to_server = false
+	current_room_code = ""
+	is_host = false
+	room_data.clear()
 
+func _process(delta: float) -> void:
+	ws_peer.poll()
+	var state = ws_peer.get_ready_state()
+	
+	if state != last_ws_state:
+		_handle_state_change(state, last_ws_state)
+		last_ws_state = state
+	
+	if state == WebSocketPeer.STATE_OPEN:
+		while ws_peer.get_available_packet_count() > 0:
+			var pkt = ws_peer.get_packet()
+			var text = pkt.get_string_from_utf8()
+			_handle_server_message(text)
+
+func _handle_state_change(new_state: int, old_state: int) -> void:
+	if new_state == WebSocketPeer.STATE_OPEN:
+		print("[Network] WebSocket Connected successfully!")
+		is_connected_to_server = true
+		connected_to_server.emit()
+	elif new_state == WebSocketPeer.STATE_CLOSED:
+		var code = ws_peer.get_close_code()
+		var reason = ws_peer.get_close_reason()
+		print("[Network] WebSocket Closed. Code: %d, Reason: %s" % [code, reason])
+		var was_connected = is_connected_to_server
+		is_connected_to_server = false
+		if was_connected:
+			server_disconnected.emit()
+		elif old_state == WebSocketPeer.STATE_CONNECTING:
+			connection_error.emit("Cannot reach server at " + server_ws_url)
+
+# ── Send JSON Packet to WebSocket Server ──────────────────────────────────────
+func send_action(action: String, data: Dictionary = {}) -> void:
+	if ws_peer.get_ready_state() != WebSocketPeer.STATE_OPEN:
+		return
+	var payload = data.duplicate()
+	payload["action"] = action
+	var json_str = JSON.stringify(payload)
+	ws_peer.send_text(json_str)
+
+# ── Message Dispatcher ────────────────────────────────────────────────────────
+func _handle_server_message(raw_text: String) -> void:
+	var parsed = JSON.parse_string(raw_text)
+	if typeof(parsed) != TYPE_DICTIONARY:
+		return
+	
+	var event = parsed.get("event", "")
+	var data = parsed.get("data", {})
+	
+	match event:
+		"room_created":
+			my_peer_id = str(data.get("myId", ""))
+			current_room_code = str(data.get("code", ""))
+			is_host = true
+			is_solo_mode = false
+			room_data = data
+			room_created.emit(data)
+			player_list_updated.emit()
+			
+		"room_joined":
+			my_peer_id = str(data.get("myId", ""))
+			current_room_code = str(data.get("code", ""))
+			is_host = bool(data.get("isHost", false))
+			is_solo_mode = false
+			room_data = data
+			room_joined.emit(data)
+			player_list_updated.emit()
+			
+		"player_joined":
+			if room_data.has("players") and typeof(room_data["players"]) == TYPE_ARRAY:
+				room_data["players"].append({
+					"id": data.get("id"),
+					"name": data.get("name"),
+					"isHost": data.get("isHost", false)
+				})
+			player_joined.emit(data)
+			player_list_updated.emit()
+			
+		"player_left":
+			var left_id = str(data.get("id", ""))
+			if room_data.has("players") and typeof(room_data["players"]) == TYPE_ARRAY:
+				for i in range(room_data["players"].size() - 1, -1, -1):
+					if str(room_data["players"][i].get("id")) == left_id:
+						room_data["players"].remove_at(i)
+						break
+			player_left.emit(data)
+			player_list_updated.emit()
+			
+		"host_changed":
+			var new_host = str(data.get("newHostId", ""))
+			is_host = (my_peer_id == new_host)
+			host_changed.emit(new_host)
+			
+		"settings_updated":
+			if room_data.has("maxPlayers") and data.has("maxPlayers"):
+				room_data["maxPlayers"] = data["maxPlayers"]
+			if room_data.has("rounds") and data.has("rounds"):
+				room_data["rounds"] = data["rounds"]
+			if room_data.has("map") and data.has("map"):
+				room_data["map"] = data["map"]
+			settings_updated.emit(data)
+			
+		"round_started":
+			current_match_players = data.get("players", [])
+			current_match_items = data.get("items", [])
+			current_round = int(data.get("round", 1))
+			max_rounds = int(data.get("maxRounds", 3))
+			round_started.emit(data)
+			game_started.emit()
+			
+		"time_sync":
+			time_sync.emit(int(data.get("timeLeft", 0)))
+			
+		"player_moved":
+			var p_id = str(data.get("id", ""))
+			var pos = Vector3(float(data.get("x", 0)), float(data.get("y", 0)), float(data.get("z", 0)))
+			var rot_y = float(data.get("rotY", 0))
+			player_moved.emit(p_id, pos, rot_y)
+			
+		"player_tagged":
+			player_tagged.emit(
+				str(data.get("taggerId", "")),
+				str(data.get("taggerName", "")),
+				str(data.get("victimId", "")),
+				str(data.get("victimName", ""))
+			)
+			
+		"player_rescued":
+			player_rescued.emit(
+				str(data.get("rescuerId", "")),
+				str(data.get("rescuerName", "")),
+				str(data.get("victimId", "")),
+				str(data.get("victimName", ""))
+			)
+			
+		"player_rescuing":
+			player_rescuing.emit(str(data.get("playerId", "")), bool(data.get("isRescuing", false)))
+			
+		"item_spawned":
+			var id = str(data.get("id", ""))
+			var type = str(data.get("type", "speed"))
+			var pos = Vector3(float(data.get("x", 0)), float(data.get("y", 0.6)), float(data.get("z", 0)))
+			item_spawned.emit(id, type, pos)
+			
+		"item_picked":
+			item_picked.emit(
+				str(data.get("playerId", "")),
+				str(data.get("playerName", "")),
+				str(data.get("itemId", "")),
+				str(data.get("itemType", ""))
+			)
+			
+		"item_used":
+			item_used.emit(
+				str(data.get("playerId", "")),
+				str(data.get("playerName", "")),
+				str(data.get("type", ""))
+			)
+			
+		"banana_placed":
+			var pos = Vector3(float(data.get("x", 0)), float(data.get("y", 0.2)), float(data.get("z", 0)))
+			banana_placed.emit(pos)
+			
+		"vortex_spawned":
+			var pos = Vector3(float(data.get("x", 0)), float(data.get("y", 0.2)), float(data.get("z", 0)))
+			vortex_spawned.emit(pos)
+			
+		"round_ended":
+			round_ended.emit(data)
+			game_ended.emit(str(data.get("winner", "")))
+			
+		"chat_message":
+			chat_received.emit(str(data.get("msg", "")))
+			
+		"error":
+			connection_error.emit(str(data.get("message", "Unknown server error")))
+
+# ── Outbound Action Helpers ───────────────────────────────────────────────────
+func create_room(r_name: String, max_p: int = 8, rounds: int = 3, map_name: String = "CASTLE") -> void:
+	send_action("create_room", {
+		"roomName": r_name,
+		"playerName": my_player_name,
+		"maxPlayers": max_p,
+		"rounds": rounds,
+		"map": map_name
+	})
+
+func join_room(code: String) -> void:
+	send_action("join_room", {
+		"roomCode": code,
+		"playerName": my_player_name
+	})
+
+func update_room_settings(max_p: int, rounds: int, map_name: String) -> void:
+	send_action("update_settings", {
+		"maxPlayers": max_p,
+		"rounds": rounds,
+		"map": map_name
+	})
+
+func start_game() -> void:
+	send_action("start_game")
+
+func send_move(pos: Vector3, rot_y: float) -> void:
+	send_action("move", {
+		"x": round(pos.x * 100.0) / 100.0,
+		"y": round(pos.y * 100.0) / 100.0,
+		"z": round(pos.z * 100.0) / 100.0,
+		"rotY": round(rot_y * 100.0) / 100.0
+	})
+
+func send_tag(victim_id: String) -> void:
+	send_action("tag_player", { "victimId": victim_id })
+
+func send_rescue(victim_id: String) -> void:
+	send_action("rescue_player", { "victimId": victim_id })
+
+func send_rescuing(is_rescuing: bool) -> void:
+	send_action("rescuing_state", { "isRescuing": is_rescuing })
+
+func send_pick_item(item_id: String) -> void:
+	send_action("pick_item", { "itemId": item_id })
+
+func send_use_item() -> void:
+	send_action("use_item")
+
+# ── HTTP REST API Query for Public Room Browser ───────────────────────────────
+func fetch_public_rooms() -> void:
+	if not http_request:
+		return
+	var url = server_http_url + "/api/rooms"
+	var err = http_request.request(url)
+	if err != OK:
+		print("[Network] HTTP rooms request failed: ", err)
+
+func _on_http_request_completed(_result: int, response_code: int, _headers: PackedStringArray, body: PackedByteArray) -> void:
+	if response_code == 200:
+		var json_str = body.get_string_from_utf8()
+		var parsed = JSON.parse_string(json_str)
+		if typeof(parsed) == TYPE_ARRAY:
+			public_rooms_updated.emit(parsed)
+	else:
+		print("[Network] HTTP rooms response code: ", response_code)
+
+# ── Solo Practice Mode (Offline with Bots) ───────────────────────────────────
 func start_solo_practice() -> void:
 	is_solo_mode = true
-	# Reset multiplayer peer to null/offline
-	multiplayer.multiplayer_peer = null
-	players.clear()
-	_add_player(1, my_player_name + " (You)", false)
-	# Add 3 bot players
-	_add_player(2, "Bot Frosty", true)
-	_add_player(3, "Bot Blizz", true)
-	_add_player(4, "Bot Chilly", true)
-	
-	# Randomly pick 1 chaser
-	_assign_roles()
-	get_tree().change_scene_to_file("res://scenes/game.tscn")
-
-func disconnect_game() -> void:
-	if multiplayer.multiplayer_peer:
-		multiplayer.multiplayer_peer.close()
-		multiplayer.multiplayer_peer = null
-	players.clear()
-	is_solo_mode = false
-
-# ── Role Assignment ─────────────────────────────────────────────────────────
-func _assign_roles() -> void:
-	var ids = players.keys()
-	if ids.is_empty():
-		return
-	ids.shuffle()
-	var chaser_id = ids[0]
-	for id in ids:
-		if id == chaser_id:
-			players[id]["role"] = "chaser"
-		else:
-			players[id]["role"] = "runner"
-		players[id]["frozen"] = false
-
-# ── Peer Callbacks ──────────────────────────────────────────────────────────
-func _on_peer_connected(id: int) -> void:
-	if multiplayer.is_server():
-		# Send current players list to newcomer
-		for pid in players:
-			rpc_id(id, "register_player", pid, players[pid]["name"], players[pid]["is_bot"])
-		# Register newcomer
-		rpc_id(id, "request_player_info")
-
-func _on_peer_disconnected(id: int) -> void:
-	if players.has(id):
-		players.erase(id)
-		player_list_updated.emit()
-		if multiplayer.is_server():
-			rpc("unregister_player", id)
-
-func _on_connected_to_server() -> void:
-	var my_id = multiplayer.get_unique_id()
-	rpc_id(1, "send_player_info", my_id, my_player_name)
-
-func _on_connection_failed() -> void:
-	disconnect_game()
-
-func _on_server_disconnected() -> void:
-	disconnect_game()
-	get_tree().change_scene_to_file("res://scenes/main_menu.tscn")
-
-# ── RPCs for Player Registration ───────────────────────────────────────────
-@rpc("any_peer")
-func send_player_info(id: int, p_name: String) -> void:
-	if multiplayer.is_server():
-		_add_player(id, p_name, false)
-		rpc("register_player", id, p_name, false)
-		player_list_updated.emit()
-
-@rpc("any_peer")
-func request_player_info() -> void:
-	var my_id = multiplayer.get_unique_id()
-	rpc_id(1, "send_player_info", my_id, my_player_name)
-
-@rpc("authority", "call_local")
-func register_player(id: int, p_name: String, is_bot: bool) -> void:
-	_add_player(id, p_name, is_bot)
-	player_list_updated.emit()
-
-@rpc("authority", "call_local")
-func unregister_player(id: int) -> void:
-	if players.has(id):
-		players.erase(id)
-		player_list_updated.emit()
-
-func _add_player(id: int, p_name: String, is_bot: bool) -> void:
-	players[id] = {
-		"name": p_name,
-		"role": "runner",
-		"frozen": false,
-		"score": 0,
-		"is_bot": is_bot
-	}
-
-# ── Game Launch ─────────────────────────────────────────────────────────────
-func server_start_game() -> void:
-	if not multiplayer.is_server() and not is_solo_mode:
-		return
-	_assign_roles()
-	rpc("client_load_game", players)
-
-@rpc("authority", "call_local")
-func client_load_game(assigned_players: Dictionary) -> void:
-	players = assigned_players
-	get_tree().change_scene_to_file("res://scenes/game.tscn")
+	disconnect_from_server()
+	get_tree().change_scene_to_file("res://scenes/3d/arena_3d.tscn")
