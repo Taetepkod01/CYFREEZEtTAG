@@ -414,7 +414,7 @@ wss.on("connection", (ws: WebSocket) => {
             rounds: currentRoom.rounds,
             map: currentRoom.map,
             isPrivate: currentRoom.isPrivate
-          });
+          }, ws);
           break;
         }
 

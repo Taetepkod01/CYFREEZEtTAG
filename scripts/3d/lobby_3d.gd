@@ -45,6 +45,7 @@ var is_host: bool = false
 var is_ready: bool = false
 var my_player_name: String = "Player 1"
 var selected_map: String = "CASTLE"
+var is_dragging_slider: bool = false
 
 var refresh_timer: float = 0.0
 
@@ -70,6 +71,8 @@ func _ready() -> void:
 	back_to_menu_btn.pressed.connect(_on_back_to_menu_pressed)
 	
 	# Connect Room events
+	max_players_slider.drag_started.connect(func(): is_dragging_slider = true)
+	max_players_slider.drag_ended.connect(func(_val_changed): is_dragging_slider = false)
 	max_players_slider.value_changed.connect(_on_max_players_changed)
 	rounds_opt.item_selected.connect(_on_rounds_selected)
 	host_private_check.toggled.connect(_on_host_private_toggled)
@@ -351,27 +354,20 @@ func _update_room_lobby_ui() -> void:
 	player_count_header.text = "PLAYERS (%d / %d)" % [r["players"].size(), r["max_players"]]
 	
 	# Player List
-	for child in player_list_vbox.get_children():
-		child.queue_free()
-	
-	for i in range(r["max_players"]):
-		var slot_lbl = Label.new()
-		if i < r["players"].size():
-			slot_lbl.text = "- " + str(r["players"][i])
-			slot_lbl.modulate = Color(1.0, 0.9, 0.4) if (i == 0) else Color(0.9, 0.95, 1.0)
-		else:
-			slot_lbl.text = "- [Open / Waiting for player...]"
-			slot_lbl.modulate = Color(0.5, 0.6, 0.7, 0.5)
-		slot_lbl.add_theme_font_size_override("font_size", 13)
-		player_list_vbox.add_child(slot_lbl)
+	_update_player_slots(r)
 	
 	# Host Customization Controls
-	max_players_slider.value = r["max_players"]
+	if not is_dragging_slider:
+		max_players_slider.set_value_no_signal(r["max_players"])
 	max_players_val_lbl.text = "%d Players" % r["max_players"]
 	map_preview_lbl.text = "MAP: " + r["map"]
 	
 	max_players_slider.editable = is_host
 	rounds_opt.disabled = not is_host
+	for idx in range(rounds_opt.item_count):
+		if rounds_opt.get_item_id(idx) == r["rounds"]:
+			rounds_opt.selected = idx
+			break
 	host_private_check.set_pressed_no_signal(bool(r.get("is_private", false)))
 	host_private_check.disabled = not is_host
 	host_settings_title.text = "HOST SETTINGS" if is_host else "ROOM SETTINGS (Host only)"
@@ -386,22 +382,40 @@ func _update_room_lobby_ui() -> void:
 		action_btn.modulate = Color(0.4, 0.85, 1.0)
 		action_btn.disabled = is_ready
 
+func _update_player_slots(r: Dictionary) -> void:
+	for child in player_list_vbox.get_children():
+		child.queue_free()
+	
+	for i in range(r["max_players"]):
+		var slot_lbl = Label.new()
+		if i < r["players"].size():
+			slot_lbl.text = "- " + str(r["players"][i])
+			slot_lbl.modulate = Color(1.0, 0.9, 0.4) if (i == 0) else Color(0.9, 0.95, 1.0)
+		else:
+			slot_lbl.text = "- [Open / Waiting for player...]"
+			slot_lbl.modulate = Color(0.5, 0.6, 0.7, 0.5)
+		slot_lbl.add_theme_font_size_override("font_size", 13)
+		player_list_vbox.add_child(slot_lbl)
+
 func _on_max_players_changed(value: float) -> void:
 	if not is_host or not active_rooms.has(current_room_code):
 		return
 	var r = active_rooms[current_room_code]
-	var new_max = int(value)
+	var new_max = int(round(value))
 	if new_max < r["players"].size():
 		new_max = r["players"].size()
-		max_players_slider.value = new_max
+		max_players_slider.set_value_no_signal(new_max)
+	
+	if r["max_players"] == new_max:
+		return
 	
 	r["max_players"] = new_max
 	max_players_val_lbl.text = "%d Players" % new_max
 	player_count_header.text = "PLAYERS (%d / %d)" % [r["players"].size(), new_max]
+	_update_player_slots(r)
 	
 	if Network and Network.is_connected_to_server:
 		Network.update_room_settings(new_max, r["rounds"], r["map"], bool(r.get("is_private", false)))
-	_update_room_lobby_ui()
 
 func _on_rounds_selected(index: int) -> void:
 	if not is_host or not active_rooms.has(current_room_code):
