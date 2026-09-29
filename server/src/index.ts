@@ -47,6 +47,8 @@ export interface ActivePlayer {
   heldItem: string;
   freezeCount: number;
   rescueCount: number;
+  hp: number;
+  invincibleUntil: number;
 }
 
 export interface Active3DRoom {
@@ -289,7 +291,9 @@ wss.on("connection", (ws: WebSocket) => {
             speedMultiplier: 1.0,
             heldItem: "",
             freezeCount: 0,
-            rescueCount: 0
+            rescueCount: 0,
+            hp: 100,
+            invincibleUntil: 0
           };
 
           newRoom.players.set(myPlayerId, p);
@@ -365,7 +369,9 @@ wss.on("connection", (ws: WebSocket) => {
             speedMultiplier: 1.0,
             heldItem: "",
             freezeCount: 0,
-            rescueCount: 0
+            rescueCount: 0,
+            hp: 100,
+            invincibleUntil: 0
           };
 
           room.players.set(myPlayerId, newPlayer);
@@ -452,6 +458,11 @@ wss.on("connection", (ws: WebSocket) => {
           const tagger = currentRoom.players.get(myPlayerId);
           const victim = currentRoom.players.get(String(msg.victimId));
           if (!tagger || !victim || tagger.role !== "tagger" || victim.role !== "runner" || victim.frozen) return;
+
+          // Runner is immune from Dash Tackle!
+          if (victim.invincibleUntil && victim.invincibleUntil > Date.now()) {
+            return;
+          }
 
           if (victim.hasShield) {
             victim.hasShield = false;
@@ -541,7 +552,15 @@ wss.on("connection", (ws: WebSocket) => {
           });
 
           if (itemType === "banana") {
-            broadcastToRoom(currentRoom, "banana_placed", { x: p.x, y: p.y, z: p.z });
+            const rotY = p.rotY || 0;
+            const bx = Math.round((p.x + Math.sin(rotY) * 1.8) * 100) / 100;
+            const bz = Math.round((p.z + Math.cos(rotY) * 1.8) * 100) / 100;
+            broadcastToRoom(currentRoom, "banana_placed", {
+              x: bx,
+              y: 0.05,
+              z: bz,
+              placerId: p.id
+            });
           } else if (itemType === "vortex") {
             // Teleport user to random location on map
             p.x = Math.round((Math.random() * 40 - 20) * 10) / 10;
@@ -549,13 +568,62 @@ wss.on("connection", (ws: WebSocket) => {
             broadcastToRoom(currentRoom, "player_moved", { id: p.id, x: p.x, y: p.y, z: p.z, rotY: p.rotY });
             broadcastToRoom(currentRoom, "chat_message", { msg: `🌀 ${p.name} teleported across the arena!` });
           } else if (itemType === "tackle") {
-            broadcastToRoom(currentRoom, "chat_message", { msg: `💥 ${p.name} dashed with a tackle attack!` });
+            p.invincibleUntil = Date.now() + 3000; // 1s dash + 2s immunity
+            broadcastToRoom(currentRoom, "chat_message", { msg: `💥 ${p.name} activated Dash Tackle! (Immunity active)` });
           } else if (itemType === "heater") {
             if (p.frozen) {
               p.frozen = false;
               broadcastToRoom(currentRoom, "player_unfrozen", { playerId: p.id });
             }
           }
+          break;
+        }
+
+        // 11. Tackle Player (Runner dashes into Tagger)
+        case "tackle_player": {
+          if (!currentRoom || currentRoom.phase !== "playing") return;
+          const runner = currentRoom.players.get(myPlayerId);
+          const tagger = currentRoom.players.get(String(msg.targetId));
+          if (!runner || !tagger || runner.role !== "runner" || tagger.role !== "tagger") return;
+
+          tagger.hp = Math.max(0, (tagger.hp !== undefined ? tagger.hp : 100) - 20);
+          runner.invincibleUntil = Date.now() + 2000; // 2 seconds invulnerability upon hit
+
+          broadcastToRoom(currentRoom, "player_damaged", {
+            targetId: tagger.id,
+            targetName: tagger.name,
+            attackerId: runner.id,
+            attackerName: runner.name,
+            amount: 20,
+            currentHp: tagger.hp
+          });
+          broadcastToRoom(currentRoom, "chat_message", {
+            msg: `💥 ${runner.name} tackled ${tagger.name}! (-20 HP, 2s Immunity)`
+          });
+
+          if (tagger.hp <= 0) {
+            broadcastToRoom(currentRoom, "chat_message", {
+              msg: `👑 Tagger ${tagger.name} ran out of HP! RUNNERS WIN!`
+            });
+            end3DRound(currentRoom, "RUNNERS", "Taggers Defeated");
+          }
+          break;
+        }
+
+        // 12. Place Banana Trap
+        case "place_banana": {
+          if (!currentRoom || currentRoom.phase !== "playing") return;
+          const p = currentRoom.players.get(myPlayerId);
+          if (!p) return;
+          const bx = Number(msg.x) || p.x;
+          const by = Number(msg.y) || 0.05;
+          const bz = Number(msg.z) || p.z;
+          broadcastToRoom(currentRoom, "banana_placed", {
+            x: bx,
+            y: by,
+            z: bz,
+            placerId: p.id
+          });
           break;
         }
       }
@@ -607,6 +675,8 @@ function start3DRound(room: Active3DRoom) {
     p.isRescuing = false;
     p.hasShield = false;
     p.heldItem = "";
+    p.hp = 100;
+    p.invincibleUntil = 0;
     const sp = SPAWN_3D_POSITIONS[i % SPAWN_3D_POSITIONS.length];
     p.x = sp.x;
     p.y = sp.y;

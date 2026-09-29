@@ -25,7 +25,8 @@ signal player_rescuing(player_id: String, is_rescuing: bool)
 signal item_spawned(id: String, type: String, pos: Vector3)
 signal item_picked(player_id: String, player_name: String, item_id: String, item_type: String)
 signal item_used(player_id: String, player_name: String, type: String)
-signal banana_placed(pos: Vector3)
+signal banana_placed(pos: Vector3, placer_id: String)
+signal player_damaged(data: Dictionary)
 signal vortex_spawned(pos: Vector3)
 signal round_ended(data: Dictionary)
 signal chat_received(msg: String)
@@ -291,8 +292,12 @@ func _handle_server_message(raw_text: String) -> void:
 			)
 			
 		"banana_placed":
-			var pos = Vector3(float(data.get("x", 0)), float(data.get("y", 0.2)), float(data.get("z", 0)))
-			banana_placed.emit(pos)
+			var pos = Vector3(float(data.get("x", 0)), float(data.get("y", 0.05)), float(data.get("z", 0)))
+			var placer_id = str(data.get("placerId", ""))
+			banana_placed.emit(pos, placer_id)
+			
+		"player_damaged":
+			player_damaged.emit(data)
 			
 		"vortex_spawned":
 			var pos = Vector3(float(data.get("x", 0)), float(data.get("y", 0.2)), float(data.get("z", 0)))
@@ -366,6 +371,16 @@ func send_pick_item(item_id: String) -> void:
 
 func send_use_item() -> void:
 	send_action("use_item")
+
+func send_tackle(target_id: String) -> void:
+	send_action("tackle_player", { "targetId": target_id })
+
+func send_banana_placed(pos: Vector3) -> void:
+	send_action("place_banana", {
+		"x": round(pos.x * 100.0) / 100.0,
+		"y": round(pos.y * 100.0) / 100.0,
+		"z": round(pos.z * 100.0) / 100.0
+	})
 
 # ── Query Public Room Browser via WebSocket and HTTP REST ───────────────────────
 func fetch_public_rooms() -> void:

@@ -33,6 +33,7 @@ var has_shield: bool = false
 var speed_boost_timer: float = 0.0
 var shield_timer: float = 0.0
 var hp: int = 100
+var invincible_timer: float = 0.0
 
 # Tackle Dash Attack (1.5x Speed, deals 20 damage to opposing Tagger)
 var is_tackling: bool = false
@@ -267,10 +268,16 @@ func use_held_item() -> void:
 			_update_role_visuals()
 			item_used.emit("HEATER")
 		"banana":
+			# REQUIREMENT: Release banana BEHIND player on ground, placer is immune
+			var backward_dir = transform.basis.z.normalized()
+			var drop_pos = global_position + backward_dir * 1.8
+			drop_pos.y = 0.05
 			var arena = get_parent().get_parent() if get_parent() else null
 			if arena and arena.has_method("spawn_banana_trap"):
-				arena.spawn_banana_trap(global_position)
-			item_used.emit("BANANA TRAP")
+				arena.spawn_banana_trap(drop_pos, self, network_id)
+			if is_local_player() and Network and Network.is_online_game():
+				Network.send_banana_placed(drop_pos)
+			item_used.emit("BANANA TRAP (DROPPED BEHIND)")
 		"vortex":
 			# REQUIREMENT: Black Hole teleports the user to a random position on the map!
 			var rx = randf_range(-22.0, 22.0)
@@ -278,12 +285,13 @@ func use_held_item() -> void:
 			global_position = Vector3(rx, 0.5, rz)
 			item_used.emit("BLACK HOLE TELEPORT")
 		"tackle":
-			# REQUIREMENT: Runner tackles forward at 1.5x speed, deals 20 damage to Tagger
+			# REQUIREMENT: Runner tackles forward at 1.5x speed, deals 20 damage to Tagger, immune to freeze and gets 2s invulnerability
 			is_tackling = true
 			tackle_timer = 1.0
-			# Forward vector relative to visuals or player orientation
+			invincible_timer = 3.0 # Immune during 1s dash + 2s immunity
 			tackle_direction = -transform.basis.z.normalized()
-			item_used.emit("DASH TACKLE (1.5x)")
+			_update_role_visuals()
+			item_used.emit("DASH TACKLE (1.5x - IMMUNITY)")
 
 func take_damage(amount: int) -> void:
 	hp = max(0, hp - amount)
@@ -297,11 +305,16 @@ func take_damage(amount: int) -> void:
 		get_tree().create_timer(0.2).timeout.connect(func(): _update_role_visuals())
 
 func slip_on_banana() -> void:
+	# Placer / immune players do not slip
+	if is_frozen or is_tackling or invincible_timer > 0.0:
+		return
 	freeze()
 	is_dizzy = true
 	dizzy_timer = 2.5
 	if dizzy_stars:
+		dizzy_stars.text = "💫  ⭐  💫"
 		dizzy_stars.visible = true
+	_update_role_visuals()
 
 func _process_buffs(delta: float) -> void:
 	if speed_boost_timer > 0.0:
@@ -312,12 +325,26 @@ func _process_buffs(delta: float) -> void:
 			has_shield = false
 			_update_role_visuals()
 	
+	if invincible_timer > 0.0:
+		invincible_timer -= delta
+		# Golden/Cyan flashing aura while invincible
+		if body_mesh:
+			var flash_on = (int(invincible_timer * 12.0) % 2 == 0)
+			body_mesh.transparency = 0.4 if flash_on else 0.0
+		if invincible_timer <= 0.0:
+			if body_mesh:
+				body_mesh.transparency = 0.0
+			_update_role_visuals()
+	
 	if is_dizzy:
 		dizzy_timer -= delta
+		# REQUIREMENT: Player visibly spins around rapidly in circles for ~2.5s
+		visuals.rotate_y(16.0 * delta)
 		if dizzy_stars:
-			dizzy_stars.rotate_y(6.0 * delta)
+			dizzy_stars.rotate_y(8.0 * delta)
 		if dizzy_timer <= 0.0:
 			is_dizzy = false
+			visuals.rotation.y = 0.0
 			if dizzy_stars:
 				dizzy_stars.visible = false
 			if is_frozen:
@@ -325,6 +352,10 @@ func _process_buffs(delta: float) -> void:
 
 # ── Freeze & Tag Mechanics ──────────────────────────────────────────────────
 func freeze() -> void:
+	# REQUIREMENT: Runner using dash tackle or having 2s immunity CANNOT be frozen!
+	if is_tackling or invincible_timer > 0.0:
+		return
+	
 	# REQUIREMENT: Blue Shield Domain absorbs tag, then pops and disappears!
 	if has_shield:
 		has_shield = false
@@ -351,8 +382,8 @@ func _update_role_visuals() -> void:
 	
 	ice_block.visible = is_frozen
 	if shield_domain:
-		# Blue glowing domain sphere around player
-		shield_domain.visible = has_shield
+		# Glowing domain sphere around player when shield or invulnerability is active
+		shield_domain.visible = has_shield or invincible_timer > 0.0 or is_tackling
 	
 	var body_mat = StandardMaterial3D.new()
 	var ring_mat = StandardMaterial3D.new()
@@ -393,23 +424,37 @@ func _on_interaction_body_entered(other: Node3D) -> void:
 	# Tackle hit check: If tackling runner hits opposing tagger
 	if is_tackling and role == "runner" and other.role == "tagger":
 		is_tackling = false
+		invincible_timer = 2.0 # 2 seconds of complete invulnerability upon hit!
+		_update_role_visuals()
 		other.take_damage(20)
 		player_damaged.emit(other, 20)
+		item_used.emit("TACKLED TAGGER! (-20 HP, 2s IMMUNITY)")
+		
+		# In online multiplayer, notify server of tackle hit
+		if is_local_player() and Network and Network.is_online_game():
+			Network.send_tackle(other.network_id)
 		return
+	
+	# If tagger attempts to tag an invincible or tackling runner, ignore tag
+	if role == "tagger" and other.role == "runner":
+		if other.is_tackling or other.invincible_timer > 0.0:
+			return
 	
 	# Online game collision: authoritatively notify server
 	if is_local_player() and Network and Network.is_online_game():
 		if role == "tagger" and other.role == "runner" and not other.is_frozen:
-			Network.send_tag(other.network_id)
+			if not other.is_tackling and other.invincible_timer <= 0.0:
+				Network.send_tag(other.network_id)
 		elif role == "runner" and not is_frozen and other.role == "runner" and other.is_frozen:
 			Network.send_rescue(other.network_id)
 		return
 	
 	# Offline practice mode collision
 	if role == "tagger" and other.role == "runner" and not other.is_frozen:
-		other.freeze()
-		freeze_count += 1
-		tagged.emit(self, other)
+		if not other.is_tackling and other.invincible_timer <= 0.0:
+			other.freeze()
+			freeze_count += 1
+			tagged.emit(self, other)
 	elif role == "runner" and not is_frozen and other.role == "runner" and other.is_frozen:
 		other.unfreeze()
 		rescue_count += 1

@@ -101,8 +101,10 @@ func _connect_network_signals() -> void:
 		Network.item_picked.connect(_on_net_item_picked)
 	if not Network.item_used.is_connected(_on_net_item_used):
 		Network.item_used.connect(_on_net_item_used)
-	if not Network.banana_placed.is_connected(spawn_banana_trap):
-		Network.banana_placed.connect(spawn_banana_trap)
+	if not Network.banana_placed.is_connected(_on_net_banana_placed):
+		Network.banana_placed.connect(_on_net_banana_placed)
+	if not Network.player_damaged.is_connected(_on_net_player_damaged):
+		Network.player_damaged.connect(_on_net_player_damaged)
 	if not Network.vortex_spawned.is_connected(spawn_vortex):
 		Network.vortex_spawned.connect(spawn_vortex)
 	if not Network.time_sync.is_connected(_on_net_time_sync):
@@ -224,7 +226,13 @@ func _spawn_match_players() -> void:
 	p1.item_used.connect(_on_player_item_used)
 	p1.item_picked_up.connect(_on_player_item_picked_up)
 	p1.item_changed.connect(_update_item_slot)
-	p1.player_damaged.connect(func(target, amt): add_game_log(">> [color=#ff9800]%s tackled %s! (-%d HP)[/color]" % [p1.player_name, target.player_name, amt]); _update_hud())
+	p1.player_damaged.connect(func(target, amt):
+		add_game_log(">> [color=#ff9800]%s tackled %s! (-%d HP)[/color]" % [p1.player_name, target.player_name, amt])
+		_update_hud()
+		if target.hp <= 0 and target.role == "tagger":
+			add_game_log("[color=#69f0ae]Tagger defeated! Runners Win![/color]")
+			_end_round("RUNNERS")
+	)
 	
 	# 3 Bots
 	var bot_names = ["Player 2 (Bot)", "Player 3 (Bot)", "Player 4 (Bot)"]
@@ -240,7 +248,13 @@ func _spawn_match_players() -> void:
 		bot.tagged.connect(_on_player_tagged)
 		bot.rescued.connect(_on_player_rescued)
 		bot.item_used.connect(func(item): add_game_log("%s used [color=#ffe066]%s[/color]!" % [bot.player_name, item]))
-		bot.player_damaged.connect(func(target, amt): add_game_log(">> [color=#ff9800]%s tackled %s! (-%d HP)[/color]" % [bot.player_name, target.player_name, amt]); _update_hud())
+		bot.player_damaged.connect(func(target, amt):
+			add_game_log(">> [color=#ff9800]%s tackled %s! (-%d HP)[/color]" % [bot.player_name, target.player_name, amt])
+			_update_hud()
+			if target.hp <= 0 and target.role == "tagger":
+				add_game_log("[color=#69f0ae]Tagger defeated! Runners Win![/color]")
+				_end_round("RUNNERS")
+		)
 	
 	_update_hud()
 
@@ -288,32 +302,111 @@ func _spawn_random_item() -> void:
 	items_container.add_child(item)
 	item.setup(selected)
 
-func spawn_banana_trap(pos: Vector3) -> void:
+func spawn_banana_trap(pos: Vector3, placer = null, placer_id: String = "") -> void:
 	var trap = Area3D.new()
 	trap.collision_layer = 8
 	trap.collision_mask = 2
+	
 	var col = CollisionShape3D.new()
 	var sphere = SphereShape3D.new()
-	sphere.radius = 1.0
+	sphere.radius = 1.1
 	col.shape = sphere
+	col.position.y = 0.25
 	trap.add_child(col)
 	
+	# 3D Banana Object on the ground
+	var banana_visuals = Node3D.new()
+	banana_visuals.name = "BananaModel"
+	trap.add_child(banana_visuals)
+	
+	var yellow_peel_mat = StandardMaterial3D.new()
+	yellow_peel_mat.albedo_color = Color(1.0, 0.88, 0.05) # Vibrant banana yellow
+	yellow_peel_mat.metallic = 0.1
+	yellow_peel_mat.roughness = 0.3
+	yellow_peel_mat.emission_enabled = true
+	yellow_peel_mat.emission = Color(0.85, 0.75, 0.05)
+	yellow_peel_mat.emission_energy_multiplier = 0.4
+	
+	var brown_stem_mat = StandardMaterial3D.new()
+	brown_stem_mat.albedo_color = Color(0.32, 0.18, 0.05) # Banana stem/tip brown
+	brown_stem_mat.roughness = 0.8
+	
+	# Central Stem
+	var stem = MeshInstance3D.new()
+	var stem_mesh = CylinderMesh.new()
+	stem_mesh.top_radius = 0.05
+	stem_mesh.bottom_radius = 0.12
+	stem_mesh.height = 0.35
+	stem.mesh = stem_mesh
+	stem.position = Vector3(0, 0.18, 0)
+	stem.set_surface_override_material(0, brown_stem_mat)
+	banana_visuals.add_child(stem)
+	
+	# Central Banana Core Nub
+	var core_nub = MeshInstance3D.new()
+	var nub_mesh = SphereMesh.new()
+	nub_mesh.radius = 0.14
+	nub_mesh.height = 0.22
+	core_nub.mesh = nub_mesh
+	core_nub.position = Vector3(0, 0.1, 0)
+	core_nub.set_surface_override_material(0, yellow_peel_mat)
+	banana_visuals.add_child(core_nub)
+	
+	# 3 Curved Peels spreading out on the floor
+	for i in range(3):
+		var angle = i * (TAU / 3.0)
+		var peel = MeshInstance3D.new()
+		var peel_mesh = BoxMesh.new()
+		peel_mesh.size = Vector3(0.2, 0.04, 0.6) # flat peel strip
+		peel.mesh = peel_mesh
+		peel.position = Vector3(sin(angle) * 0.28, 0.03, cos(angle) * 0.28)
+		peel.rotation = Vector3(deg_to_rad(8), angle, deg_to_rad(6))
+		peel.set_surface_override_material(0, yellow_peel_mat)
+		banana_visuals.add_child(peel)
+		
+		# Peel Tip (brown edge)
+		var tip = MeshInstance3D.new()
+		var tip_mesh = BoxMesh.new()
+		tip_mesh.size = Vector3(0.14, 0.045, 0.12)
+		tip.mesh = tip_mesh
+		tip.position = Vector3(sin(angle) * 0.55, 0.02, cos(angle) * 0.55)
+		tip.rotation = Vector3(0, angle, 0)
+		tip.set_surface_override_material(0, brown_stem_mat)
+		banana_visuals.add_child(tip)
+	
+	# Floating 3D Label
 	var lbl = Label3D.new()
 	lbl.text = "BANANA"
 	lbl.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	lbl.font_size = 20
+	lbl.modulate = Color(1.0, 0.9, 0.2)
+	lbl.position = Vector3(0, 0.65, 0)
 	trap.add_child(lbl)
 	
-	trap.position = pos + Vector3(0, 0.2, 0)
+	trap.position = Vector3(pos.x, 0.05, pos.z)
 	traps_container.add_child(trap)
 	
+	# Immunity for placer:
+	var placer_obj = placer
+	var p_id = placer_id
+	if placer is CharacterBody3D and "network_id" in placer and not placer.network_id.is_empty():
+		p_id = placer.network_id
+	
 	trap.body_entered.connect(func(body):
+		if not is_instance_valid(trap) or trap.is_queued_for_deletion():
+			return
 		if body is CharacterBody3D and not body.is_frozen:
+			# Placer is completely immune to their own banana!
+			if placer_obj != null and body == placer_obj:
+				return
+			if not p_id.is_empty() and "network_id" in body and body.network_id == p_id:
+				return
+			
 			if body.has_method("slip_on_banana"):
 				body.slip_on_banana()
 			else:
 				body.freeze()
-			add_game_log("[color=#ffe066]%s[/color] slipped on a banana peel! (Dizzy)" % body.player_name)
+			add_game_log("[color=#ffe066]%s[/color] slipped on a banana peel! (Dizzy 2.5s)" % body.player_name)
 			trap.queue_free()
 	)
 
@@ -380,6 +473,21 @@ func _on_net_item_picked(player_id: String, player_name: String, item_id: String
 func _on_net_item_used(player_id: String, player_name: String, type: String) -> void:
 	if local_player and local_player.network_id != player_id:
 		add_game_log("%s used [color=#ffe066]%s[/color]!" % [player_name, type.to_upper()])
+
+func _on_net_banana_placed(pos: Vector3, placer_id: String = "") -> void:
+	spawn_banana_trap(pos, null, placer_id)
+
+func _on_net_player_damaged(data: Dictionary) -> void:
+	var target_id = str(data.get("targetId", ""))
+	var amt = int(data.get("amount", 20))
+	var attacker_name = str(data.get("attackerName", "Runner"))
+	var target_name = str(data.get("targetName", "Tagger"))
+	for p in player_nodes:
+		if p.network_id == target_id:
+			p.take_damage(amt)
+			break
+	add_game_log(">> [color=#ff9800]%s tackled %s! (-%d HP)[/color]" % [attacker_name, target_name, amt])
+	_update_hud()
 
 func _on_net_time_sync(time_left: int) -> void:
 	round_time = float(time_left)
