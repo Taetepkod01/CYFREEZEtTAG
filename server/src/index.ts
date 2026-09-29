@@ -154,14 +154,35 @@ app.use((req, res, next) => {
 
 const server = http.createServer(app);
 
-// ── Colyseus GameServer Initialization ───────────────────────────────────────
+// ── Colyseus GameServer Initialization (noServer: true to avoid upgrade collision) ──
+const colyseusTransport = new WebSocketTransport({ noServer: true });
 const gameServer = new Server({
-  transport: new WebSocketTransport({ server })
+  transport: colyseusTransport
 });
 gameServer.define("game_room", GameRoom);
 
 // ── Direct High-Speed WebSocket Server for Godot 3D Client (/ws) ─────────────
-const wss = new WebSocketServer({ server, path: "/ws" });
+const wss = new WebSocketServer({ noServer: true });
+
+// Unified HTTP Upgrade dispatcher routing /ws to Godot and all other endpoints to Colyseus
+server.on("upgrade", (request, socket, head) => {
+  try {
+    const host = request.headers.host || "localhost";
+    const url = new URL(request.url || "", `http://${host}`);
+    if (url.pathname === "/ws") {
+      wss.handleUpgrade(request, socket, head, (ws) => {
+        wss.emit("connection", ws, request);
+      });
+    } else {
+      (colyseusTransport as any).wss.handleUpgrade(request, socket, head, (ws: any) => {
+        (colyseusTransport as any).wss.emit("connection", ws, request);
+      });
+    }
+  } catch (err) {
+    console.error("[Server] Upgrade error:", err);
+    socket.destroy();
+  }
+});
 
 const CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 function generateCode(): string {
@@ -269,6 +290,24 @@ wss.on("connection", (ws: WebSocket) => {
           break;
         }
 
+        // Get Public Rooms List
+        case "get_rooms": {
+          const list: Array<any> = [];
+          active3DRooms.forEach((r) => {
+            list.push({
+              code: r.code,
+              name: r.name,
+              playersCount: r.players.size,
+              maxPlayers: r.maxPlayers,
+              map: r.map,
+              rounds: r.rounds,
+              hasStarted: r.phase !== "lobby"
+            });
+          });
+          sendTo(ws, "public_rooms_updated", list);
+          break;
+        }
+
         // 2. Join Room by Code
         case "join_room": {
           const code = String(msg.roomCode || "").toUpperCase().trim();
@@ -276,11 +315,15 @@ wss.on("connection", (ws: WebSocket) => {
 
           const room = active3DRooms.get(code);
           if (!room) {
-            sendTo(ws, "error", { message: `ไม่พบห้องรหัส "${code}"` });
+            sendTo(ws, "error", { message: `Room not found: "${code}"` });
+            return;
+          }
+          if (room.phase !== "lobby") {
+            sendTo(ws, "error", { message: `Match already in progress for room "${code}"` });
             return;
           }
           if (room.players.size >= room.maxPlayers) {
-            sendTo(ws, "error", { message: "ห้องนี้ผู้เล่นเต็มแล้ว" });
+            sendTo(ws, "error", { message: `Room "${code}" is already full (${room.players.size}/${room.maxPlayers})` });
             return;
           }
 

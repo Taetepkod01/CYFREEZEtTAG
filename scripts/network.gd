@@ -87,8 +87,15 @@ func is_online_game() -> bool:
 
 # ── WebSocket Management ──────────────────────────────────────────────────────
 func connect_to_server(custom_url: String = "") -> Error:
-	if is_connected_to_server:
+	if is_connected_to_server and ws_peer.get_ready_state() == WebSocketPeer.STATE_OPEN:
 		return OK
+	
+	if ws_peer.get_ready_state() == WebSocketPeer.STATE_CONNECTING:
+		return OK
+	
+	# Instantiate fresh WebSocketPeer to prevent stale state in WebGL
+	ws_peer = WebSocketPeer.new()
+	_init_urls()
 	
 	var target_url = custom_url if not custom_url.is_empty() else server_ws_url
 	print("[Network] Connecting to WebSocket: ", target_url)
@@ -129,6 +136,7 @@ func _handle_state_change(new_state: int, old_state: int) -> void:
 		print("[Network] WebSocket Connected successfully!")
 		is_connected_to_server = true
 		connected_to_server.emit()
+		fetch_public_rooms()
 	elif new_state == WebSocketPeer.STATE_CLOSED:
 		var code = ws_peer.get_close_code()
 		var reason = ws_peer.get_close_reason()
@@ -280,6 +288,10 @@ func _handle_server_message(raw_text: String) -> void:
 			round_ended.emit(data)
 			game_ended.emit(str(data.get("winner", "")))
 			
+		"public_rooms_updated":
+			if typeof(data) == TYPE_ARRAY:
+				public_rooms_updated.emit(data)
+			
 		"chat_message":
 			chat_received.emit(str(data.get("msg", "")))
 			
@@ -335,14 +347,16 @@ func send_pick_item(item_id: String) -> void:
 func send_use_item() -> void:
 	send_action("use_item")
 
-# ── HTTP REST API Query for Public Room Browser ───────────────────────────────
+# ── Query Public Room Browser via WebSocket and HTTP REST ───────────────────────
 func fetch_public_rooms() -> void:
-	if not http_request:
-		return
-	var url = server_http_url + "/api/rooms"
-	var err = http_request.request(url)
-	if err != OK:
-		print("[Network] HTTP rooms request failed: ", err)
+	# 1. Fetch via active WebSocket connection (instant)
+	if is_connected_to_server and ws_peer.get_ready_state() == WebSocketPeer.STATE_OPEN:
+		send_action("get_rooms")
+	
+	# 2. Also query REST API as fallback
+	if http_request and not server_http_url.is_empty():
+		var url = server_http_url + "/api/rooms"
+		http_request.request(url)
 
 func _on_http_request_completed(_result: int, response_code: int, _headers: PackedStringArray, body: PackedByteArray) -> void:
 	if response_code == 200:

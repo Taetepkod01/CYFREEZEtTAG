@@ -112,6 +112,13 @@ func _connect_network_signals() -> void:
 		Network.round_started.connect(_on_network_round_started)
 	if not Network.connection_error.is_connected(_on_network_error):
 		Network.connection_error.connect(_on_network_error)
+	if not Network.connected_to_server.is_connected(_on_network_connected):
+		Network.connected_to_server.connect(_on_network_connected)
+
+func _on_network_connected() -> void:
+	code_error_lbl.text = ""
+	if Network:
+		Network.fetch_public_rooms()
 
 # ── Room Code Generator (Local Fallback) ────────────────────────────────────
 func generate_unique_code() -> String:
@@ -181,21 +188,9 @@ func _on_create_room_pressed() -> void:
 		code_error_lbl.text = "Creating room on server..."
 		Network.create_room(r_name, 8, 3, selected_map)
 	else:
-		# Local fallback
-		var new_code = generate_unique_code()
-		active_rooms[new_code] = {
-			"name": r_name,
-			"code": new_code,
-			"host": my_player_name,
-			"max_players": 8,
-			"rounds": 3,
-			"map": selected_map,
-			"players": [my_player_name + " (Host)"]
-		}
-		current_room_code = new_code
-		is_host = true
-		is_ready = true
-		_show_room_view()
+		code_error_lbl.text = "Connecting to server... Please wait a moment."
+		if Network:
+			Network.connect_to_server()
 
 # ── Join by Code (Among Us Style) ───────────────────────────────────────────
 func _on_join_by_code_pressed() -> void:
@@ -211,21 +206,9 @@ func _join_room_by_code(code: String) -> void:
 		code_error_lbl.text = "Connecting to room " + code + "..."
 		Network.join_room(code)
 	else:
-		# Local fallback
-		if not active_rooms.has(code):
-			code_error_lbl.text = "Room not found: " + code
-			return
-		var r = active_rooms[code]
-		if r["players"].size() >= r["max_players"]:
-			code_error_lbl.text = "Room is full (%d/%d)" % [r["players"].size(), r["max_players"]]
-			return
-		
-		current_room_code = code
-		is_host = false
-		is_ready = false
-		var guest_name = "Player " + str(r["players"].size() + 1)
-		r["players"].append(guest_name)
-		_show_room_view()
+		code_error_lbl.text = "Connecting to server... Please wait a moment."
+		if Network:
+			Network.connect_to_server()
 
 # ── Network Handlers ────────────────────────────────────────────────────────
 func _on_network_room_created(data: Dictionary) -> void:
