@@ -57,6 +57,7 @@ export interface Active3DRoom {
   rounds: number;
   currentRound: number;
   map: string;
+  isPrivate: boolean;
   phase: "lobby" | "playing" | "ended";
   timeLeft: number;
   runnersScore: number;
@@ -70,7 +71,7 @@ export interface Active3DRoom {
 
 const active3DRooms: Map<string, Active3DRoom> = new Map();
 
-// Public rooms API for Godot Lobby Browser
+// Public rooms API for Godot Lobby Browser (private rooms excluded)
 app.get("/api/rooms", async (_req, res) => {
   const list: Array<{
     code: string;
@@ -83,6 +84,7 @@ app.get("/api/rooms", async (_req, res) => {
   }> = [];
 
   active3DRooms.forEach((r) => {
+    if (r.isPrivate) return; // Do not display private rooms in public list
     list.push({
       code: r.code,
       name: r.name,
@@ -226,14 +228,31 @@ wss.on("connection", (ws: WebSocket) => {
       const action = msg.action || msg.type || "";
 
       switch (action) {
+        // Set Player Name
+        case "set_player_name": {
+          const newName = String(msg.name || "Player").trim().slice(0, 16);
+          if (currentRoom) {
+            const p = currentRoom.players.get(myPlayerId);
+            if (p) {
+              p.name = newName;
+              broadcastToRoom(currentRoom, "player_name_updated", {
+                id: myPlayerId,
+                name: newName
+              });
+            }
+          }
+          break;
+        }
+
         // 1. Create Room (Host)
         case "create_room": {
           const code = generateCode();
           const rName = String(msg.roomName || `Room ${code}`);
-          const pName = String(msg.playerName || "Host");
+          const pName = String(msg.playerName || "Host").slice(0, 16);
           const maxP = Math.max(4, Math.min(8, Number(msg.maxPlayers) || 8));
           const rounds = Math.max(1, Math.min(5, Number(msg.rounds) || 3));
           const map = String(msg.map || "CASTLE");
+          const isPrivate = Boolean(msg.isPrivate);
 
           const newRoom: Active3DRoom = {
             code,
@@ -243,6 +262,7 @@ wss.on("connection", (ws: WebSocket) => {
             rounds,
             currentRound: 1,
             map,
+            isPrivate,
             phase: "lobby",
             timeLeft: 165,
             runnersScore: 0,
@@ -284,16 +304,18 @@ wss.on("connection", (ws: WebSocket) => {
             maxPlayers: maxP,
             rounds,
             map,
+            isPrivate,
             players: [{ id: p.id, name: p.name, isHost: true }]
           });
-          console.log(`[WS Server] Room created: ${code} by ${pName}`);
+          console.log(`[WS Server] Room created: ${code} (${isPrivate ? "PRIVATE" : "PUBLIC"}) by ${pName}`);
           break;
         }
 
-        // Get Public Rooms List
+        // Get Public Rooms List (Excludes private rooms)
         case "get_rooms": {
           const list: Array<any> = [];
           active3DRooms.forEach((r) => {
+            if (r.isPrivate) return; // Do not send private rooms to public browser
             list.push({
               code: r.code,
               name: r.name,
@@ -311,7 +333,7 @@ wss.on("connection", (ws: WebSocket) => {
         // 2. Join Room by Code
         case "join_room": {
           const code = String(msg.roomCode || "").toUpperCase().trim();
-          const pName = String(msg.playerName || "Player");
+          const pName = String(msg.playerName || "Player").slice(0, 16);
 
           const room = active3DRooms.get(code);
           if (!room) {
@@ -363,6 +385,7 @@ wss.on("connection", (ws: WebSocket) => {
             maxPlayers: room.maxPlayers,
             rounds: room.rounds,
             map: room.map,
+            isPrivate: room.isPrivate,
             players: pList
           });
 
@@ -384,11 +407,13 @@ wss.on("connection", (ws: WebSocket) => {
           if (msg.maxPlayers) currentRoom.maxPlayers = Math.max(4, Math.min(8, Number(msg.maxPlayers)));
           if (msg.rounds) currentRoom.rounds = Math.max(1, Math.min(5, Number(msg.rounds)));
           if (msg.map) currentRoom.map = String(msg.map);
+          if (typeof msg.isPrivate === "boolean") currentRoom.isPrivate = msg.isPrivate;
 
           broadcastToRoom(currentRoom, "settings_updated", {
             maxPlayers: currentRoom.maxPlayers,
             rounds: currentRoom.rounds,
-            map: currentRoom.map
+            map: currentRoom.map,
+            isPrivate: currentRoom.isPrivate
           });
           break;
         }

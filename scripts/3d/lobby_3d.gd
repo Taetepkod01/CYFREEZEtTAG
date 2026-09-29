@@ -8,8 +8,10 @@ const CODE_CHARS: String = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
 @onready var room_view: Control = $RoomView
 
 # ── Browser View Nodes ──────────────────────────────────────────────────────
+@onready var player_name_input: LineEdit = $BrowserView/PlayerNameContainer/PlayerNameInput
 @onready var room_list_vbox: VBoxContainer = $BrowserView/HBox/RoomListCard/Scroll/RoomList
 @onready var create_room_name_input: LineEdit = $BrowserView/HBox/CreateRoomCard/RoomNameInput
+@onready var create_private_check: CheckBox = $BrowserView/HBox/CreateRoomCard/PrivateCheck
 @onready var create_room_btn: Button = $BrowserView/HBox/CreateRoomCard/CreateBtn
 @onready var join_code_input: LineEdit = $BrowserView/HBox/JoinCodeCard/CodeInput
 @onready var join_code_btn: Button = $BrowserView/HBox/JoinCodeCard/JoinCodeBtn
@@ -28,6 +30,7 @@ const CODE_CHARS: String = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
 @onready var max_players_slider: HSlider = $RoomView/HBox/HostSettingsCard/MaxPlayersRow/Slider
 @onready var max_players_val_lbl: Label = $RoomView/HBox/HostSettingsCard/MaxPlayersRow/ValLabel
 @onready var rounds_opt: OptionButton = $RoomView/HBox/HostSettingsCard/RoundsRow/RoundsOpt
+@onready var host_private_check: CheckBox = $RoomView/HBox/HostSettingsCard/PrivateRow/PrivateCheck
 @onready var map_preview_lbl: Label = $RoomView/HBox/HostSettingsCard/MapPreview/MapName
 @onready var map_grid: GridContainer = $RoomView/HBox/MapSelectionCard/Grid
 
@@ -51,6 +54,8 @@ func _ready() -> void:
 	
 	if Network:
 		my_player_name = Network.my_player_name
+	player_name_input.text = my_player_name
+	player_name_input.text_changed.connect(_on_player_name_changed)
 	
 	# Setup rounds options
 	rounds_opt.clear()
@@ -67,6 +72,7 @@ func _ready() -> void:
 	# Connect Room events
 	max_players_slider.value_changed.connect(_on_max_players_changed)
 	rounds_opt.item_selected.connect(_on_rounds_selected)
+	host_private_check.toggled.connect(_on_host_private_toggled)
 	copy_code_btn.pressed.connect(_on_copy_code_pressed)
 	action_btn.pressed.connect(_on_action_pressed)
 	leave_btn.pressed.connect(_on_leave_room_pressed)
@@ -106,6 +112,8 @@ func _connect_network_signals() -> void:
 		Network.player_left.connect(_on_network_player_left)
 	if not Network.settings_updated.is_connected(_on_network_settings_updated):
 		Network.settings_updated.connect(_on_network_settings_updated)
+	if not Network.player_name_updated.is_connected(_on_network_player_name_updated):
+		Network.player_name_updated.connect(_on_network_player_name_updated)
 	if not Network.public_rooms_updated.is_connected(_on_network_public_rooms_updated):
 		Network.public_rooms_updated.connect(_on_network_public_rooms_updated)
 	if not Network.round_started.is_connected(_on_network_round_started):
@@ -114,6 +122,16 @@ func _connect_network_signals() -> void:
 		Network.connection_error.connect(_on_network_error)
 	if not Network.connected_to_server.is_connected(_on_network_connected):
 		Network.connected_to_server.connect(_on_network_connected)
+
+func _on_player_name_changed(new_text: String) -> void:
+	var clean = new_text.strip_edges()
+	if clean.is_empty():
+		clean = "Player " + str(randi_range(1, 99))
+	my_player_name = clean
+	if Network:
+		Network.my_player_name = clean
+		if Network.is_connected_to_server:
+			Network.set_player_name(clean)
 
 func _on_network_connected() -> void:
 	code_error_lbl.text = ""
@@ -184,9 +202,10 @@ func _on_create_room_pressed() -> void:
 	if r_name.is_empty():
 		r_name = "Room " + str(randi_range(101, 999))
 	
+	var is_priv = create_private_check.button_pressed
 	if Network and Network.is_connected_to_server:
 		code_error_lbl.text = "Creating room on server..."
-		Network.create_room(r_name, 8, 3, selected_map)
+		Network.create_room(r_name, 8, 3, selected_map, is_priv)
 	else:
 		code_error_lbl.text = "Connecting to server... Please wait a moment."
 		if Network:
@@ -228,6 +247,7 @@ func _on_network_room_created(data: Dictionary) -> void:
 		"max_players": int(data.get("maxPlayers", 8)),
 		"rounds": int(data.get("rounds", 3)),
 		"map": str(data.get("map", "CASTLE")),
+		"is_private": bool(data.get("isPrivate", false)),
 		"players": r_players
 	}
 	_show_room_view()
@@ -249,6 +269,7 @@ func _on_network_room_joined(data: Dictionary) -> void:
 		"max_players": int(data.get("maxPlayers", 8)),
 		"rounds": int(data.get("rounds", 3)),
 		"map": str(data.get("map", "CASTLE")),
+		"is_private": bool(data.get("isPrivate", false)),
 		"players": r_players
 	}
 	_show_room_view()
@@ -276,12 +297,25 @@ func _on_network_settings_updated(data: Dictionary) -> void:
 		if data.has("maxPlayers"): r["max_players"] = int(data["maxPlayers"])
 		if data.has("rounds"): r["rounds"] = int(data["rounds"])
 		if data.has("map"): r["map"] = str(data["map"])
+		if data.has("isPrivate"): r["is_private"] = bool(data["isPrivate"])
+		_update_room_lobby_ui()
+
+func _on_network_player_name_updated(_data: Dictionary) -> void:
+	if active_rooms.has(current_room_code):
+		var r = active_rooms[current_room_code]
+		if Network and Network.room_data.has("players"):
+			var r_players = []
+			for p in Network.room_data["players"]:
+				r_players.append(str(p.get("name", "Player")) + (" (Host)" if p.get("isHost", false) else ""))
+			r["players"] = r_players
 		_update_room_lobby_ui()
 
 func _on_network_public_rooms_updated(rooms: Array) -> void:
 	# Update active_rooms from server REST query
 	var new_dict: Dictionary = {}
 	for r in rooms:
+		if bool(r.get("isPrivate", false)):
+			continue
 		var code = str(r.get("code", ""))
 		new_dict[code] = {
 			"name": str(r.get("name", "Room")),
@@ -338,6 +372,8 @@ func _update_room_lobby_ui() -> void:
 	
 	max_players_slider.editable = is_host
 	rounds_opt.disabled = not is_host
+	host_private_check.set_pressed_no_signal(bool(r.get("is_private", false)))
+	host_private_check.disabled = not is_host
 	host_settings_title.text = "HOST SETTINGS" if is_host else "ROOM SETTINGS (Host only)"
 	
 	# Action Button
@@ -364,7 +400,7 @@ func _on_max_players_changed(value: float) -> void:
 	player_count_header.text = "PLAYERS (%d / %d)" % [r["players"].size(), new_max]
 	
 	if Network and Network.is_connected_to_server:
-		Network.update_room_settings(new_max, r["rounds"], r["map"])
+		Network.update_room_settings(new_max, r["rounds"], r["map"], bool(r.get("is_private", false)))
 	_update_room_lobby_ui()
 
 func _on_rounds_selected(index: int) -> void:
@@ -373,7 +409,15 @@ func _on_rounds_selected(index: int) -> void:
 	var rounds = rounds_opt.get_item_id(index)
 	active_rooms[current_room_code]["rounds"] = rounds
 	if Network and Network.is_connected_to_server:
-		Network.update_room_settings(active_rooms[current_room_code]["max_players"], rounds, active_rooms[current_room_code]["map"])
+		Network.update_room_settings(active_rooms[current_room_code]["max_players"], rounds, active_rooms[current_room_code]["map"], bool(active_rooms[current_room_code].get("is_private", false)))
+
+func _on_host_private_toggled(toggled_on: bool) -> void:
+	if not is_host or not active_rooms.has(current_room_code):
+		return
+	var r = active_rooms[current_room_code]
+	r["is_private"] = toggled_on
+	if Network and Network.is_connected_to_server:
+		Network.update_room_settings(r["max_players"], r["rounds"], r["map"], toggled_on)
 
 func _setup_map_grid_buttons() -> void:
 	for child in map_grid.get_children():
@@ -386,7 +430,7 @@ func _setup_map_grid_buttons() -> void:
 				active_rooms[current_room_code]["map"] = clean_name
 				map_preview_lbl.text = "MAP: " + clean_name
 				if Network and Network.is_connected_to_server:
-					Network.update_room_settings(active_rooms[current_room_code]["max_players"], active_rooms[current_room_code]["rounds"], clean_name)
+					Network.update_room_settings(active_rooms[current_room_code]["max_players"], active_rooms[current_room_code]["rounds"], clean_name, bool(active_rooms[current_room_code].get("is_private", false)))
 			)
 
 func _on_copy_code_pressed() -> void:
