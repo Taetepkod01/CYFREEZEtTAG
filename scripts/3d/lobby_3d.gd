@@ -77,6 +77,11 @@ func _ready() -> void:
 	back_to_menu_btn.pressed.connect(_on_back_to_menu_pressed)
 	refresh_btn.pressed.connect(func(): if Network: Network.fetch_public_rooms())
 	
+	for btn in [create_room_btn, join_code_btn, back_to_menu_btn, refresh_btn, action_btn, leave_btn]:
+		if btn:
+			btn.mouse_entered.connect(func(): btn.modulate = Color(1.15, 1.15, 1.15))
+			btn.mouse_exited.connect(func(): btn.modulate = Color.WHITE)
+	
 	# Connect Room events
 	max_players_slider.drag_started.connect(func(): is_dragging_slider = true)
 	max_players_slider.drag_ended.connect(func(_val_changed): is_dragging_slider = false)
