@@ -8,6 +8,7 @@ const TEX_ROLE_RUNNER_ON = preload("res://assets/ui/buttons/btn_role_runner_on.p
 const TEX_ROLE_RUNNER_OFF = preload("res://assets/ui/buttons/btn_role_runner_off.png")
 
 @onready var title_label: TextureRect = $TitleLogo
+@onready var menu_buttons: VBoxContainer = $MenuButtons
 @onready var play_online_btn: TextureButton = $MenuButtons/PlayOnlineBtn
 @onready var practice_btn: TextureButton = $MenuButtons/PracticeBtn
 @onready var how_to_play_btn: TextureButton = $MenuButtons/HowToPlayBtn
@@ -35,8 +36,16 @@ func _ready() -> void:
 	practice_btn.pressed.connect(_on_practice_pressed)
 	how_to_play_btn.pressed.connect(_on_how_to_play_pressed)
 	quit_btn.pressed.connect(_on_quit_pressed)
-	close_rules_btn.pressed.connect(func(): rules_panel.visible = false)
-	close_practice_btn.pressed.connect(func(): practice_modal.visible = false)
+	close_rules_btn.pressed.connect(func():
+		rules_panel.visible = false
+		menu_buttons.visible = true
+		title_label.visible = true
+	)
+	close_practice_btn.pressed.connect(func():
+		practice_modal.visible = false
+		menu_buttons.visible = true
+		title_label.visible = true
+	)
 	
 	random_role_btn.pressed.connect(func(): _select_role("random"))
 	tagger_role_btn.pressed.connect(func(): _select_role("tagger"))
@@ -61,6 +70,8 @@ func _on_play_online_pressed() -> void:
 
 func _on_practice_pressed() -> void:
 	practice_modal.visible = true
+	menu_buttons.visible = false
+	title_label.visible = false
 
 func _start_practice(role: String) -> void:
 	start_practice_btn.disabled = true
@@ -78,6 +89,8 @@ func _start_practice(role: String) -> void:
 
 func _on_how_to_play_pressed() -> void:
 	rules_panel.visible = true
+	menu_buttons.visible = false
+	title_label.visible = false
 
 func _on_quit_pressed() -> void:
 	get_tree().quit()

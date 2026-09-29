@@ -87,12 +87,12 @@ layout_mode = 1
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
-offset_left = -260.0
-offset_top = 70.0
-offset_right = 260.0
-offset_bottom = 150.0
+offset_left = -307.0
+offset_top = 40.0
+offset_right = 308.0
+offset_bottom = 165.0
 grow_horizontal = 2
-pivot_offset = Vector2(260, 40)
+pivot_offset = Vector2(307, 62)
 texture = ExtResource("4_title_logo")
 expand_mode = 1
 stretch_mode = 5
@@ -104,35 +104,35 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -130.0
-offset_top = -20.0
-offset_right = 130.0
-offset_bottom = 220.0
+offset_left = -115.0
+offset_top = -15.0
+offset_right = 115.0
+offset_bottom = 225.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/separation = 12
+theme_override_constants/separation = 10
 alignment = 1
 
 [node name="PlayOnlineBtn" type="TextureButton" parent="MenuButtons"]
-custom_minimum_size = Vector2(254, 49)
+custom_minimum_size = Vector2(225, 49)
 layout_mode = 2
 texture_normal = ExtResource("5_btn_play")
 stretch_mode = 5
 
 [node name="PracticeBtn" type="TextureButton" parent="MenuButtons"]
-custom_minimum_size = Vector2(254, 49)
+custom_minimum_size = Vector2(225, 49)
 layout_mode = 2
 texture_normal = ExtResource("6_btn_practice")
 stretch_mode = 5
 
 [node name="HowToPlayBtn" type="TextureButton" parent="MenuButtons"]
-custom_minimum_size = Vector2(254, 49)
+custom_minimum_size = Vector2(225, 49)
 layout_mode = 2
 texture_normal = ExtResource("7_btn_settings")
 stretch_mode = 5
 
 [node name="QuitBtn" type="TextureButton" parent="MenuButtons"]
-custom_minimum_size = Vector2(254, 49)
+custom_minimum_size = Vector2(225, 49)
 layout_mode = 2
 texture_normal = ExtResource("8_btn_quit")
 stretch_mode = 5
@@ -146,9 +146,9 @@ anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
 offset_left = -220.0
-offset_top = -190.0
+offset_top = -215.0
 offset_right = 220.0
-offset_bottom = 190.0
+offset_bottom = 215.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_modal_ice")
@@ -194,29 +194,29 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -160.0
+offset_left = -155.0
 offset_top = -80.0
-offset_right = 160.0
-offset_bottom = 75.0
+offset_right = 155.0
+offset_bottom = 85.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/separation = 10
+theme_override_constants/separation = 8
 alignment = 1
 
 [node name="RandomRoleBtn" type="TextureButton" parent="PracticeModal/RoleButtons"]
-custom_minimum_size = Vector2(305, 48)
+custom_minimum_size = Vector2(307, 52)
 layout_mode = 2
 texture_normal = ExtResource("9_role_random_off")
 stretch_mode = 5
 
 [node name="TaggerRoleBtn" type="TextureButton" parent="PracticeModal/RoleButtons"]
-custom_minimum_size = Vector2(305, 48)
+custom_minimum_size = Vector2(307, 52)
 layout_mode = 2
 texture_normal = ExtResource("10_role_tagger_off")
 stretch_mode = 5
 
 [node name="RunnerRoleBtn" type="TextureButton" parent="PracticeModal/RoleButtons"]
-custom_minimum_size = Vector2(305, 48)
+custom_minimum_size = Vector2(307, 52)
 layout_mode = 2
 texture_normal = ExtResource("11_role_runner_on")
 stretch_mode = 5
@@ -230,26 +230,26 @@ anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
 offset_left = -123.0
-offset_top = -88.0
+offset_top = -92.0
 offset_right = 123.0
-offset_bottom = -40.0
+offset_bottom = -44.0
 grow_horizontal = 2
 grow_vertical = 0
 texture_normal = ExtResource("12_btn_start_practice")
 stretch_mode = 5
 
 [node name="ClosePracticeBtn" type="TextureButton" parent="PracticeModal"]
-custom_minimum_size = Vector2(132, 28)
+custom_minimum_size = Vector2(140, 36)
 layout_mode = 1
 anchors_preset = 7
 anchor_left = 0.5
 anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
-offset_left = -66.0
-offset_top = -36.0
-offset_right = 66.0
-offset_bottom = -8.0
+offset_left = -70.0
+offset_top = -38.0
+offset_right = 70.0
+offset_bottom = -4.0
 grow_horizontal = 2
 grow_vertical = 0
 texture_normal = ExtResource("13_btn_cancel")

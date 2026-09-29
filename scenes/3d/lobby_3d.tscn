@@ -384,7 +384,7 @@ theme_override_font_sizes/font_size = 13
 text = "Private Room (PIN Only)"
 
 [node name="CreateBtn" type="TextureButton" parent="BrowserView/HBox/CreateRoomCard"]
-custom_minimum_size = Vector2(270, 48)
+custom_minimum_size = Vector2(270, 52)
 layout_mode = 1
 anchors_preset = 7
 anchor_left = 0.5
@@ -392,9 +392,9 @@ anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
 offset_left = -135.0
-offset_top = -75.0
+offset_top = -78.0
 offset_right = 135.0
-offset_bottom = -27.0
+offset_bottom = -26.0
 grow_horizontal = 2
 grow_vertical = 0
 texture_normal = ExtResource("8_btn_create")
@@ -491,17 +491,17 @@ theme_override_font_sizes/font_size = 12
 horizontal_alignment = 1
 
 [node name="JoinCodeBtn" type="TextureButton" parent="BrowserView/HBox/JoinCodeCard"]
-custom_minimum_size = Vector2(254, 48)
+custom_minimum_size = Vector2(270, 52)
 layout_mode = 1
 anchors_preset = 7
 anchor_left = 0.5
 anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
-offset_left = -127.0
-offset_top = -75.0
-offset_right = 127.0
-offset_bottom = -27.0
+offset_left = -135.0
+offset_top = -78.0
+offset_right = 135.0
+offset_bottom = -26.0
 grow_horizontal = 2
 grow_vertical = 0
 texture_normal = ExtResource("9_btn_join")
@@ -888,27 +888,27 @@ theme_override_constants/separation = 24
 alignment = 1
 
 [node name="ActionBtn" type="TextureButton" parent="RoomView/BottomBar"]
-custom_minimum_size = Vector2(189, 40)
+custom_minimum_size = Vector2(195, 46)
 layout_mode = 2
 texture_normal = ExtResource("11_btn_start")
 stretch_mode = 5
 
 [node name="LeaveBtn" type="TextureButton" parent="RoomView/BottomBar"]
-custom_minimum_size = Vector2(181, 40)
+custom_minimum_size = Vector2(184, 46)
 layout_mode = 2
 texture_normal = ExtResource("12_btn_leave")
 stretch_mode = 5
 
 [node name="BackButton" type="TextureButton" parent="."]
-custom_minimum_size = Vector2(126, 34)
+custom_minimum_size = Vector2(135, 40)
 layout_mode = 1
 anchors_preset = 2
 anchor_top = 1.0
 anchor_bottom = 1.0
 offset_left = 30.0
-offset_top = -54.0
-offset_right = 156.0
-offset_bottom = -20.0
+offset_top = -56.0
+offset_right = 165.0
+offset_bottom = -16.0
 grow_vertical = 0
 texture_normal = ExtResource("13_btn_back")
 stretch_mode = 5
