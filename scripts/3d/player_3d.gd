@@ -75,6 +75,7 @@ func _ready() -> void:
 		Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 		camera.current = true
 		spring_arm.visible = true
+		spring_arm.add_excluded_object(get_rid())
 	else:
 		camera.current = false
 		spring_arm.visible = false
@@ -92,10 +93,21 @@ func _unhandled_input(event: InputEvent) -> void:
 	if not is_local_player():
 		return
 	
-	# Left-click to recapture mouse if lost by Alt / Alt-Tab
-	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+	# Any mouse button click immediately recaptures mouse if lost by Alt / Alt-Tab
+	if event is InputEventMouseButton and event.pressed:
 		if Input.get_mouse_mode() != Input.MOUSE_MODE_CAPTURED:
 			Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
+			get_viewport().set_input_as_handled()
+			return
+	
+	# Toggle mouse free/lock with Alt or Escape
+	if event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode == KEY_ALT or event.keycode == KEY_ESCAPE:
+			if Input.get_mouse_mode() == Input.MOUSE_MODE_CAPTURED:
+				Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+			else:
+				Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
+			get_viewport().set_input_as_handled()
 			return
 
 	if is_frozen:
@@ -106,13 +118,6 @@ func _unhandled_input(event: InputEvent) -> void:
 		rotate_y(-event.relative.x * mouse_sensitivity)
 		spring_arm.rotate_x(-event.relative.y * mouse_sensitivity)
 		spring_arm.rotation.x = clamp(spring_arm.rotation.x, deg_to_rad(-65.0), deg_to_rad(45.0))
-	
-	# Release / capture mouse with Escape
-	if event.is_action_pressed("ui_cancel"):
-		if Input.get_mouse_mode() == Input.MOUSE_MODE_CAPTURED:
-			Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
-		else:
-			Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 
 func _physics_process(delta: float) -> void:
 	_process_buffs(delta)
