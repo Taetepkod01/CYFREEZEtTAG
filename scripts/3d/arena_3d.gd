@@ -25,22 +25,38 @@ var taggers_score: int = 0
 @onready var timer_lbl: Label = $HUD/TopBar/TimerBox/TimerLabel
 @onready var round_lbl: Label = $HUD/TopBar/TimerBox/RoundLabel
 @onready var status_container: VBoxContainer = $HUD/PlayerStatusPanel/Scroll/VBox
+@onready var status_title_lbl: Label = $HUD/PlayerStatusPanel/Title
 @onready var game_log_lbl: RichTextLabel = $HUD/GameLogPanel/LogContent
 @onready var minimap: Control = $HUD/MinimapPanel/Minimap
-@onready var hp_bar: ProgressBar = $HUD/BottomHUD/HPBox/ProgressBar
-@onready var hp_lbl: Label = $HUD/BottomHUD/HPBox/HPLabel
-@onready var item_btn: Button = $HUD/BottomHUD/SingleItemSlot/ItemButton
-@onready var item_icon: Label = $HUD/BottomHUD/SingleItemSlot/ItemButton/Icon
-@onready var item_name_lbl: Label = $HUD/BottomHUD/SingleItemSlot/ItemButton/Name
+@onready var hp_bar: ProgressBar = $HUD/BottomHPPanel/ProgressBar
+@onready var hp_lbl: Label = $HUD/BottomHPPanel/HPHeader/HPLabel
+@onready var item_btn: Button = $HUD/BottomInventoryPanel/ItemButton
+@onready var item_name_lbl: Label = $HUD/BottomInventoryPanel/ItemButton/ItemName
 @onready var role_btn: Button = $HUD/PracticeRoleBtn
+@onready var player_tag_dot: Label = $HUD/BottomPlayerTag/HBox/Dot
+@onready var player_tag_name: Label = $HUD/BottomPlayerTag/HBox/Name
+@onready var player_tag_role: Label = $HUD/BottomPlayerTag/HBox/RoleBadge
 
-# Match Summary Panel (Card 4 from Teacher's Mockup)
+# Match Summary Panel (5.png)
 @onready var game_over_panel: Panel = $HUD/GameOverPanel
 @onready var game_over_title: Label = $HUD/GameOverPanel/Title
 @onready var score_lbl: Label = $HUD/GameOverPanel/ScoreLabel
 @onready var mvp_lbl: Label = $HUD/GameOverPanel/MVPLabel
 @onready var next_round_btn: Button = $HUD/GameOverPanel/Buttons/NextButton
 @onready var exit_menu_btn: Button = $HUD/GameOverPanel/Buttons/ExitButton
+
+# Menu / Instructions Modal (6.png)
+@onready var menu_btn: Button = $HUD/MenuButton
+@onready var menu_modal: Panel = $HUD/MenuModal
+@onready var resume_btn: Button = $HUD/MenuModal/Buttons/ResumeBtn
+@onready var leave_btn: Button = $HUD/MenuModal/Buttons/LeaveBtn
+
+# Practice Role Modal (4.png)
+@onready var practice_role_modal: Panel = $HUD/PracticeRoleModal
+@onready var opt_random: Button = $HUD/PracticeRoleModal/RoleVBox/OptRandom
+@onready var opt_tagger: Button = $HUD/PracticeRoleModal/RoleVBox/OptTagger
+@onready var opt_runner: Button = $HUD/PracticeRoleModal/RoleVBox/OptRunner
+@onready var close_role_btn: Button = $HUD/PracticeRoleModal/CloseRoleBtn
 
 var player_nodes: Array[CharacterBody3D] = []
 var local_player: CharacterBody3D = null
@@ -51,9 +67,16 @@ var practice_role: String = "random"
 
 func _ready() -> void:
 	game_over_panel.visible = false
+	menu_modal.visible = false
+	practice_role_modal.visible = false
+	
 	next_round_btn.pressed.connect(_on_next_round_pressed)
 	exit_menu_btn.pressed.connect(_on_exit_to_menu_pressed)
-	$HUD/MenuButton.pressed.connect(_on_exit_to_menu_pressed)
+	
+	menu_btn.pressed.connect(_toggle_menu_modal)
+	resume_btn.pressed.connect(func(): _set_menu_modal_visible(false))
+	leave_btn.pressed.connect(_on_exit_to_menu_pressed)
+	
 	item_btn.pressed.connect(_on_item_button_pressed)
 	
 	if Network and Network.is_online_game():
@@ -68,7 +91,11 @@ func _ready() -> void:
 		if Network and "selected_practice_role" in Network:
 			practice_role = Network.selected_practice_role
 		_update_role_button_ui()
-		role_btn.pressed.connect(_on_cycle_role_pressed)
+		role_btn.pressed.connect(_toggle_practice_role_modal)
+		opt_random.pressed.connect(func(): _select_practice_role("random"))
+		opt_tagger.pressed.connect(func(): _select_practice_role("tagger"))
+		opt_runner.pressed.connect(func(): _select_practice_role("runner"))
+		close_role_btn.pressed.connect(func(): practice_role_modal.visible = false)
 	
 	# Connect Minimap
 	if minimap and minimap.has_method("setup"):
@@ -114,6 +141,11 @@ func _connect_network_signals() -> void:
 	if not Network.chat_received.is_connected(func(msg): add_game_log(msg)):
 		Network.chat_received.connect(func(msg): add_game_log(msg))
 
+func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode == KEY_ESCAPE:
+			_toggle_menu_modal()
+
 func _process(delta: float) -> void:
 	if not is_game_active:
 		return
@@ -126,7 +158,7 @@ func _process(delta: float) -> void:
 	
 	var mins = int(round_time) / 60
 	var secs = int(round_time) % 60
-	timer_lbl.text = "%02d:%02d" % [mins, secs]
+	timer_lbl.text = "🕒 %02d:%02d" % [mins, secs]
 	
 	# Item spawn cycle for offline mode
 	if not Network or not Network.is_online_game():
@@ -137,27 +169,41 @@ func _process(delta: float) -> void:
 	
 	_update_hud()
 
-# ── Role Selection & Cycling (Practice Mode) ────────────────────────────────
-func _on_cycle_role_pressed() -> void:
-	match practice_role:
-		"random":
-			practice_role = "tagger"
-		"tagger":
-			practice_role = "runner"
-		"runner":
-			practice_role = "random"
-		_:
-			practice_role = "random"
-	
+# ── Modal Controls & Role Selection ─────────────────────────────────────────
+func _toggle_menu_modal() -> void:
+	_set_menu_modal_visible(not menu_modal.visible)
+
+func _set_menu_modal_visible(v: bool) -> void:
+	menu_modal.visible = v
+	if v:
+		practice_role_modal.visible = false
+		Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+	else:
+		if is_game_active and not game_over_panel.visible and not practice_role_modal.visible:
+			Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
+
+func _toggle_practice_role_modal() -> void:
+	practice_role_modal.visible = not practice_role_modal.visible
+	if practice_role_modal.visible:
+		menu_modal.visible = false
+		Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+	else:
+		if is_game_active and not game_over_panel.visible and not menu_modal.visible:
+			Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
+
+func _select_practice_role(role_name: String) -> void:
+	practice_role = role_name
 	if Network:
 		Network.selected_practice_role = practice_role
 	
 	_update_role_button_ui()
-	add_game_log("[color=#ffe066]AI Role: %s! Restarting round...[/color]" % practice_role.to_upper())
+	practice_role_modal.visible = false
+	add_game_log("[color=#ffe066]Role selected: %s! Starting round...[/color]" % practice_role.to_upper())
 	
 	round_time = 165.0
 	is_game_active = true
 	game_over_panel.visible = false
+	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 	_spawn_match_players()
 
 func _update_role_button_ui() -> void:
@@ -165,13 +211,13 @@ func _update_role_button_ui() -> void:
 		return
 	match practice_role:
 		"tagger":
-			role_btn.text = "ROLE: TAGGER"
+			role_btn.text = "ROLE: 🔺 TAGGER"
 			role_btn.modulate = Color(1.0, 0.45, 0.45)
 		"runner":
-			role_btn.text = "ROLE: RUNNER"
+			role_btn.text = "ROLE: 🟢 RUNNER"
 			role_btn.modulate = Color(0.45, 1.0, 0.45)
 		"random", _:
-			role_btn.text = "ROLE: RANDOM"
+			role_btn.text = "ROLE: 🤖 RANDOM"
 			role_btn.modulate = Color(1.0, 0.9, 0.4)
 
 # ── Spawning Players & Items ────────────────────────────────────────────────
@@ -452,18 +498,18 @@ func _on_net_round_ended(data: Dictionary) -> void:
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 	
 	if winner == "TAGGERS":
-		game_over_title.text = "TAGGERS WIN ROUND!"
+		game_over_title.text = "❄ 🔺 TAGGERS WIN ROUND! 🔺 ❄"
 		game_over_title.modulate = Color(1.0, 0.4, 0.4)
 	else:
-		game_over_title.text = "RUNNERS WIN ROUND!"
-		game_over_title.modulate = Color(0.4, 0.9, 1.0)
+		game_over_title.text = "❄ 🟢 RUNNERS WIN ROUND! 🟢 ❄"
+		game_over_title.modulate = Color(0.4, 0.95, 1.0)
 	
 	score_lbl.text = "SCORE: Runners %d  -  Taggers %d" % [runners_score, taggers_score]
 	
 	if mvp and typeof(mvp) == TYPE_DICTIONARY:
-		mvp_lbl.text = "MVP: %s (%d Tags / %d Rescues)" % [mvp.get("name", "Player"), mvp.get("freezeCount", 0), mvp.get("rescueCount", 0)]
+		mvp_lbl.text = "👑 MVP: %s (%d Tags / %d Rescues)" % [mvp.get("name", "Player"), mvp.get("freezeCount", 0), mvp.get("rescueCount", 0)]
 	else:
-		mvp_lbl.text = "MVP: Match Complete"
+		mvp_lbl.text = "👑 MVP: Match Complete"
 	
 	if Network.is_host:
 		next_round_btn.visible = true
@@ -503,36 +549,37 @@ func add_game_log(msg: String) -> void:
 
 # ── Single Item Slot UI Update ──────────────────────────────────────────────
 func _update_item_slot(item_name: String) -> void:
+	if not item_name_lbl:
+		return
 	if item_name.is_empty():
-		item_icon.text = "-"
-		item_name_lbl.text = "ITEM: NONE"
-		item_btn.modulate = Color(0.7, 0.7, 0.7, 0.6)
+		item_name_lbl.text = "✕ ITEM: NONE"
+		item_name_lbl.modulate = Color(0.6, 0.75, 0.9, 0.7)
 	else:
-		item_btn.modulate = Color(1.0, 1.0, 1.0, 1.0)
 		match item_name:
 			"speed":
-				item_icon.text = "SPD"
-				item_name_lbl.text = "[E] SPEED"
+				item_name_lbl.text = "⚡ SPEED BOOST"
+				item_name_lbl.modulate = Color(1.0, 0.9, 0.2)
 			"shield":
-				item_icon.text = "SHD"
-				item_name_lbl.text = "[E] SHIELD"
+				item_name_lbl.text = "🛡️ ICE SHIELD"
+				item_name_lbl.modulate = Color(0.3, 1.0, 0.5)
 			"heater":
-				item_icon.text = "HTR"
-				item_name_lbl.text = "[E] HEATER"
+				item_name_lbl.text = "🔥 HEATER"
+				item_name_lbl.modulate = Color(1.0, 0.45, 0.2)
 			"banana":
-				item_icon.text = "BAN"
-				item_name_lbl.text = "[E] BANANA"
+				item_name_lbl.text = "🍌 BANANA PEEL"
+				item_name_lbl.modulate = Color(1.0, 0.95, 0.1)
 			"vortex":
-				item_icon.text = "VTX"
-				item_name_lbl.text = "[E] VORTEX"
+				item_name_lbl.text = "🌀 BLACK HOLE"
+				item_name_lbl.modulate = Color(0.75, 0.4, 1.0)
 			"tackle":
-				item_icon.text = "TCK"
-				item_name_lbl.text = "[E] TACKLE (1.5x)"
+				item_name_lbl.text = "💥 DASH TACKLE"
+				item_name_lbl.modulate = Color(1.0, 0.5, 0.1)
 
 # ── HUD Update ──────────────────────────────────────────────────────────────
 func _update_hud() -> void:
 	var runners_count = 0
 	var taggers_count = 0
+	var total_players = player_nodes.size()
 	
 	for child in status_container.get_children():
 		child.queue_free()
@@ -545,37 +592,63 @@ func _update_hud() -> void:
 				runners_count += 1
 		
 		var row = HBoxContainer.new()
+		row.custom_minimum_size = Vector2(0, 22)
+		
+		var dot_lbl = Label.new()
+		dot_lbl.add_theme_font_size_override("font_size", 10)
+		
 		var name_lbl = Label.new()
-		name_lbl.text = p.player_name
+		name_lbl.text = " " + p.player_name
 		name_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		name_lbl.add_theme_font_size_override("font_size", 13)
+		name_lbl.add_theme_font_size_override("font_size", 12)
+		name_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 		
 		var status_badge = Label.new()
-		status_badge.add_theme_font_size_override("font_size", 13)
+		status_badge.add_theme_font_size_override("font_size", 10)
+		
 		if p.is_frozen:
+			dot_lbl.text = "❄️"
 			status_badge.text = "[FROZEN]"
 			status_badge.modulate = Color(0.3, 0.9, 1.0)
 		elif p.is_rescuing:
+			dot_lbl.text = "🟡"
 			status_badge.text = "[RESCUING]"
 			status_badge.modulate = Color(1.0, 0.9, 0.2)
 		elif p.role == "tagger":
+			dot_lbl.text = "🔴"
 			status_badge.text = "[TAGGER]"
 			status_badge.modulate = Color(1.0, 0.35, 0.35)
 		else:
+			dot_lbl.text = "🟢"
 			status_badge.text = "[RUNNER]"
 			status_badge.modulate = Color(0.4, 0.95, 0.4)
 		
+		row.add_child(dot_lbl)
 		row.add_child(name_lbl)
 		row.add_child(status_badge)
 		status_container.add_child(row)
 	
-	runners_count_lbl.text = str(runners_count)
-	taggers_count_lbl.text = str(taggers_count)
+	runners_count_lbl.text = "❄ %d" % runners_count
+	taggers_count_lbl.text = "🔺 %d" % taggers_count
 	round_lbl.text = "ROUND %d / %d" % [current_round, max_rounds]
+	status_title_lbl.text = "👤 PLAYER STATUS   %d/%d" % [total_players, total_players]
 	
 	if local_player:
 		hp_bar.value = local_player.hp
 		hp_lbl.text = "%d / 100" % local_player.hp
+		player_tag_name.text = local_player.player_name
+		if local_player.is_frozen:
+			player_tag_dot.text = "❄️"
+			player_tag_role.text = "FROZEN"
+			player_tag_role.modulate = Color(0.3, 0.9, 1.0)
+		elif local_player.role == "tagger":
+			player_tag_dot.text = "🔺"
+			player_tag_role.text = "TAGGER"
+			player_tag_role.modulate = Color(1.0, 0.35, 0.35)
+		else:
+			player_tag_dot.text = "🟢"
+			player_tag_role.text = "RUNNER"
+			player_tag_role.modulate = Color(0.4, 0.95, 0.4)
 
 # ── Win / Loss & MVP Summary (Offline / Practice Mode) ──────────────────────
 func _end_round(winner: String) -> void:
@@ -585,12 +658,12 @@ func _end_round(winner: String) -> void:
 	
 	if winner == "TAGGERS":
 		taggers_score += 1
-		game_over_title.text = "TAGGERS WIN ROUND!"
+		game_over_title.text = "❄ 🔺 TAGGERS WIN ROUND! 🔺 ❄"
 		game_over_title.modulate = Color(1.0, 0.4, 0.4)
 	else:
 		runners_score += 1
-		game_over_title.text = "RUNNERS WIN ROUND!"
-		game_over_title.modulate = Color(0.4, 0.9, 1.0)
+		game_over_title.text = "❄ 🟢 RUNNERS WIN ROUND! 🟢 ❄"
+		game_over_title.modulate = Color(0.4, 0.95, 1.0)
 	
 	score_lbl.text = "SCORE: Runners %d  -  Taggers %d" % [runners_score, taggers_score]
 	
@@ -603,9 +676,9 @@ func _end_round(winner: String) -> void:
 			best_player = p
 	
 	if best_player:
-		mvp_lbl.text = "MVP: %s (%d Tags / %d Rescues)" % [best_player.player_name, best_player.freeze_count, best_player.rescue_count]
+		mvp_lbl.text = "👑 MVP: %s (%d Tags / %d Rescues)" % [best_player.player_name, best_player.freeze_count, best_player.rescue_count]
 	else:
-		mvp_lbl.text = "MVP: Player 1 (You)"
+		mvp_lbl.text = "👑 MVP: Player 1 (You)"
 	
 	if current_round >= max_rounds:
 		next_round_btn.text = "PLAY AGAIN"

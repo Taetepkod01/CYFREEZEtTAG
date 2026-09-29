@@ -51,23 +51,121 @@ size = Vector3(4, 3, 4)
 size = Vector3(4, 3, 4)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hud"]
-bg_color = Color(0.04, 0.08, 0.18, 0.85)
+bg_color = Color(0.03, 0.08, 0.18, 0.88)
 border_width_left = 2
 border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
-border_color = Color(0.3, 0.75, 0.95, 0.6)
+border_color = Color(0.15, 0.72, 1, 0.85)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+shadow_color = Color(0, 0.45, 0.95, 0.25)
+shadow_size = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pill"]
+bg_color = Color(0.04, 0.1, 0.22, 0.88)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.15, 0.72, 1, 0.85)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+shadow_color = Color(0, 0.45, 0.95, 0.3)
+shadow_size = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pill_hover"]
+bg_color = Color(0.08, 0.2, 0.42, 0.95)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.35, 0.9, 1, 1)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+shadow_color = Color(0, 0.7, 1, 0.5)
+shadow_size = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_card"]
+bg_color = Color(0.03, 0.08, 0.18, 0.92)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.15, 0.75, 1, 0.85)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(0, 0.45, 0.95, 0.3)
+shadow_size = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hp_bg"]
+bg_color = Color(0.02, 0.05, 0.12, 0.95)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.1, 0.35, 0.6, 0.7)
 corner_radius_top_left = 8
 corner_radius_top_right = 8
 corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hp"]
-bg_color = Color(0.2, 0.8, 0.3, 1)
-corner_radius_top_left = 4
-corner_radius_top_right = 4
-corner_radius_bottom_right = 4
-corner_radius_bottom_left = 4
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hp_fill"]
+bg_color = Color(0, 0.85, 1, 1)
+corner_radius_top_left = 7
+corner_radius_top_right = 7
+corner_radius_bottom_right = 7
+corner_radius_bottom_left = 7
+shadow_color = Color(0, 0.85, 1, 0.5)
+shadow_size = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_modal_ice"]
+bg_color = Color(0.03, 0.07, 0.18, 0.97)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.25, 0.85, 1, 1)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
+shadow_color = Color(0, 0.65, 1, 0.5)
+shadow_size = 14
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_next"]
+bg_color = Color(0.06, 0.45, 0.85, 0.95)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.4, 0.95, 1, 1)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+shadow_color = Color(0, 0.6, 1, 0.4)
+shadow_size = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_exit"]
+bg_color = Color(0.06, 0.12, 0.22, 0.95)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.3, 0.6, 0.85, 0.8)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
 
 [node name="Arena3D" type="Node3D"]
 script = ExtResource("1_arena3d")
@@ -171,26 +269,35 @@ mesh = SubResource("BoxMesh_obstacle")
 [node name="HUD" type="CanvasLayer" parent="."]
 
 [node name="MenuButton" type="Button" parent="HUD"]
-offset_left = 24.0
-offset_top = 20.0
+offset_left = 20.0
+offset_top = 16.0
 offset_right = 110.0
-offset_bottom = 54.0
-text = "MENU"
+offset_bottom = 52.0
+theme_override_styles/normal = SubResource("StyleBoxFlat_pill")
+theme_override_styles/hover = SubResource("StyleBoxFlat_pill_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_pill")
+theme_override_colors/font_color = Color(0.9, 0.95, 1, 1)
+theme_override_font_sizes/font_size = 13
+text = "❄ MENU"
 
 [node name="PracticeRoleBtn" type="Button" parent="HUD"]
-offset_left = 118.0
-offset_top = 20.0
-offset_right = 280.0
-offset_bottom = 54.0
-theme_override_font_sizes/font_size = 13
+offset_left = 120.0
+offset_top = 16.0
+offset_right = 270.0
+offset_bottom = 52.0
+theme_override_styles/normal = SubResource("StyleBoxFlat_pill")
+theme_override_styles/hover = SubResource("StyleBoxFlat_pill_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_pill")
+theme_override_colors/font_color = Color(1, 0.9, 0.3, 1)
+theme_override_font_sizes/font_size = 12
 text = "ROLE: RANDOM"
 
 [node name="MinimapPanel" type="Panel" parent="HUD"]
-offset_left = 24.0
-offset_top = 70.0
-offset_right = 164.0
-offset_bottom = 210.0
-theme_override_styles/panel = SubResource("StyleBoxFlat_hud")
+offset_left = 20.0
+offset_top = 62.0
+offset_right = 176.0
+offset_bottom = 218.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
 
 [node name="Minimap" type="Control" parent="HUD/MinimapPanel"]
 layout_mode = 1
@@ -199,10 +306,10 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -64.0
-offset_top = -64.0
-offset_right = 64.0
-offset_bottom = 64.0
+offset_left = -70.0
+offset_top = -70.0
+offset_right = 70.0
+offset_bottom = 70.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("2_minimap")
@@ -211,18 +318,18 @@ script = ExtResource("2_minimap")
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
-offset_left = -280.0
+offset_left = -260.0
 offset_top = 16.0
-offset_right = 280.0
-offset_bottom = 76.0
+offset_right = 260.0
+offset_bottom = 70.0
 grow_horizontal = 2
-theme_override_constants/separation = 24
+theme_override_constants/separation = 16
 alignment = 1
 
 [node name="RunnersBox" type="Panel" parent="HUD/TopBar"]
-custom_minimum_size = Vector2(130, 60)
+custom_minimum_size = Vector2(130, 52)
 layout_mode = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_hud")
+theme_override_styles/panel = SubResource("StyleBoxFlat_pill")
 
 [node name="Label" type="Label" parent="HUD/TopBar/RunnersBox"]
 layout_mode = 1
@@ -230,12 +337,12 @@ anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
 offset_left = -55.0
-offset_top = 6.0
+offset_top = 4.0
 offset_right = 55.0
-offset_bottom = 26.0
+offset_bottom = 20.0
 grow_horizontal = 2
 theme_override_colors/font_color = Color(0.4, 0.85, 1, 1)
-theme_override_font_sizes/font_size = 12
+theme_override_font_sizes/font_size = 11
 text = "RUNNERS"
 horizontal_alignment = 1
 
@@ -246,20 +353,21 @@ anchor_left = 0.5
 anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
-offset_left = -30.0
-offset_top = -36.0
-offset_right = 30.0
-offset_bottom = -4.0
+offset_left = -45.0
+offset_top = -34.0
+offset_right = 45.0
+offset_bottom = -2.0
 grow_horizontal = 2
 grow_vertical = 0
-theme_override_font_sizes/font_size = 24
-text = "3"
+theme_override_colors/font_color = Color(0.3, 0.9, 1, 1)
+theme_override_font_sizes/font_size = 20
+text = "❄ 3"
 horizontal_alignment = 1
 
 [node name="TimerBox" type="Panel" parent="HUD/TopBar"]
-custom_minimum_size = Vector2(180, 60)
+custom_minimum_size = Vector2(160, 52)
 layout_mode = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_hud")
+theme_override_styles/panel = SubResource("StyleBoxFlat_pill")
 
 [node name="TimerLabel" type="Label" parent="HUD/TopBar/TimerBox"]
 layout_mode = 1
@@ -267,13 +375,13 @@ anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
 offset_left = -60.0
-offset_top = 4.0
+offset_top = 3.0
 offset_right = 60.0
-offset_bottom = 36.0
+offset_bottom = 31.0
 grow_horizontal = 2
-theme_override_colors/font_color = Color(1, 0.9, 0.4, 1)
-theme_override_font_sizes/font_size = 26
-text = "02:45"
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 22
+text = "🕒 02:45"
 horizontal_alignment = 1
 
 [node name="RoundLabel" type="Label" parent="HUD/TopBar/TimerBox"]
@@ -284,20 +392,20 @@ anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
 offset_left = -60.0
-offset_top = -24.0
+offset_top = -22.0
 offset_right = 60.0
-offset_bottom = -4.0
+offset_bottom = -3.0
 grow_horizontal = 2
 grow_vertical = 0
-theme_override_colors/font_color = Color(0.7, 0.85, 1, 1)
-theme_override_font_sizes/font_size = 12
+theme_override_colors/font_color = Color(0.4, 0.75, 1, 0.9)
+theme_override_font_sizes/font_size = 11
 text = "ROUND 1 / 3"
 horizontal_alignment = 1
 
 [node name="TaggersBox" type="Panel" parent="HUD/TopBar"]
-custom_minimum_size = Vector2(130, 60)
+custom_minimum_size = Vector2(130, 52)
 layout_mode = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_hud")
+theme_override_styles/panel = SubResource("StyleBoxFlat_pill")
 
 [node name="Label" type="Label" parent="HUD/TopBar/TaggersBox"]
 layout_mode = 1
@@ -305,12 +413,12 @@ anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
 offset_left = -55.0
-offset_top = 6.0
+offset_top = 4.0
 offset_right = 55.0
-offset_bottom = 26.0
+offset_bottom = 20.0
 grow_horizontal = 2
-theme_override_colors/font_color = Color(1, 0.4, 0.4, 1)
-theme_override_font_sizes/font_size = 12
+theme_override_colors/font_color = Color(1, 0.45, 0.45, 1)
+theme_override_font_sizes/font_size = 11
 text = "TAGGERS"
 horizontal_alignment = 1
 
@@ -321,40 +429,41 @@ anchor_left = 0.5
 anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
-offset_left = -30.0
-offset_top = -36.0
-offset_right = 30.0
-offset_bottom = -4.0
+offset_left = -45.0
+offset_top = -34.0
+offset_right = 45.0
+offset_bottom = -2.0
 grow_horizontal = 2
 grow_vertical = 0
-theme_override_font_sizes/font_size = 24
-text = "1"
+theme_override_colors/font_color = Color(1, 0.35, 0.35, 1)
+theme_override_font_sizes/font_size = 20
+text = "🔺 1"
 horizontal_alignment = 1
 
 [node name="PlayerStatusPanel" type="Panel" parent="HUD"]
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
-offset_left = -210.0
-offset_top = 20.0
+offset_left = -220.0
+offset_top = 16.0
 offset_right = -20.0
-offset_bottom = 220.0
+offset_bottom = 200.0
 grow_horizontal = 0
-theme_override_styles/panel = SubResource("StyleBoxFlat_hud")
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
 
 [node name="Title" type="Label" parent="HUD/PlayerStatusPanel"]
 layout_mode = 1
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
-offset_left = -85.0
-offset_top = 8.0
-offset_right = 85.0
-offset_bottom = 28.0
+offset_left = -90.0
+offset_top = 6.0
+offset_right = 90.0
+offset_bottom = 26.0
 grow_horizontal = 2
 theme_override_colors/font_color = Color(0.3, 0.8, 1, 1)
-theme_override_font_sizes/font_size = 13
-text = "PLAYER STATUS"
+theme_override_font_sizes/font_size = 12
+text = "👤 PLAYER STATUS"
 horizontal_alignment = 1
 
 [node name="Scroll" type="ScrollContainer" parent="HUD/PlayerStatusPanel"]
@@ -362,17 +471,17 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 10.0
-offset_top = 34.0
-offset_right = -10.0
-offset_bottom = -10.0
+offset_left = 8.0
+offset_top = 30.0
+offset_right = -8.0
+offset_bottom = -8.0
 grow_horizontal = 2
 grow_vertical = 2
 
 [node name="VBox" type="VBoxContainer" parent="HUD/PlayerStatusPanel/Scroll"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/separation = 6
+theme_override_constants/separation = 4
 
 [node name="GameLogPanel" type="Panel" parent="HUD"]
 anchors_preset = 6
@@ -380,13 +489,13 @@ anchor_left = 1.0
 anchor_top = 0.5
 anchor_right = 1.0
 anchor_bottom = 0.5
-offset_left = -230.0
-offset_top = -20.0
+offset_left = -220.0
+offset_top = -30.0
 offset_right = -20.0
-offset_bottom = 140.0
+offset_bottom = 110.0
 grow_horizontal = 0
 grow_vertical = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_hud")
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
 
 [node name="Title" type="Label" parent="HUD/GameLogPanel"]
 layout_mode = 1
@@ -394,13 +503,13 @@ anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
 offset_left = -85.0
-offset_top = 6.0
+offset_top = 5.0
 offset_right = 85.0
-offset_bottom = 24.0
+offset_bottom = 22.0
 grow_horizontal = 2
 theme_override_colors/font_color = Color(1, 0.88, 0.4, 1)
-theme_override_font_sizes/font_size = 12
-text = "GAME LOG"
+theme_override_font_sizes/font_size = 11
+text = "📜 GAME LOG"
 horizontal_alignment = 1
 
 [node name="LogContent" type="RichTextLabel" parent="HUD/GameLogPanel"]
@@ -408,10 +517,10 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 8.0
-offset_top = 28.0
-offset_right = -8.0
-offset_bottom = -6.0
+offset_left = 6.0
+offset_top = 24.0
+offset_right = -6.0
+offset_bottom = -4.0
 grow_horizontal = 2
 grow_vertical = 2
 bbcode_enabled = true
@@ -423,100 +532,175 @@ anchor_left = 0.5
 anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
-offset_left = -320.0
-offset_top = -106.0
-offset_right = 320.0
-offset_bottom = -88.0
+offset_left = -300.0
+offset_top = -92.0
+offset_right = 300.0
+offset_bottom = -74.0
 grow_horizontal = 2
 grow_vertical = 0
-theme_override_colors/font_color = Color(0.7, 0.85, 1, 0.75)
+theme_override_colors/font_color = Color(0.7, 0.85, 1, 0.65)
 theme_override_font_sizes/font_size = 11
 text = "[WASD] Move | [SPACE] Jump | [E] Use Item | [CLICK] Lock Camera | [ALT / ESC] Free Mouse"
 horizontal_alignment = 1
 
-[node name="BottomHUD" type="HBoxContainer" parent="HUD"]
+[node name="BottomHPPanel" type="Panel" parent="HUD"]
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = -74.0
+offset_right = 230.0
+offset_bottom = -20.0
+grow_vertical = 0
+theme_override_styles/panel = SubResource("StyleBoxFlat_pill")
+
+[node name="HPHeader" type="HBoxContainer" parent="HUD/BottomHPPanel"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 14.0
+offset_top = 6.0
+offset_right = -14.0
+offset_bottom = 24.0
+grow_horizontal = 2
+
+[node name="Label" type="Label" parent="HUD/BottomHPPanel/HPHeader"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(1, 0.45, 0.65, 1)
+theme_override_font_sizes/font_size = 11
+text = "❤️ PLAYER HP"
+
+[node name="HPLabel" type="Label" parent="HUD/BottomHPPanel/HPHeader"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 0.9, 1, 1)
+theme_override_font_sizes/font_size = 11
+text = "100 / 100"
+
+[node name="ProgressBar" type="ProgressBar" parent="HUD/BottomHPPanel"]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 14.0
+offset_top = -24.0
+offset_right = -14.0
+offset_bottom = -10.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_styles/background = SubResource("StyleBoxFlat_hp_bg")
+theme_override_styles/fill = SubResource("StyleBoxFlat_hp_fill")
+value = 100.0
+show_percentage = false
+
+[node name="BottomInventoryPanel" type="Panel" parent="HUD"]
 anchors_preset = 7
 anchor_left = 0.5
 anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
-offset_left = -260.0
-offset_top = -85.0
-offset_right = 260.0
+offset_left = -120.0
+offset_top = -74.0
+offset_right = 120.0
 offset_bottom = -20.0
 grow_horizontal = 2
 grow_vertical = 0
-theme_override_constants/separation = 40
-alignment = 1
+theme_override_styles/panel = SubResource("StyleBoxFlat_pill")
 
-[node name="HPBox" type="VBoxContainer" parent="HUD/BottomHUD"]
-layout_mode = 2
-alignment = 1
-
-[node name="Label" type="Label" parent="HUD/BottomHUD/HPBox"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 12
-text = "HP / HEALTH"
-
-[node name="ProgressBar" type="ProgressBar" parent="HUD/BottomHUD/HPBox"]
-custom_minimum_size = Vector2(170, 18)
-layout_mode = 2
-theme_override_styles/fill = SubResource("StyleBoxFlat_hp")
-value = 100.0
-show_percentage = false
-
-[node name="HPLabel" type="Label" parent="HUD/BottomHUD/HPBox"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 11
-text = "100 / 100"
-horizontal_alignment = 1
-
-[node name="SingleItemSlot" type="VBoxContainer" parent="HUD/BottomHUD"]
-layout_mode = 2
-alignment = 1
-
-[node name="Label" type="Label" parent="HUD/BottomHUD/SingleItemSlot"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 12
-text = "ITEM SLOT"
-horizontal_alignment = 1
-
-[node name="ItemButton" type="Button" parent="HUD/BottomHUD/SingleItemSlot"]
-custom_minimum_size = Vector2(150, 42)
-layout_mode = 2
-theme_override_styles/normal = SubResource("StyleBoxFlat_hud")
-
-[node name="Icon" type="Label" parent="HUD/BottomHUD/SingleItemSlot/ItemButton"]
+[node name="InvHeader" type="HBoxContainer" parent="HUD/BottomInventoryPanel"]
 layout_mode = 1
-anchors_preset = 4
-anchor_top = 0.5
-anchor_bottom = 0.5
-offset_left = 12.0
-offset_top = -14.0
-offset_right = 38.0
-offset_bottom = 14.0
-grow_vertical = 2
-theme_override_font_sizes/font_size = 14
-text = "-"
-horizontal_alignment = 1
-vertical_alignment = 1
-
-[node name="Name" type="Label" parent="HUD/BottomHUD/SingleItemSlot/ItemButton"]
-layout_mode = 1
-anchors_preset = 6
-anchor_left = 1.0
-anchor_top = 0.5
+anchors_preset = 10
 anchor_right = 1.0
-anchor_bottom = 0.5
-offset_left = -110.0
-offset_top = -12.0
-offset_right = -10.0
-offset_bottom = 12.0
-grow_horizontal = 0
+offset_left = 16.0
+offset_top = 6.0
+offset_right = -16.0
+offset_bottom = 24.0
+grow_horizontal = 2
+
+[node name="Label" type="Label" parent="HUD/BottomInventoryPanel/InvHeader"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.7, 0.85, 1, 0.8)
+theme_override_font_sizes/font_size = 11
+text = "🎒 INVENTORY"
+
+[node name="UseBadge" type="Label" parent="HUD/BottomInventoryPanel/InvHeader"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.3, 0.9, 1, 1)
+theme_override_font_sizes/font_size = 10
+text = "[E] USE"
+
+[node name="ItemButton" type="Button" parent="HUD/BottomInventoryPanel"]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 12.0
+offset_top = -28.0
+offset_right = -12.0
+offset_bottom = -6.0
+grow_horizontal = 2
+grow_vertical = 0
+flat = true
+
+[node name="ItemName" type="Label" parent="HUD/BottomInventoryPanel/ItemButton"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
 grow_vertical = 2
+theme_override_colors/font_color = Color(0.6, 0.75, 0.9, 1)
 theme_override_font_sizes/font_size = 12
-text = "ITEM: NONE"
+text = "✕ ITEM: NONE"
+horizontal_alignment = 1
 vertical_alignment = 1
+
+[node name="BottomPlayerTag" type="Panel" parent="HUD"]
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -220.0
+offset_top = -70.0
+offset_right = -20.0
+offset_bottom = -24.0
+grow_horizontal = 0
+grow_vertical = 0
+theme_override_styles/panel = SubResource("StyleBoxFlat_pill")
+
+[node name="HBox" type="HBoxContainer" parent="HUD/BottomPlayerTag"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 12.0
+offset_right = -12.0
+grow_horizontal = 2
+grow_vertical = 2
+alignment = 1
+
+[node name="Dot" type="Label" parent="HUD/BottomPlayerTag/HBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "🟢"
+
+[node name="Name" type="Label" parent="HUD/BottomPlayerTag/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 12
+text = "Player 1 (You)"
+text_overrun_behavior = 3
+
+[node name="RoleBadge" type="Label" parent="HUD/BottomPlayerTag/HBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 0.95, 0.4, 1)
+theme_override_font_sizes/font_size = 11
+text = "RUNNER"
 
 [node name="GameOverPanel" type="Panel" parent="HUD"]
 visible = false
@@ -525,27 +709,27 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -240.0
-offset_top = -150.0
-offset_right = 240.0
-offset_bottom = 150.0
+offset_left = -250.0
+offset_top = -140.0
+offset_right = 250.0
+offset_bottom = 140.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_hud")
+theme_override_styles/panel = SubResource("StyleBoxFlat_modal_ice")
 
 [node name="Title" type="Label" parent="HUD/GameOverPanel"]
 layout_mode = 1
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
-offset_left = -200.0
+offset_left = -230.0
 offset_top = 22.0
-offset_right = 200.0
-offset_bottom = 62.0
+offset_right = 230.0
+offset_bottom = 60.0
 grow_horizontal = 2
-theme_override_colors/font_color = Color(1, 0.88, 0.4, 1)
-theme_override_font_sizes/font_size = 24
-text = "ROUND OVER"
+theme_override_colors/font_color = Color(1, 0.4, 0.4, 1)
+theme_override_font_sizes/font_size = 22
+text = "❄ 🔺 TAGGERS WIN ROUND! 🔺 ❄"
 horizontal_alignment = 1
 vertical_alignment = 1
 
@@ -557,10 +741,10 @@ anchor_right = 0.5
 offset_left = -200.0
 offset_top = 70.0
 offset_right = 200.0
-offset_bottom = 105.0
+offset_bottom = 98.0
 grow_horizontal = 2
-theme_override_colors/font_color = Color(0.85, 0.95, 1, 1)
-theme_override_font_sizes/font_size = 18
+theme_override_colors/font_color = Color(0.8, 0.95, 1, 1)
+theme_override_font_sizes/font_size = 15
 text = "SCORE: Runners 0  -  Taggers 0"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -570,14 +754,14 @@ layout_mode = 1
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
-offset_left = -220.0
-offset_top = 115.0
-offset_right = 220.0
-offset_bottom = 155.0
+offset_left = -230.0
+offset_top = 110.0
+offset_right = 230.0
+offset_bottom = 145.0
 grow_horizontal = 2
-theme_override_colors/font_color = Color(1, 0.9, 0.3, 1)
-theme_override_font_sizes/font_size = 16
-text = "MVP: Player 1 (You)"
+theme_override_colors/font_color = Color(1, 0.88, 0.2, 1)
+theme_override_font_sizes/font_size = 14
+text = "👑 MVP: Player 1 (3 Tags / 0 Rescues)"
 horizontal_alignment = 1
 vertical_alignment = 1
 
@@ -588,25 +772,226 @@ anchor_left = 0.5
 anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
-offset_left = -180.0
+offset_left = -190.0
 offset_top = -65.0
-offset_right = 180.0
+offset_right = 190.0
 offset_bottom = -25.0
 grow_horizontal = 2
 grow_vertical = 0
-theme_override_constants/separation = 16
+theme_override_constants/separation = 20
 alignment = 1
 
 [node name="NextButton" type="Button" parent="HUD/GameOverPanel/Buttons"]
 custom_minimum_size = Vector2(170, 40)
 layout_mode = 2
-theme_override_colors/font_color = Color(0.4, 1, 0.4, 1)
-theme_override_font_sizes/font_size = 15
-text = "NEXT ROUND"
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_next")
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 14
+text = "NEXT ROUND (2)"
 
 [node name="ExitButton" type="Button" parent="HUD/GameOverPanel/Buttons"]
-custom_minimum_size = Vector2(120, 40)
+custom_minimum_size = Vector2(130, 40)
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.5, 0.5, 1)
-theme_override_font_sizes/font_size = 15
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_exit")
+theme_override_colors/font_color = Color(0.85, 0.95, 1, 1)
+theme_override_font_sizes/font_size = 14
 text = "EXIT"
+
+[node name="MenuModal" type="Panel" parent="HUD"]
+visible = false
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -250.0
+offset_top = -210.0
+offset_right = 250.0
+offset_bottom = 210.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_modal_ice")
+
+[node name="Title" type="Label" parent="HUD/MenuModal"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -200.0
+offset_top = 16.0
+offset_right = 200.0
+offset_bottom = 44.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(0.4, 0.9, 1, 1)
+theme_override_font_sizes/font_size = 20
+text = "❄ HOW TO PLAY ❄"
+horizontal_alignment = 1
+
+[node name="Subtitle" type="Label" parent="HUD/MenuModal"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -180.0
+offset_top = 48.0
+offset_right = 180.0
+offset_bottom = 70.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(0.2, 0.8, 1, 1)
+theme_override_font_sizes/font_size = 12
+text = "📖 GAME INSTRUCTIONS"
+horizontal_alignment = 1
+
+[node name="Content" type="RichTextLabel" parent="HUD/MenuModal"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 24.0
+offset_top = 78.0
+offset_right = -24.0
+offset_bottom = -68.0
+grow_horizontal = 2
+grow_vertical = 2
+bbcode_enabled = true
+text = "[color=#00e5ff][b]🎯 OBJECTIVE & RULES:[/b][/color]
+• [color=#ff5252]TAGGERS[/color] must tag all runners to freeze them in ice cubes!
+• [color=#69f0ae]RUNNERS[/color] must survive until time runs out, or touch frozen teammates to thaw them!
+
+[color=#ffe066][b]⚡ ITEMS & POWER-UPS ([E] to use):[/b][/color]
+• [b]⚡ Speed Boost:[/b] Move 1.3x faster for 6s
+• [b]🛡️ Ice Shield:[/b] Blocks 1 freeze attempt
+• [b]🔥 Heater:[/b] Unfreezes yourself immediately
+• [b]🍌 Banana Trap:[/b] Drops behind you; slips enemies for 2.5s
+• [b]💥 Dash Tackle:[/b] 2s immunity, deals 20 HP to tagger
+• [b]🌀 Vortex:[/b] Gravitational pull field
+
+[color=#a78bfa][b]🎮 3D CONTROLS:[/b][/color]
+• [b]Mouse:[/b] Orbit Camera | [b]WASD:[/b] Move | [b]Space:[/b] Jump | [b]E:[/b] Use Item"
+
+[node name="Buttons" type="HBoxContainer" parent="HUD/MenuModal"]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -180.0
+offset_top = -54.0
+offset_right = 180.0
+offset_bottom = -16.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_constants/separation = 16
+alignment = 1
+
+[node name="ResumeBtn" type="Button" parent="HUD/MenuModal/Buttons"]
+custom_minimum_size = Vector2(140, 36)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_next")
+theme_override_font_sizes/font_size = 13
+text = "RESUME"
+
+[node name="LeaveBtn" type="Button" parent="HUD/MenuModal/Buttons"]
+custom_minimum_size = Vector2(140, 36)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_exit")
+theme_override_font_sizes/font_size = 13
+text = "LEAVE MATCH"
+
+[node name="PracticeRoleModal" type="Panel" parent="HUD"]
+visible = false
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -210.0
+offset_top = -160.0
+offset_right = 210.0
+offset_bottom = 160.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_modal_ice")
+
+[node name="Title" type="Label" parent="HUD/PracticeRoleModal"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -180.0
+offset_top = 16.0
+offset_right = 180.0
+offset_bottom = 44.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(0.4, 0.9, 1, 1)
+theme_override_font_sizes/font_size = 20
+text = "❄ PRACTICE ❄"
+horizontal_alignment = 1
+
+[node name="Subtitle" type="Label" parent="HUD/PracticeRoleModal"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -150.0
+offset_top = 46.0
+offset_right = 150.0
+offset_bottom = 66.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(0.3, 0.8, 1, 1)
+theme_override_font_sizes/font_size = 12
+text = "CHOOSE ROLE"
+horizontal_alignment = 1
+
+[node name="RoleVBox" type="VBoxContainer" parent="HUD/PracticeRoleModal"]
+layout_mode = 1
+anchors_preset = 14
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = 24.0
+offset_top = -65.0
+offset_right = -24.0
+offset_bottom = 65.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 8
+
+[node name="OptRandom" type="Button" parent="HUD/PracticeRoleModal/RoleVBox"]
+custom_minimum_size = Vector2(0, 34)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_pill")
+theme_override_font_sizes/font_size = 12
+text = "🤖 RANDOM (Auto-assign role)"
+
+[node name="OptTagger" type="Button" parent="HUD/PracticeRoleModal/RoleVBox"]
+custom_minimum_size = Vector2(0, 34)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_pill")
+theme_override_font_sizes/font_size = 12
+text = "🔺 TAGGER (You hunt runners)"
+
+[node name="OptRunner" type="Button" parent="HUD/PracticeRoleModal/RoleVBox"]
+custom_minimum_size = Vector2(0, 34)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_pill")
+theme_override_font_sizes/font_size = 12
+text = "🟢 RUNNER (Survive from taggers)"
+
+[node name="CloseRoleBtn" type="Button" parent="HUD/PracticeRoleModal"]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -60.0
+offset_top = -42.0
+offset_right = 60.0
+offset_bottom = -12.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_exit")
+theme_override_font_sizes/font_size = 12
+text = "CLOSE"
