@@ -57,7 +57,7 @@ offset_bottom = 14.0
 grow_vertical = 2
 theme_override_colors/font_color = Color(1, 0.878431, 0.4, 1)
 theme_override_font_sizes/font_size = 18
-text = "Role: 🏃 RUNNER"
+text = "Role:  RUNNER"
 vertical_alignment = 1
 
 [node name="TimerLabel" type="Label" parent="HUD/TopBar"]
@@ -75,7 +75,7 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_colors/font_color = Color(0.309804, 0.764706, 0.968627, 1)
 theme_override_font_sizes/font_size = 24
-text = "⏱ 3:00"
+text = " 3:00"
 horizontal_alignment = 1
 vertical_alignment = 1
 
@@ -111,7 +111,7 @@ offset_right = -20.0
 offset_bottom = 16.0
 grow_horizontal = 0
 grow_vertical = 2
-text = "⚙️ MENU"
+text = "️ MENU"
 
 [node name="NotificationLabel" type="Label" parent="HUD"]
 anchors_preset = 5
@@ -155,7 +155,7 @@ offset_bottom = 80.0
 grow_horizontal = 2
 theme_override_colors/font_color = Color(1, 0.878431, 0.4, 1)
 theme_override_font_sizes/font_size = 32
-text = "❄ RUNNERS WIN! ❄"
+text = " RUNNERS WIN! "
 horizontal_alignment = 1
 vertical_alignment = 1
 

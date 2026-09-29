@@ -1,7 +1,12 @@
-[gd_scene load_steps=16 format=3 uid="uid://b3darena0001"]
+[gd_scene load_steps=21 format=3 uid="uid://b3darena0001"]
 
 [ext_resource type="Script" path="res://scripts/3d/arena_3d.gd" id="1_arena3d"]
 [ext_resource type="Script" path="res://scripts/3d/minimap.gd" id="2_minimap"]
+[ext_resource type="Texture2D" path="res://assets/ui/buttons/btn_menu.png" id="3_btn_menu"]
+[ext_resource type="Texture2D" path="res://assets/ui/buttons/btn_next_round.png" id="4_btn_next"]
+[ext_resource type="Texture2D" path="res://assets/ui/buttons/btn_exit.png" id="5_btn_exit"]
+[ext_resource type="Texture2D" path="res://assets/ui/buttons/btn_leave_room.png" id="6_btn_leave"]
+[ext_resource type="Texture2D" path="res://assets/ui/buttons/btn_close.png" id="7_btn_close"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sky"]
 sky_top_color = Color(0.2, 0.5, 0.85, 1)
@@ -268,17 +273,13 @@ mesh = SubResource("BoxMesh_obstacle")
 
 [node name="HUD" type="CanvasLayer" parent="."]
 
-[node name="MenuButton" type="Button" parent="HUD"]
+[node name="MenuButton" type="TextureButton" parent="HUD"]
 offset_left = 20.0
 offset_top = 16.0
-offset_right = 110.0
-offset_bottom = 52.0
-theme_override_styles/normal = SubResource("StyleBoxFlat_pill")
-theme_override_styles/hover = SubResource("StyleBoxFlat_pill_hover")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_pill")
-theme_override_colors/font_color = Color(0.9, 0.95, 1, 1)
-theme_override_font_sizes/font_size = 13
-text = "MENU"
+offset_right = 108.0
+offset_bottom = 51.0
+texture_normal = ExtResource("3_btn_menu")
+stretch_mode = 5
 
 [node name="PracticeRoleBtn" type="Button" parent="HUD"]
 offset_left = 120.0
@@ -523,8 +524,8 @@ offset_right = -6.0
 offset_bottom = -4.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_font_sizes/normal_font_size = 10
-theme_override_font_sizes/bold_font_size = 10
+theme_override_font_sizes/normal_font_size = 9
+theme_override_font_sizes/bold_font_size = 9
 bbcode_enabled = true
 scroll_following = true
 
@@ -784,21 +785,17 @@ grow_vertical = 0
 theme_override_constants/separation = 20
 alignment = 1
 
-[node name="NextButton" type="Button" parent="HUD/GameOverPanel/Buttons"]
-custom_minimum_size = Vector2(170, 40)
+[node name="NextButton" type="TextureButton" parent="HUD/GameOverPanel/Buttons"]
+custom_minimum_size = Vector2(184, 44)
 layout_mode = 2
-theme_override_styles/normal = SubResource("StyleBoxFlat_btn_next")
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 14
-text = "NEXT ROUND (2)"
+texture_normal = ExtResource("4_btn_next")
+stretch_mode = 5
 
-[node name="ExitButton" type="Button" parent="HUD/GameOverPanel/Buttons"]
-custom_minimum_size = Vector2(130, 40)
+[node name="ExitButton" type="TextureButton" parent="HUD/GameOverPanel/Buttons"]
+custom_minimum_size = Vector2(128, 44)
 layout_mode = 2
-theme_override_styles/normal = SubResource("StyleBoxFlat_btn_exit")
-theme_override_colors/font_color = Color(0.85, 0.95, 1, 1)
-theme_override_font_sizes/font_size = 14
-text = "EXIT"
+texture_normal = ExtResource("5_btn_exit")
+stretch_mode = 5
 
 [node name="MenuModal" type="Panel" parent="HUD"]
 visible = false
@@ -858,19 +855,19 @@ grow_horizontal = 2
 grow_vertical = 2
 bbcode_enabled = true
 text = "[color=#00e5ff][b]OBJECTIVE & RULES:[/b][/color]
-• [color=#ff5252]TAGGERS[/color] must tag all runners to freeze them in ice cubes!
-• [color=#69f0ae]RUNNERS[/color] must survive until time runs out, or touch frozen teammates to thaw them!
+- [color=#ff5252]TAGGERS[/color] must tag all runners to freeze them in ice cubes!
+- [color=#69f0ae]RUNNERS[/color] must survive until time runs out, or touch frozen teammates to thaw them!
 
 [color=#ffe066][b]ITEMS & POWER-UPS ([E] to use):[/b][/color]
-• [b]Speed Boost:[/b] Move 1.3x faster for 6s
-• [b]Ice Shield:[/b] Blocks 1 freeze attempt
-• [b]Heater:[/b] Unfreezes yourself immediately
-• [b]Banana Trap:[/b] Drops behind you; slips enemies for 2.5s
-• [b]Dash Tackle:[/b] 2s immunity, deals 20 HP to tagger
-• [b]Vortex:[/b] Gravitational pull field
+- [b]Speed Boost:[/b] Move 1.3x faster for 6s
+- [b]Ice Shield:[/b] Blocks 1 freeze attempt
+- [b]Heater:[/b] Unfreezes yourself immediately
+- [b]Banana Trap:[/b] Drops behind you; slips enemies for 2.5s
+- [b]Dash Tackle:[/b] 2s immunity, deals 20 HP to tagger
+- [b]Vortex:[/b] Gravitational pull field
 
 [color=#a78bfa][b]3D CONTROLS:[/b][/color]
-• [b]Mouse:[/b] Orbit Camera | [b]WASD:[/b] Move | [b]Space:[/b] Jump | [b]E:[/b] Use Item"
+- [b]Mouse:[/b] Orbit Camera | [b]WASD:[/b] Move | [b]Space:[/b] Jump | [b]E:[/b] Use Item"
 
 [node name="Buttons" type="HBoxContainer" parent="HUD/MenuModal"]
 layout_mode = 1
@@ -895,12 +892,11 @@ theme_override_styles/normal = SubResource("StyleBoxFlat_btn_next")
 theme_override_font_sizes/font_size = 13
 text = "RESUME"
 
-[node name="LeaveBtn" type="Button" parent="HUD/MenuModal/Buttons"]
-custom_minimum_size = Vector2(140, 36)
+[node name="LeaveBtn" type="TextureButton" parent="HUD/MenuModal/Buttons"]
+custom_minimum_size = Vector2(181, 40)
 layout_mode = 2
-theme_override_styles/normal = SubResource("StyleBoxFlat_btn_exit")
-theme_override_font_sizes/font_size = 13
-text = "LEAVE MATCH"
+texture_normal = ExtResource("6_btn_leave")
+stretch_mode = 5
 
 [node name="PracticeRoleModal" type="Panel" parent="HUD"]
 visible = false
@@ -982,19 +978,19 @@ theme_override_styles/normal = SubResource("StyleBoxFlat_pill")
 theme_override_font_sizes/font_size = 12
 text = "RUNNER (Survive from taggers)"
 
-[node name="CloseRoleBtn" type="Button" parent="HUD/PracticeRoleModal"]
+[node name="CloseRoleBtn" type="TextureButton" parent="HUD/PracticeRoleModal"]
+custom_minimum_size = Vector2(140, 42)
 layout_mode = 1
 anchors_preset = 7
 anchor_left = 0.5
 anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
-offset_left = -60.0
-offset_top = -42.0
-offset_right = 60.0
-offset_bottom = -12.0
+offset_left = -70.0
+offset_top = -48.0
+offset_right = 70.0
+offset_bottom = -6.0
 grow_horizontal = 2
 grow_vertical = 0
-theme_override_styles/normal = SubResource("StyleBoxFlat_btn_exit")
-theme_override_font_sizes/font_size = 12
-text = "CLOSE"
+texture_normal = ExtResource("7_btn_close")
+stretch_mode = 5

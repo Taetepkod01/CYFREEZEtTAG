@@ -88,7 +88,7 @@ offset_bottom = 220.0
 grow_horizontal = 2
 theme_override_colors/font_color = Color(0.7, 0.9, 1, 1)
 theme_override_font_sizes/font_size = 20
-text = "❄ Real-Time Multiplayer Freeze Tag ❄"
+text = " Real-Time Multiplayer Freeze Tag "
 horizontal_alignment = 1
 vertical_alignment = 1
 
@@ -112,27 +112,27 @@ custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.4, 1, 0.4, 1)
 theme_override_font_sizes/font_size = 18
-text = "🌐 PLAY ONLINE / LAN"
+text = " PLAY ONLINE / LAN"
 
 [node name="PracticeButton" type="Button" parent="VBoxContainer" unique_id=1510934974]
 custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.88, 0.4, 1)
 theme_override_font_sizes/font_size = 18
-text = "🤖 PRACTICE SOLO (BOTS)"
+text = " PRACTICE SOLO (BOTS)"
 
 [node name="HowToPlayButton" type="Button" parent="VBoxContainer" unique_id=716999469]
 custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
 theme_override_font_sizes/font_size = 18
-text = "📖 HOW TO PLAY"
+text = " HOW TO PLAY"
 
 [node name="QuitButton" type="Button" parent="VBoxContainer" unique_id=2003488910]
 custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.5, 0.5, 1)
 theme_override_font_sizes/font_size = 18
-text = "❌ QUIT"
+text = " QUIT"
 
 [node name="HowToPlayPanel" type="Panel" parent="." unique_id=1483884256]
 visible = false
@@ -162,7 +162,7 @@ offset_bottom = 60.0
 grow_horizontal = 2
 theme_override_colors/font_color = Color(1, 0.88, 0.4, 1)
 theme_override_font_sizes/font_size = 24
-text = "📖 HOW TO PLAY"
+text = " HOW TO PLAY"
 horizontal_alignment = 1
 
 [node name="RichTextLabel" type="RichTextLabel" parent="HowToPlayPanel" unique_id=844767516]
@@ -179,20 +179,20 @@ offset_bottom = 140.0
 grow_horizontal = 2
 grow_vertical = 2
 bbcode_enabled = true
-text = "[color=#ffe066]🎯 OBJECTIVE:[/color]
+text = "[color=#ffe066] OBJECTIVE:[/color]
 • 1 [color=#ff4c4c]CHASER[/color] vs up to 3 [color=#4fc3f7]RUNNERS[/color].
 • [color=#ff4c4c]Chaser[/color] must tag all runners to freeze them into ice blocks!
 • [color=#4fc3f7]Runners[/color] survive 180 seconds or unfreeze frozen teammates by touching them!
 
-[color=#ffe066]⚡ ITEMS (Collect & press [E] to use):[/color]
-• ⚡ [b]Speed Boost[/b]: Move 1.6x faster for 6s.
-• 👻 [b]Ghost Mode[/b]: Pass through walls for 4.5s!
-• 🛡️ [b]Shield[/b]: Blocks 1 tag attempt.
-• 🔥 [b]Heater[/b]: Unfreeze instantly + temporary immunity.
-• 🍌 [b]Banana[/b]: Trap that slips & stuns players for 2.5s!
-• 🌀 [b]Black Hole[/b]: Vortex that pulls nearby players!
+[color=#ffe066] ITEMS (Collect & press [E] to use):[/color]
+•  [b]Speed Boost[/b]: Move 1.6x faster for 6s.
+•  [b]Ghost Mode[/b]: Pass through walls for 4.5s!
+• ️ [b]Shield[/b]: Blocks 1 tag attempt.
+•  [b]Heater[/b]: Unfreeze instantly + temporary immunity.
+•  [b]Banana[/b]: Trap that slips & stuns players for 2.5s!
+•  [b]Black Hole[/b]: Vortex that pulls nearby players!
 
-[color=#ffe066]🎮 CONTROLS:[/color]
+[color=#ffe066] CONTROLS:[/color]
 • WASD / Arrow Keys: Move
 • E Key: Use Held Item"
 

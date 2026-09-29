@@ -1,7 +1,19 @@
-[gd_scene load_steps=12 format=3 uid="uid://b3dmenu00001"]
+[gd_scene load_steps=18 format=3 uid="uid://b3dmenu00001"]
 
 [ext_resource type="Script" path="res://scripts/3d/main_menu_3d.gd" id="1_menu3d"]
 [ext_resource type="Texture2D" path="res://assets/ui/ice_frame_border.png" id="2_ice_frame"]
+[ext_resource type="FontFile" path="res://assets/fonts/Audiowide.ttf" id="3_font_audio"]
+[ext_resource type="Texture2D" path="res://assets/ui/buttons/title_logo.png" id="4_title_logo"]
+[ext_resource type="Texture2D" path="res://assets/ui/buttons/btn_play.png" id="5_btn_play"]
+[ext_resource type="Texture2D" path="res://assets/ui/buttons/btn_practice.png" id="6_btn_practice"]
+[ext_resource type="Texture2D" path="res://assets/ui/buttons/btn_settings.png" id="7_btn_settings"]
+[ext_resource type="Texture2D" path="res://assets/ui/buttons/btn_quit.png" id="8_btn_quit"]
+[ext_resource type="Texture2D" path="res://assets/ui/buttons/btn_role_random_off.png" id="9_role_random_off"]
+[ext_resource type="Texture2D" path="res://assets/ui/buttons/btn_role_tagger_off.png" id="10_role_tagger_off"]
+[ext_resource type="Texture2D" path="res://assets/ui/buttons/btn_role_runner_on.png" id="11_role_runner_on"]
+[ext_resource type="Texture2D" path="res://assets/ui/buttons/btn_start_practice.png" id="12_btn_start_practice"]
+[ext_resource type="Texture2D" path="res://assets/ui/buttons/btn_cancel.png" id="13_btn_cancel"]
+[ext_resource type="Texture2D" path="res://assets/ui/buttons/btn_close.png" id="14_btn_close"]
 
 [sub_resource type="Curve" id="Curve_particles"]
 _data = [Vector2(0, 0.4), 0.0, 0.0, 0, 0, Vector2(0.5, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
@@ -10,64 +22,8 @@ point_count = 3
 [sub_resource type="Gradient" id="Gradient_particles"]
 colors = PackedColorArray(0.8, 0.95, 1, 0.7, 0.3, 0.7, 1, 0)
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pill"]
-bg_color = Color(0.04, 0.2, 0.42, 0.88)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.15, 0.85, 1, 0.95)
-corner_radius_top_left = 24
-corner_radius_top_right = 24
-corner_radius_bottom_right = 24
-corner_radius_bottom_left = 24
-shadow_color = Color(0, 0.65, 1, 0.35)
-shadow_size = 10
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pill_hover"]
-bg_color = Color(0.08, 0.3, 0.6, 0.95)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.5, 0.95, 1, 1)
-corner_radius_top_left = 24
-corner_radius_top_right = 24
-corner_radius_bottom_right = 24
-corner_radius_bottom_left = 24
-shadow_color = Color(0.2, 0.85, 1, 0.55)
-shadow_size = 14
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pill_red"]
-bg_color = Color(0.35, 0.05, 0.1, 0.88)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(1, 0.3, 0.38, 0.95)
-corner_radius_top_left = 24
-corner_radius_top_right = 24
-corner_radius_bottom_right = 24
-corner_radius_bottom_left = 24
-shadow_color = Color(0.9, 0.15, 0.25, 0.3)
-shadow_size = 8
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pill_green"]
-bg_color = Color(0.03, 0.28, 0.14, 0.88)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.2, 0.95, 0.45, 0.95)
-corner_radius_top_left = 24
-corner_radius_top_right = 24
-corner_radius_bottom_right = 24
-corner_radius_bottom_left = 24
-shadow_color = Color(0, 0.8, 0.35, 0.3)
-shadow_size = 8
-
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_modal_ice"]
-bg_color = Color(0.03, 0.08, 0.18, 0.94)
+bg_color = Color(0.03, 0.08, 0.18, 0.95)
 border_width_left = 2
 border_width_top = 2
 border_width_right = 2
@@ -79,32 +35,6 @@ corner_radius_bottom_right = 18
 corner_radius_bottom_left = 18
 shadow_color = Color(0, 0.5, 0.95, 0.35)
 shadow_size = 20
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_cyan"]
-bg_color = Color(0.05, 0.35, 0.7, 0.95)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.4, 0.9, 1, 1)
-corner_radius_top_left = 20
-corner_radius_top_right = 20
-corner_radius_bottom_right = 20
-corner_radius_bottom_left = 20
-shadow_color = Color(0, 0.7, 1, 0.4)
-shadow_size = 8
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_exit"]
-bg_color = Color(0.08, 0.16, 0.3, 0.85)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.3, 0.65, 0.85, 0.5)
-corner_radius_top_left = 20
-corner_radius_top_right = 20
-corner_radius_bottom_right = 20
-corner_radius_bottom_left = 20
 
 [node name="MainMenu3D" type="Control"]
 layout_mode = 3
@@ -152,41 +82,20 @@ mouse_filter = 2
 texture = ExtResource("2_ice_frame")
 expand_mode = 1
 
-[node name="Title" type="Label" parent="."]
+[node name="TitleLogo" type="TextureRect" parent="."]
 layout_mode = 1
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
-offset_left = -300.0
+offset_left = -260.0
 offset_top = 70.0
-offset_right = 300.0
+offset_right = 260.0
 offset_bottom = 150.0
 grow_horizontal = 2
-pivot_offset = Vector2(300, 40)
-theme_override_colors/font_color = Color(0.65, 0.92, 1, 1)
-theme_override_colors/font_shadow_color = Color(0, 0.45, 0.85, 0.9)
-theme_override_constants/shadow_offset_y = 2
-theme_override_constants/shadow_outline_size = 14
-theme_override_font_sizes/font_size = 54
-text = "* FREEZE TAG *"
-horizontal_alignment = 1
-vertical_alignment = 1
-
-[node name="Subtitle" type="Label" parent="."]
-layout_mode = 1
-anchors_preset = 5
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = -250.0
-offset_top = 150.0
-offset_right = 250.0
-offset_bottom = 180.0
-grow_horizontal = 2
-theme_override_colors/font_color = Color(0.35, 0.8, 1, 0.9)
-theme_override_font_sizes/font_size = 14
-text = "──  MULTIPLAYER ARENA  ──"
-horizontal_alignment = 1
-vertical_alignment = 1
+pivot_offset = Vector2(260, 40)
+texture = ExtResource("4_title_logo")
+expand_mode = 1
+stretch_mode = 5
 
 [node name="MenuButtons" type="VBoxContainer" parent="."]
 layout_mode = 1
@@ -195,53 +104,38 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -140.0
-offset_top = -10.0
-offset_right = 140.0
-offset_bottom = 230.0
+offset_left = -130.0
+offset_top = -20.0
+offset_right = 130.0
+offset_bottom = 220.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/separation = 14
+theme_override_constants/separation = 12
+alignment = 1
 
-[node name="PlayOnlineBtn" type="Button" parent="MenuButtons"]
-custom_minimum_size = Vector2(280, 46)
+[node name="PlayOnlineBtn" type="TextureButton" parent="MenuButtons"]
+custom_minimum_size = Vector2(254, 49)
 layout_mode = 2
-theme_override_styles/normal = SubResource("StyleBoxFlat_pill")
-theme_override_styles/hover = SubResource("StyleBoxFlat_pill_hover")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_pill")
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 16
-text = "▶  PLAY"
+texture_normal = ExtResource("5_btn_play")
+stretch_mode = 5
 
-[node name="PracticeBtn" type="Button" parent="MenuButtons"]
-custom_minimum_size = Vector2(280, 46)
+[node name="PracticeBtn" type="TextureButton" parent="MenuButtons"]
+custom_minimum_size = Vector2(254, 49)
 layout_mode = 2
-theme_override_styles/normal = SubResource("StyleBoxFlat_pill")
-theme_override_styles/hover = SubResource("StyleBoxFlat_pill_hover")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_pill")
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 16
-text = "PRACTICE"
+texture_normal = ExtResource("6_btn_practice")
+stretch_mode = 5
 
-[node name="HowToPlayBtn" type="Button" parent="MenuButtons"]
-custom_minimum_size = Vector2(280, 46)
+[node name="HowToPlayBtn" type="TextureButton" parent="MenuButtons"]
+custom_minimum_size = Vector2(254, 49)
 layout_mode = 2
-theme_override_styles/normal = SubResource("StyleBoxFlat_pill")
-theme_override_styles/hover = SubResource("StyleBoxFlat_pill_hover")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_pill")
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 16
-text = "SETTINGS"
+texture_normal = ExtResource("7_btn_settings")
+stretch_mode = 5
 
-[node name="QuitBtn" type="Button" parent="MenuButtons"]
-custom_minimum_size = Vector2(280, 46)
+[node name="QuitBtn" type="TextureButton" parent="MenuButtons"]
+custom_minimum_size = Vector2(254, 49)
 layout_mode = 2
-theme_override_styles/normal = SubResource("StyleBoxFlat_pill")
-theme_override_styles/hover = SubResource("StyleBoxFlat_pill_hover")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_pill")
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 16
-text = "QUIT"
+texture_normal = ExtResource("8_btn_quit")
+stretch_mode = 5
 
 [node name="PracticeModal" type="Panel" parent="."]
 visible = false
@@ -265,14 +159,15 @@ anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
 offset_left = -180.0
-offset_top = 18.0
+offset_top = 16.0
 offset_right = 180.0
-offset_bottom = 50.0
+offset_bottom = 48.0
 grow_horizontal = 2
+theme_override_fonts/font = ExtResource("3_font_audio")
 theme_override_colors/font_color = Color(0.65, 0.92, 1, 1)
 theme_override_colors/font_shadow_color = Color(0, 0.5, 0.95, 0.9)
-theme_override_constants/shadow_outline_size = 8
-theme_override_font_sizes/font_size = 22
+theme_override_constants/shadow_outline_size = 6
+theme_override_font_sizes/font_size = 20
 text = "* PRACTICE *"
 horizontal_alignment = 1
 
@@ -282,13 +177,14 @@ anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
 offset_left = -150.0
-offset_top = 50.0
+offset_top = 46.0
 offset_right = 150.0
-offset_bottom = 72.0
+offset_bottom = 68.0
 grow_horizontal = 2
+theme_override_fonts/font = ExtResource("3_font_audio")
 theme_override_colors/font_color = Color(0.3, 0.8, 1, 1)
-theme_override_font_sizes/font_size = 12
-text = "──  CHOOSE ROLE  ──"
+theme_override_font_sizes/font_size = 11
+text = "--  CHOOSE ROLE  --"
 horizontal_alignment = 1
 
 [node name="RoleButtons" type="VBoxContainer" parent="PracticeModal"]
@@ -298,75 +194,66 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -180.0
+offset_left = -160.0
 offset_top = -80.0
-offset_right = 180.0
+offset_right = 160.0
 offset_bottom = 75.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/separation = 12
+theme_override_constants/separation = 10
+alignment = 1
 
-[node name="RandomRoleBtn" type="Button" parent="PracticeModal/RoleButtons"]
-custom_minimum_size = Vector2(0, 42)
+[node name="RandomRoleBtn" type="TextureButton" parent="PracticeModal/RoleButtons"]
+custom_minimum_size = Vector2(305, 48)
 layout_mode = 2
-theme_override_styles/normal = SubResource("StyleBoxFlat_pill")
-theme_override_styles/hover = SubResource("StyleBoxFlat_pill_hover")
-theme_override_colors/font_color = Color(0.9, 0.95, 1, 1)
-theme_override_font_sizes/font_size = 13
-text = "RANDOM   (Auto-assign role)              (○)"
+texture_normal = ExtResource("9_role_random_off")
+stretch_mode = 5
 
-[node name="TaggerRoleBtn" type="Button" parent="PracticeModal/RoleButtons"]
-custom_minimum_size = Vector2(0, 42)
+[node name="TaggerRoleBtn" type="TextureButton" parent="PracticeModal/RoleButtons"]
+custom_minimum_size = Vector2(305, 48)
 layout_mode = 2
-theme_override_styles/normal = SubResource("StyleBoxFlat_pill_red")
-theme_override_colors/font_color = Color(1, 0.9, 0.9, 1)
-theme_override_font_sizes/font_size = 13
-text = "TAGGER   (You hunt runners)               (○)"
+texture_normal = ExtResource("10_role_tagger_off")
+stretch_mode = 5
 
-[node name="RunnerRoleBtn" type="Button" parent="PracticeModal/RoleButtons"]
-custom_minimum_size = Vector2(0, 42)
+[node name="RunnerRoleBtn" type="TextureButton" parent="PracticeModal/RoleButtons"]
+custom_minimum_size = Vector2(305, 48)
 layout_mode = 2
-theme_override_styles/normal = SubResource("StyleBoxFlat_pill_green")
-theme_override_colors/font_color = Color(0.9, 1, 0.9, 1)
-theme_override_font_sizes/font_size = 13
-text = "RUNNER   (Survive from taggers)           (●)"
+texture_normal = ExtResource("11_role_runner_on")
+stretch_mode = 5
 
-[node name="StartPracticeBtn" type="Button" parent="PracticeModal"]
-custom_minimum_size = Vector2(180, 42)
+[node name="StartPracticeBtn" type="TextureButton" parent="PracticeModal"]
+custom_minimum_size = Vector2(246, 48)
 layout_mode = 1
 anchors_preset = 7
 anchor_left = 0.5
 anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
-offset_left = -90.0
-offset_top = -90.0
-offset_right = 90.0
-offset_bottom = -48.0
+offset_left = -123.0
+offset_top = -88.0
+offset_right = 123.0
+offset_bottom = -40.0
 grow_horizontal = 2
 grow_vertical = 0
-theme_override_styles/normal = SubResource("StyleBoxFlat_btn_cyan")
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 16
-text = "▶  START"
+texture_normal = ExtResource("12_btn_start_practice")
+stretch_mode = 5
 
-[node name="ClosePracticeBtn" type="Button" parent="PracticeModal"]
+[node name="ClosePracticeBtn" type="TextureButton" parent="PracticeModal"]
+custom_minimum_size = Vector2(132, 28)
 layout_mode = 1
 anchors_preset = 7
 anchor_left = 0.5
 anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
-offset_left = -50.0
-offset_top = -40.0
-offset_right = 50.0
-offset_bottom = -14.0
+offset_left = -66.0
+offset_top = -36.0
+offset_right = 66.0
+offset_bottom = -8.0
 grow_horizontal = 2
 grow_vertical = 0
-theme_override_styles/normal = SubResource("StyleBoxFlat_btn_exit")
-theme_override_colors/font_color = Color(0.7, 0.85, 1, 0.9)
-theme_override_font_sizes/font_size = 11
-text = "CANCEL"
+texture_normal = ExtResource("13_btn_cancel")
+stretch_mode = 5
 
 [node name="RulesPanel" type="Panel" parent="."]
 visible = false
@@ -394,9 +281,10 @@ offset_top = 16.0
 offset_right = 180.0
 offset_bottom = 44.0
 grow_horizontal = 2
+theme_override_fonts/font = ExtResource("3_font_audio")
 theme_override_colors/font_color = Color(0.65, 0.92, 1, 1)
 theme_override_colors/font_shadow_color = Color(0, 0.5, 0.95, 0.9)
-theme_override_constants/shadow_outline_size = 8
+theme_override_constants/shadow_outline_size = 6
 theme_override_font_sizes/font_size = 20
 text = "* HOW TO PLAY *"
 horizontal_alignment = 1
@@ -411,8 +299,9 @@ offset_top = 46.0
 offset_right = 150.0
 offset_bottom = 66.0
 grow_horizontal = 2
+theme_override_fonts/font = ExtResource("3_font_audio")
 theme_override_colors/font_color = Color(0.3, 0.8, 1, 1)
-theme_override_font_sizes/font_size = 12
+theme_override_font_sizes/font_size = 11
 text = "GAME INSTRUCTIONS"
 horizontal_alignment = 1
 
@@ -424,27 +313,29 @@ anchor_bottom = 1.0
 offset_left = 24.0
 offset_top = 74.0
 offset_right = -24.0
-offset_bottom = -60.0
+offset_bottom = -55.0
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_fonts/normal_font = ExtResource("3_font_audio")
+theme_override_font_sizes/normal_font_size = 11
 bbcode_enabled = true
 text = "[color=#00e5ff][b]OBJECTIVE & RULES:[/b][/color]
-• [color=#ff5252]TAGGERS[/color] must tag all runners to freeze them in ice cubes!
-• [color=#69f0ae]RUNNERS[/color] must survive until time runs out, or touch frozen teammates to thaw them!
+- [color=#ff5252]TAGGERS[/color] must tag all runners to freeze them in ice cubes!
+- [color=#69f0ae]RUNNERS[/color] must survive until time runs out, or touch frozen teammates to thaw them!
 
 [color=#ffe066][b]ITEMS & POWER-UPS ([E] to use):[/b][/color]
-• [b]Speed Boost:[/b] Move 1.3x faster for 6s
-• [b]Ice Shield:[/b] Blocks 1 freeze attempt
-• [b]Heater:[/b] Unfreezes yourself immediately
-• [b]Banana Trap:[/b] Drops behind you; slips enemies for 2.5s
-• [b]Dash Tackle:[/b] 2s immunity, deals 20 HP to tagger
-• [b]Vortex:[/b] Gravitational pull field
+- [b]Speed Boost:[/b] Move 1.3x faster for 6s
+- [b]Ice Shield:[/b] Blocks 1 freeze attempt
+- [b]Heater:[/b] Unfreezes yourself immediately
+- [b]Banana Trap:[/b] Drops behind you; slips enemies for 2.5s
+- [b]Dash Tackle:[/b] 2s immunity, deals 20 HP to tagger
+- [b]Vortex:[/b] Gravitational pull field
 
 [color=#a78bfa][b]3D CONTROLS:[/b][/color]
-• [b]Mouse:[/b] Orbit Camera | [b]WASD:[/b] Move | [b]Space:[/b] Jump | [b]E:[/b] Use Item"
+- Mouse: Orbit Camera | WASD: Move | Space: Jump | E: Use Item"
 
-[node name="CloseBtn" type="Button" parent="RulesPanel"]
-custom_minimum_size = Vector2(140, 36)
+[node name="CloseBtn" type="TextureButton" parent="RulesPanel"]
+custom_minimum_size = Vector2(140, 42)
 layout_mode = 1
 anchors_preset = 7
 anchor_left = 0.5
@@ -452,11 +343,10 @@ anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
 offset_left = -70.0
-offset_top = -48.0
+offset_top = -50.0
 offset_right = 70.0
-offset_bottom = -12.0
+offset_bottom = -8.0
 grow_horizontal = 2
 grow_vertical = 0
-theme_override_styles/normal = SubResource("StyleBoxFlat_btn_cyan")
-theme_override_font_sizes/font_size = 13
-text = "CLOSE"
+texture_normal = ExtResource("14_btn_close")
+stretch_mode = 5

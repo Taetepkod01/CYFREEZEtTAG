@@ -223,7 +223,7 @@ func _send_network_position(delta: float) -> void:
 			last_sent_rot_y = rot
 			Network.send_move(global_position, rot)
 
-# ── Item Pickup & Use ───────────────────────────────────────────────────────
+# -- Item Pickup & Use -------------------------------------------------------
 func pick_up_item(type: String) -> void:
 	if not held_item.is_empty():
 		return
@@ -350,7 +350,7 @@ func _process_buffs(delta: float) -> void:
 			if is_frozen:
 				unfreeze()
 
-# ── Freeze & Tag Mechanics ──────────────────────────────────────────────────
+# -- Freeze & Tag Mechanics --------------------------------------------------
 func freeze() -> void:
 	# REQUIREMENT: Runner using dash tackle or having 2s immunity CANNOT be frozen!
 	if is_tackling or invincible_timer > 0.0:
@@ -460,7 +460,7 @@ func _on_interaction_body_entered(other: Node3D) -> void:
 		rescue_count += 1
 		rescued.emit(self, other)
 
-# ── 3D Bot AI ───────────────────────────────────────────────────────────────
+# -- 3D Bot AI ---------------------------------------------------------------
 func _calculate_bot_input(delta: float) -> Vector2:
 	bot_timer -= delta
 	var arena = get_parent()

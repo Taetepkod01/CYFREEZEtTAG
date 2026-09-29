@@ -3,26 +3,30 @@ extends Control
 # Constants for Among Us-style room codes (No ambiguous 0, O, 1, I)
 const CODE_CHARS: String = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
 
-# ── Views ───────────────────────────────────────────────────────────────────
+const TEX_START_GAME = preload("res://assets/ui/buttons/btn_start_game.png")
+const TEX_READY = preload("res://assets/ui/buttons/btn_ready.png")
+const TEX_WAITING = preload("res://assets/ui/buttons/btn_waiting.png")
+
+# -- Views -------------------------------------------------------------------
 @onready var browser_view: Control = $BrowserView
 @onready var room_view: Control = $RoomView
 
-# ── Browser View Nodes ──────────────────────────────────────────────────────
+# -- Browser View Nodes ------------------------------------------------------
 @onready var player_name_input: LineEdit = $BrowserView/PlayerNameContainer/PlayerNameInput
 @onready var room_list_vbox: VBoxContainer = $BrowserView/HBox/RoomListCard/Scroll/RoomList
-@onready var refresh_btn: Button = $BrowserView/HBox/RoomListCard/HeaderBox/RefreshBtn
+@onready var refresh_btn: TextureButton = $BrowserView/HBox/RoomListCard/HeaderBox/RefreshBtn
 @onready var create_room_name_input: LineEdit = $BrowserView/HBox/CreateRoomCard/RoomNameInput
 @onready var create_private_check: CheckBox = $BrowserView/HBox/CreateRoomCard/PrivateCheck
-@onready var create_room_btn: Button = $BrowserView/HBox/CreateRoomCard/CreateBtn
+@onready var create_room_btn: TextureButton = $BrowserView/HBox/CreateRoomCard/CreateBtn
 @onready var join_code_input: LineEdit = $BrowserView/HBox/JoinCodeCard/CodeInput
-@onready var join_code_btn: Button = $BrowserView/HBox/JoinCodeCard/JoinCodeBtn
+@onready var join_code_btn: TextureButton = $BrowserView/HBox/JoinCodeCard/JoinCodeBtn
 @onready var code_error_lbl: Label = $BrowserView/HBox/JoinCodeCard/ErrorLabel
-@onready var back_to_menu_btn: Button = $BackButton
+@onready var back_to_menu_btn: TextureButton = $BackButton
 
-# ── In-Room Waiting Lobby Nodes (Host & Players) ─────────────────────────────
+# -- In-Room Waiting Lobby Nodes (Host & Players) -----------------------------
 @onready var room_header_lbl: Label = $RoomView/Header/RoomTitle
 @onready var room_code_lbl: Label = $RoomView/Header/CodeBox/CodeLabel
-@onready var copy_code_btn: Button = $RoomView/Header/CodeBox/CopyBtn
+@onready var copy_code_btn: TextureButton = $RoomView/Header/CodeBox/CopyBtn
 @onready var player_list_vbox: VBoxContainer = $RoomView/HBox/PlayerListCard/Scroll/PlayerList
 @onready var player_count_header: Label = $RoomView/HBox/PlayerListCard/Header
 
@@ -37,10 +41,10 @@ const CODE_CHARS: String = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
 @onready var map_grid: VBoxContainer = $RoomView/HBox/MapSelectionCard/Grid
 
 # Action Buttons
-@onready var action_btn: Button = $RoomView/BottomBar/ActionBtn
-@onready var leave_btn: Button = $RoomView/BottomBar/LeaveBtn
+@onready var action_btn: TextureButton = $RoomView/BottomBar/ActionBtn
+@onready var leave_btn: TextureButton = $RoomView/BottomBar/LeaveBtn
 
-# ── Dynamic Room State ──────────────────────────────────────────────────────
+# -- Dynamic Room State ------------------------------------------------------
 static var active_rooms: Dictionary = {}
 var current_room_code: String = ""
 var is_host: bool = false
@@ -103,7 +107,7 @@ func _process(delta: float) -> void:
 			if Network:
 				Network.fetch_public_rooms()
 
-# ── Network Signals Connection ──────────────────────────────────────────────
+# -- Network Signals Connection ----------------------------------------------
 func _connect_network_signals() -> void:
 	if not Network:
 		return
@@ -144,7 +148,7 @@ func _on_network_connected() -> void:
 	if Network:
 		Network.fetch_public_rooms()
 
-# ── Room Code Generator (Local Fallback) ────────────────────────────────────
+# -- Room Code Generator (Local Fallback) ------------------------------------
 func generate_unique_code() -> String:
 	while true:
 		var code = ""
@@ -154,7 +158,7 @@ func generate_unique_code() -> String:
 			return code
 	return "ROOM01"
 
-# ── View Switching ──────────────────────────────────────────────────────────
+# -- View Switching ----------------------------------------------------------
 func _show_browser_view() -> void:
 	browser_view.visible = true
 	room_view.visible = false
@@ -168,7 +172,7 @@ func _show_room_view() -> void:
 	back_to_menu_btn.visible = false
 	_update_room_lobby_ui()
 
-# ── Browser UI ──────────────────────────────────────────────────────────────
+# -- Browser UI --------------------------------------------------------------
 func _update_room_list_browser() -> void:
 	for child in room_list_vbox.get_children():
 		child.queue_free()
@@ -199,7 +203,7 @@ func _update_room_list_browser() -> void:
 		
 		room_list_vbox.add_child(item_btn)
 
-# ── Create Room (1 Player = 1 Room Only) ────────────────────────────────────
+# -- Create Room (1 Player = 1 Room Only) ------------------------------------
 func _on_create_room_pressed() -> void:
 	if not current_room_code.is_empty() and active_rooms.has(current_room_code):
 		return
@@ -217,7 +221,7 @@ func _on_create_room_pressed() -> void:
 		if Network:
 			Network.connect_to_server()
 
-# ── Join by Code (Among Us Style) ───────────────────────────────────────────
+# -- Join by Code (Among Us Style) -------------------------------------------
 func _on_join_by_code_pressed() -> void:
 	var code = join_code_input.text.strip_edges().to_upper()
 	if code.length() != 6:
@@ -235,7 +239,7 @@ func _join_room_by_code(code: String) -> void:
 		if Network:
 			Network.connect_to_server()
 
-# ── Network Handlers ────────────────────────────────────────────────────────
+# -- Network Handlers --------------------------------------------------------
 func _on_network_room_created(data: Dictionary) -> void:
 	code_error_lbl.text = ""
 	current_room_code = str(data.get("code", ""))
@@ -343,7 +347,7 @@ func _on_network_round_started(_data: Dictionary) -> void:
 func _on_network_error(msg: String) -> void:
 	code_error_lbl.text = msg
 
-# ── In-Room UI & Customization ──────────────────────────────────────────────
+# -- In-Room UI & Customization ----------------------------------------------
 func _update_room_lobby_ui() -> void:
 	if not active_rooms.has(current_room_code):
 		_show_browser_view()
@@ -379,10 +383,10 @@ func _update_room_lobby_ui() -> void:
 	
 	# Action Button
 	if is_host:
-		action_btn.text = "START GAME"
+		action_btn.texture_normal = TEX_START_GAME
 		action_btn.disabled = false
 	else:
-		action_btn.text = "READY" if not is_ready else "WAITING FOR HOST..."
+		action_btn.texture_normal = TEX_WAITING if is_ready else TEX_READY
 		action_btn.disabled = is_ready
 
 func _update_player_slots(r: Dictionary) -> void:

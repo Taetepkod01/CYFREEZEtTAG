@@ -1,20 +1,27 @@
 extends Control
 
-@onready var title_label: Label = $Title
-@onready var play_online_btn: Button = $MenuButtons/PlayOnlineBtn
-@onready var practice_btn: Button = $MenuButtons/PracticeBtn
-@onready var how_to_play_btn: Button = $MenuButtons/HowToPlayBtn
-@onready var quit_btn: Button = $MenuButtons/QuitBtn
+const TEX_ROLE_RANDOM_ON = preload("res://assets/ui/buttons/btn_role_random_on.png")
+const TEX_ROLE_RANDOM_OFF = preload("res://assets/ui/buttons/btn_role_random_off.png")
+const TEX_ROLE_TAGGER_ON = preload("res://assets/ui/buttons/btn_role_tagger_on.png")
+const TEX_ROLE_TAGGER_OFF = preload("res://assets/ui/buttons/btn_role_tagger_off.png")
+const TEX_ROLE_RUNNER_ON = preload("res://assets/ui/buttons/btn_role_runner_on.png")
+const TEX_ROLE_RUNNER_OFF = preload("res://assets/ui/buttons/btn_role_runner_off.png")
+
+@onready var title_label: TextureRect = $TitleLogo
+@onready var play_online_btn: TextureButton = $MenuButtons/PlayOnlineBtn
+@onready var practice_btn: TextureButton = $MenuButtons/PracticeBtn
+@onready var how_to_play_btn: TextureButton = $MenuButtons/HowToPlayBtn
+@onready var quit_btn: TextureButton = $MenuButtons/QuitBtn
 @onready var rules_panel: Panel = $RulesPanel
-@onready var close_rules_btn: Button = $RulesPanel/CloseBtn
+@onready var close_rules_btn: TextureButton = $RulesPanel/CloseBtn
 
 # Practice Modal (Matches 4.png)
 @onready var practice_modal: Panel = $PracticeModal
-@onready var random_role_btn: Button = $PracticeModal/RoleButtons/RandomRoleBtn
-@onready var tagger_role_btn: Button = $PracticeModal/RoleButtons/TaggerRoleBtn
-@onready var runner_role_btn: Button = $PracticeModal/RoleButtons/RunnerRoleBtn
-@onready var start_practice_btn: Button = $PracticeModal/StartPracticeBtn
-@onready var close_practice_btn: Button = $PracticeModal/ClosePracticeBtn
+@onready var random_role_btn: TextureButton = $PracticeModal/RoleButtons/RandomRoleBtn
+@onready var tagger_role_btn: TextureButton = $PracticeModal/RoleButtons/TaggerRoleBtn
+@onready var runner_role_btn: TextureButton = $PracticeModal/RoleButtons/RunnerRoleBtn
+@onready var start_practice_btn: TextureButton = $PracticeModal/StartPracticeBtn
+@onready var close_practice_btn: TextureButton = $PracticeModal/ClosePracticeBtn
 
 var selected_practice_role: String = "runner"
 var time_passed: float = 0.0
@@ -40,11 +47,9 @@ func _ready() -> void:
 
 func _select_role(role: String) -> void:
 	selected_practice_role = role
-	
-	# Update radio button visual selection indicators
-	random_role_btn.text = "RANDOM   (Auto-assign role)              " + ("(●)" if role == "random" else "(○)")
-	tagger_role_btn.text = "TAGGER   (You hunt runners)               " + ("(●)" if role == "tagger" else "(○)")
-	runner_role_btn.text = "RUNNER   (Survive from taggers)           " + ("(●)" if role == "runner" else "(○)")
+	random_role_btn.texture_normal = TEX_ROLE_RANDOM_ON if role == "random" else TEX_ROLE_RANDOM_OFF
+	tagger_role_btn.texture_normal = TEX_ROLE_TAGGER_ON if role == "tagger" else TEX_ROLE_TAGGER_OFF
+	runner_role_btn.texture_normal = TEX_ROLE_RUNNER_ON if role == "runner" else TEX_ROLE_RUNNER_OFF
 
 func _process(delta: float) -> void:
 	time_passed += delta
@@ -58,7 +63,6 @@ func _on_practice_pressed() -> void:
 	practice_modal.visible = true
 
 func _start_practice(role: String) -> void:
-	start_practice_btn.text = "LOADING 3D ARENA..."
 	start_practice_btn.disabled = true
 	random_role_btn.disabled = true
 	tagger_role_btn.disabled = true

@@ -68,6 +68,10 @@ use_item={
 ]
 }
 
+[gui]
+
+theme/custom_font="res://assets/fonts/Audiowide.ttf"
+
 [physics]
 
 3d/physics_engine="Jolt Physics"

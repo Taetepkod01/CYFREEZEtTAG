@@ -37,26 +37,29 @@ var taggers_score: int = 0
 @onready var player_tag_name: Label = $HUD/BottomPlayerTag/HBox/Name
 @onready var player_tag_role: Label = $HUD/BottomPlayerTag/HBox/RoleBadge
 
+const TEX_NEXT_ROUND = preload("res://assets/ui/buttons/btn_next_round.png")
+const TEX_PLAY_AGAIN = preload("res://assets/ui/buttons/btn_play_again.png")
+
 # Match Summary Panel (5.png)
 @onready var game_over_panel: Panel = $HUD/GameOverPanel
 @onready var game_over_title: Label = $HUD/GameOverPanel/Title
 @onready var score_lbl: Label = $HUD/GameOverPanel/ScoreLabel
 @onready var mvp_lbl: Label = $HUD/GameOverPanel/MVPLabel
-@onready var next_round_btn: Button = $HUD/GameOverPanel/Buttons/NextButton
-@onready var exit_menu_btn: Button = $HUD/GameOverPanel/Buttons/ExitButton
+@onready var next_round_btn: TextureButton = $HUD/GameOverPanel/Buttons/NextButton
+@onready var exit_menu_btn: TextureButton = $HUD/GameOverPanel/Buttons/ExitButton
 
 # Menu / Instructions Modal (6.png)
-@onready var menu_btn: Button = $HUD/MenuButton
+@onready var menu_btn: TextureButton = $HUD/MenuButton
 @onready var menu_modal: Panel = $HUD/MenuModal
 @onready var resume_btn: Button = $HUD/MenuModal/Buttons/ResumeBtn
-@onready var leave_btn: Button = $HUD/MenuModal/Buttons/LeaveBtn
+@onready var leave_btn: TextureButton = $HUD/MenuModal/Buttons/LeaveBtn
 
 # Practice Role Modal (4.png)
 @onready var practice_role_modal: Panel = $HUD/PracticeRoleModal
 @onready var opt_random: Button = $HUD/PracticeRoleModal/RoleVBox/OptRandom
 @onready var opt_tagger: Button = $HUD/PracticeRoleModal/RoleVBox/OptTagger
 @onready var opt_runner: Button = $HUD/PracticeRoleModal/RoleVBox/OptRunner
-@onready var close_role_btn: Button = $HUD/PracticeRoleModal/CloseRoleBtn
+@onready var close_role_btn: TextureButton = $HUD/PracticeRoleModal/CloseRoleBtn
 
 var player_nodes: Array[CharacterBody3D] = []
 var local_player: CharacterBody3D = null
@@ -169,7 +172,7 @@ func _process(delta: float) -> void:
 	
 	_update_hud()
 
-# ── Modal Controls & Role Selection ─────────────────────────────────────────
+# -- Modal Controls & Role Selection -----------------------------------------
 func _toggle_menu_modal() -> void:
 	_set_menu_modal_visible(not menu_modal.visible)
 
@@ -220,7 +223,7 @@ func _update_role_button_ui() -> void:
 			role_btn.text = "ROLE: RANDOM"
 			role_btn.modulate = Color(1.0, 0.9, 0.4)
 
-# ── Spawning Players & Items ────────────────────────────────────────────────
+# -- Spawning Players & Items ------------------------------------------------
 func _spawn_match_players() -> void:
 	for child in players_container.get_children():
 		child.queue_free()
@@ -418,7 +421,7 @@ func spawn_vortex(pos: Vector3) -> void:
 		get_tree().process_frame.disconnect(pull_func)
 	)
 
-# ── Network Event Handlers ──────────────────────────────────────────────────
+# -- Network Event Handlers --------------------------------------------------
 func _on_net_player_moved(id: String, pos: Vector3, rot_y: float) -> void:
 	for p in player_nodes:
 		if p.network_id == id and p.is_remote:
@@ -513,11 +516,11 @@ func _on_net_round_ended(data: Dictionary) -> void:
 	
 	if Network.is_host:
 		next_round_btn.visible = true
-		next_round_btn.text = "PLAY AGAIN" if is_match_over else "NEXT ROUND (%d)" % (current_round + 1)
+		next_round_btn.texture_normal = TEX_PLAY_AGAIN if is_match_over else TEX_NEXT_ROUND
 	else:
 		next_round_btn.visible = false
 
-# ── Events & Log (Practice / Local) ─────────────────────────────────────────
+# -- Events & Log (Practice / Local) -----------------------------------------
 func _on_player_tagged(tagger: CharacterBody3D, victim: CharacterBody3D) -> void:
 	add_game_log("[color=#ff4c4c]%s[/color] tagged [color=#4fc3f7]%s[/color]" % [tagger.player_name, victim.player_name])
 	_update_hud()
@@ -547,7 +550,7 @@ func _on_item_button_pressed() -> void:
 func add_game_log(msg: String) -> void:
 	game_log_lbl.append_text(msg + "\n")
 
-# ── Single Item Slot UI Update ──────────────────────────────────────────────
+# -- Single Item Slot UI Update ----------------------------------------------
 func _update_item_slot(item_name: String) -> void:
 	if not item_name_lbl:
 		return
@@ -575,7 +578,7 @@ func _update_item_slot(item_name: String) -> void:
 				item_name_lbl.text = "DASH TACKLE"
 				item_name_lbl.modulate = Color(1.0, 0.5, 0.1)
 
-# ── HUD Update ──────────────────────────────────────────────────────────────
+# -- HUD Update --------------------------------------------------------------
 func _update_hud() -> void:
 	var runners_count = 0
 	var taggers_count = 0
@@ -659,7 +662,7 @@ func _update_hud() -> void:
 			player_tag_role.text = "[RUNNER]"
 			player_tag_role.modulate = Color(0.4, 0.95, 0.4)
 
-# ── Win / Loss & MVP Summary (Offline / Practice Mode) ──────────────────────
+# -- Win / Loss & MVP Summary (Offline / Practice Mode) ----------------------
 func _end_round(winner: String) -> void:
 	is_game_active = false
 	game_over_panel.visible = true
@@ -690,9 +693,9 @@ func _end_round(winner: String) -> void:
 		mvp_lbl.text = "MVP: Player 1 (You)"
 	
 	if current_round >= max_rounds:
-		next_round_btn.text = "PLAY AGAIN"
+		next_round_btn.texture_normal = TEX_PLAY_AGAIN
 	else:
-		next_round_btn.text = "NEXT ROUND (%d)" % (current_round + 1)
+		next_round_btn.texture_normal = TEX_NEXT_ROUND
 
 func _on_next_round_pressed() -> void:
 	if Network and Network.is_online_game():

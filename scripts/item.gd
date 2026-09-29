@@ -20,19 +20,19 @@ func _update_visuals() -> void:
 	
 	match item_type:
 		"speed":
-			icon_label.text = "⚡"
+			icon_label.text = ""
 		"ghost":
-			icon_label.text = "👻"
+			icon_label.text = ""
 		"shield":
-			icon_label.text = "🛡️"
+			icon_label.text = "️"
 		"heater":
-			icon_label.text = "🔥"
+			icon_label.text = ""
 		"banana":
-			icon_label.text = "🍌"
+			icon_label.text = ""
 		"blackhole":
-			icon_label.text = "🌀"
+			icon_label.text = ""
 		_:
-			icon_label.text = "❓"
+			icon_label.text = ""
 
 func _process(delta: float) -> void:
 	time_passed += delta

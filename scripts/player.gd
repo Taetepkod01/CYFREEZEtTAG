@@ -270,13 +270,13 @@ func _update_appearance() -> void:
 		return
 	
 	if is_frozen:
-		role_badge.text = "❄ FROZEN ❄"
+		role_badge.text = " FROZEN "
 		role_badge.modulate = Color(0.3, 0.9, 1.0)
 	elif role == "chaser":
-		role_badge.text = "🔥 CHASER"
+		role_badge.text = " CHASER"
 		role_badge.modulate = Color(1.0, 0.3, 0.3)
 	else:
-		role_badge.text = "🏃 RUNNER"
+		role_badge.text = " RUNNER"
 		role_badge.modulate = Color(1.0, 0.9, 0.4)
 	
 	queue_redraw()

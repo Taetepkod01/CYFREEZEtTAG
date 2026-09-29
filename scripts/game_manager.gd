@@ -64,7 +64,7 @@ func _process(delta: float) -> void:
 	
 	var mins = int(time_left) / 60
 	var secs = int(time_left) % 60
-	timer_label.text = "⏱ %d:%02d" % [mins, secs]
+	timer_label.text = " %d:%02d" % [mins, secs]
 	
 	# Update local player HUD
 	if local_player_node:
@@ -162,11 +162,11 @@ func _spawn_all_players() -> void:
 			_setup_camera(player_instance)
 			
 			if p_info["role"] == "chaser":
-				role_label.text = "Role: 🔥 CHASER"
+				role_label.text = "Role:  CHASER"
 				role_label.modulate = Color(1.0, 0.4, 0.4)
 				show_notification("YOU ARE THE CHASER! Tag and freeze all runners!")
 			else:
-				role_label.text = "Role: 🏃 RUNNER"
+				role_label.text = "Role:  RUNNER"
 				role_label.modulate = Color(1.0, 0.9, 0.4)
 				show_notification("YOU ARE A RUNNER! Survive and unfreeze teammates!")
 
@@ -209,7 +209,7 @@ func spawn_banana_trap(pos: Vector2) -> void:
 	trap.add_child(col)
 	
 	var lbl = Label.new()
-	lbl.text = "🍌"
+	lbl.text = ""
 	lbl.offset_left = -12
 	lbl.offset_top = -12
 	trap.add_child(lbl)
@@ -220,7 +220,7 @@ func spawn_banana_trap(pos: Vector2) -> void:
 	trap.body_entered.connect(func(body):
 		if body is CharacterBody2D and body.has_method("stun"):
 			body.stun(2.5)
-			show_notification("🍌 " + body.player_name + " slipped on a banana peel!")
+			show_notification(" " + body.player_name + " slipped on a banana peel!")
 			trap.queue_free()
 	)
 
@@ -228,7 +228,7 @@ func spawn_vortex(pos: Vector2) -> void:
 	var vortex = Node2D.new()
 	vortex.position = pos
 	traps_node.add_child(vortex)
-	show_notification("🌀 Black Hole activated!")
+	show_notification(" Black Hole activated!")
 	
 	var tween = create_tween()
 	var time := 0.0
@@ -250,13 +250,13 @@ func spawn_vortex(pos: Vector2) -> void:
 
 # ── Notifications & Events ──────────────────────────────────────────────────
 func on_player_tagged(chaser_name: String, runner_name: String) -> void:
-	show_notification("❄ " + runner_name + " was FROZEN by " + chaser_name + "!")
+	show_notification(" " + runner_name + " was FROZEN by " + chaser_name + "!")
 
 func on_player_unfrozen(rescuer_name: String, runner_name: String) -> void:
-	show_notification("🔥 " + rescuer_name + " THAWED " + runner_name + "!")
+	show_notification(" " + rescuer_name + " THAWED " + runner_name + "!")
 
 func on_item_collected(player_name: String, item_type: String) -> void:
-	show_notification("⚡ " + player_name + " picked up " + item_type.to_upper() + "!")
+	show_notification(" " + player_name + " picked up " + item_type.to_upper() + "!")
 
 func show_notification(msg: String) -> void:
 	notification_label.text = msg
@@ -289,11 +289,11 @@ func _end_game(winner: String) -> void:
 	game_over_panel.visible = true
 	
 	if winner == "CHASER":
-		winner_title.text = "🔥 CHASER WINS! 🔥"
+		winner_title.text = " CHASER WINS! "
 		winner_title.modulate = Color(1.0, 0.4, 0.4)
 		winner_sub.text = "All runners have been frozen!"
 	else:
-		winner_title.text = "❄ RUNNERS WIN! ❄"
+		winner_title.text = " RUNNERS WIN! "
 		winner_title.modulate = Color(0.4, 0.9, 1.0)
 		winner_sub.text = "Runners survived the full 3 minutes!"
 
