@@ -1,42 +1,119 @@
-[gd_scene load_steps=5 format=3 uid="uid://b3dlobby00001"]
+[gd_scene load_steps=15 format=3 uid="uid://b3dlobby00001"]
 
 [ext_resource type="Script" path="res://scripts/3d/lobby_3d.gd" id="1_lobby3d"]
+[ext_resource type="Texture2D" path="res://assets/ui/ice_frame_border.png" id="2_ice_frame"]
+[ext_resource type="Texture2D" path="res://assets/maps/map_preview_snow_town.png" id="3_preview_snow"]
+[ext_resource type="Texture2D" path="res://assets/maps/map_snow_town.png" id="4_map_snow"]
+[ext_resource type="Texture2D" path="res://assets/maps/map_space_station.png" id="5_map_space"]
+[ext_resource type="Texture2D" path="res://assets/maps/map_labyrinth.png" id="6_map_laby"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_card"]
-bg_color = Color(0.04, 0.08, 0.18, 0.9)
+bg_color = Color(0.03, 0.08, 0.18, 0.92)
 border_width_left = 2
 border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
-border_color = Color(0.3, 0.75, 0.95, 0.6)
+border_color = Color(0.18, 0.75, 0.98, 0.85)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+shadow_color = Color(0, 0.5, 0.9, 0.25)
+shadow_size = 12
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_code"]
+bg_color = Color(0.02, 0.07, 0.16, 0.95)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.2, 0.8, 1, 0.9)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(0, 0.6, 1, 0.3)
+shadow_size = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pill"]
+bg_color = Color(0.04, 0.2, 0.42, 0.88)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.15, 0.85, 1, 0.95)
+corner_radius_top_left = 22
+corner_radius_top_right = 22
+corner_radius_bottom_right = 22
+corner_radius_bottom_left = 22
+shadow_color = Color(0, 0.65, 1, 0.35)
+shadow_size = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pill_green"]
+bg_color = Color(0.03, 0.28, 0.14, 0.88)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.2, 0.95, 0.45, 0.95)
+corner_radius_top_left = 22
+corner_radius_top_right = 22
+corner_radius_bottom_right = 22
+corner_radius_bottom_left = 22
+shadow_color = Color(0, 0.8, 0.35, 0.3)
+shadow_size = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pill_red"]
+bg_color = Color(0.35, 0.05, 0.1, 0.88)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 0.3, 0.38, 0.95)
+corner_radius_top_left = 22
+corner_radius_top_right = 22
+corner_radius_bottom_right = 22
+corner_radius_bottom_left = 22
+shadow_color = Color(0.9, 0.15, 0.25, 0.3)
+shadow_size = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_slot"]
+bg_color = Color(0.02, 0.06, 0.14, 0.8)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.18, 0.65, 0.95, 0.5)
 corner_radius_top_left = 10
 corner_radius_top_right = 10
 corner_radius_bottom_right = 10
 corner_radius_bottom_left = 10
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_code"]
-bg_color = Color(0.08, 0.16, 0.32, 0.9)
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_map_btn"]
+bg_color = Color(0.04, 0.1, 0.22, 0.9)
 border_width_left = 2
 border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
-border_color = Color(1, 0.88, 0.4, 0.8)
-corner_radius_top_left = 6
-corner_radius_top_right = 6
-corner_radius_bottom_right = 6
-corner_radius_bottom_left = 6
+border_color = Color(0.2, 0.8, 1, 0.7)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+shadow_color = Color(0, 0.5, 0.9, 0.3)
+shadow_size = 6
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_slot"]
-bg_color = Color(0.06, 0.12, 0.24, 0.8)
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pill_small"]
+bg_color = Color(0.04, 0.18, 0.38, 0.85)
 border_width_left = 1
 border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
-border_color = Color(0.3, 0.65, 0.85, 0.4)
-corner_radius_top_left = 6
-corner_radius_top_right = 6
-corner_radius_bottom_right = 6
-corner_radius_bottom_left = 6
+border_color = Color(0.3, 0.8, 1, 0.8)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
 
 [node name="Lobby3D" type="Control"]
 layout_mode = 3
@@ -54,7 +131,18 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0.04, 0.09, 0.22, 1)
+color = Color(0.03, 0.07, 0.18, 1)
+
+[node name="IceBorderOverlay" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("2_ice_frame")
+expand_mode = 1
 
 [node name="BrowserView" type="Control" parent="."]
 layout_mode = 1
@@ -70,14 +158,17 @@ anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
 offset_left = -300.0
-offset_top = 18.0
+offset_top = 16.0
 offset_right = 300.0
 offset_bottom = 60.0
 grow_horizontal = 2
-theme_override_colors/font_color = Color(1, 0.88, 0.4, 1)
-theme_override_font_sizes/font_size = 28
-text = "MULTIPLAYER LOBBY BROWSER"
+theme_override_colors/font_color = Color(0.65, 0.92, 1, 1)
+theme_override_colors/font_shadow_color = Color(0, 0.45, 0.85, 0.9)
+theme_override_constants/shadow_outline_size = 10
+theme_override_font_sizes/font_size = 32
+text = "* LOBBY *"
 horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="PlayerNameContainer" type="HBoxContainer" parent="BrowserView"]
 layout_mode = 1
@@ -85,9 +176,9 @@ anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
 offset_left = -220.0
-offset_top = 66.0
+offset_top = 64.0
 offset_right = 220.0
-offset_bottom = 104.0
+offset_bottom = 98.0
 grow_horizontal = 2
 theme_override_constants/separation = 12
 alignment = 1
@@ -95,14 +186,14 @@ alignment = 1
 [node name="NameLabel" type="Label" parent="BrowserView/PlayerNameContainer"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.4, 0.85, 1, 1)
-theme_override_font_sizes/font_size = 14
+theme_override_font_sizes/font_size = 13
 text = "YOUR NAME:"
 
 [node name="PlayerNameInput" type="LineEdit" parent="BrowserView/PlayerNameContainer"]
-custom_minimum_size = Vector2(200, 34)
+custom_minimum_size = Vector2(200, 32)
 layout_mode = 2
-theme_override_font_sizes/font_size = 14
-placeholder_text = "Enter your nickname..."
+theme_override_font_sizes/font_size = 13
+placeholder_text = "Enter nickname..."
 max_length = 16
 
 [node name="HBox" type="HBoxContainer" parent="BrowserView"]
@@ -112,44 +203,56 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -580.0
-offset_top = -180.0
-offset_right = 580.0
-offset_bottom = 300.0
+offset_left = -540.0
+offset_top = -215.0
+offset_right = 540.0
+offset_bottom = 255.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/separation = 24
+theme_override_constants/separation = 20
 alignment = 1
 
 [node name="RoomListCard" type="Panel" parent="BrowserView/HBox"]
-custom_minimum_size = Vector2(420, 480)
+custom_minimum_size = Vector2(340, 460)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_card")
 
-[node name="Header" type="Label" parent="BrowserView/HBox/RoomListCard"]
-layout_mode = 1
-anchors_preset = 5
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = -180.0
-offset_top = 18.0
-offset_right = 180.0
-offset_bottom = 44.0
-grow_horizontal = 2
-theme_override_colors/font_color = Color(0.4, 0.85, 1, 1)
-theme_override_font_sizes/font_size = 16
-text = "PUBLIC ROOMS"
-horizontal_alignment = 1
-
-[node name="HSeparator" type="HSeparator" parent="BrowserView/HBox/RoomListCard"]
+[node name="HeaderBox" type="HBoxContainer" parent="BrowserView/HBox/RoomListCard"]
 layout_mode = 1
 anchors_preset = 10
 anchor_right = 1.0
 offset_left = 20.0
-offset_top = 48.0
+offset_top = 16.0
 offset_right = -20.0
-offset_bottom = 56.0
+offset_bottom = 44.0
 grow_horizontal = 2
+
+[node name="Header" type="Label" parent="BrowserView/HBox/RoomListCard/HeaderBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.4, 0.85, 1, 1)
+theme_override_font_sizes/font_size = 15
+text = "PUBLIC ROOMS"
+
+[node name="RefreshBtn" type="Button" parent="BrowserView/HBox/RoomListCard/HeaderBox"]
+custom_minimum_size = Vector2(90, 28)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_pill_small")
+theme_override_font_sizes/font_size = 11
+text = "REFRESH"
+
+[node name="Sub" type="Label" parent="BrowserView/HBox/RoomListCard"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 20.0
+offset_top = 46.0
+offset_right = -20.0
+offset_bottom = 66.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(0.6, 0.75, 0.9, 0.8)
+theme_override_font_sizes/font_size = 11
+text = "(Refresh to see available rooms)"
 
 [node name="Scroll" type="ScrollContainer" parent="BrowserView/HBox/RoomListCard"]
 layout_mode = 1
@@ -157,7 +260,7 @@ anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 offset_left = 20.0
-offset_top = 65.0
+offset_top = 74.0
 offset_right = -20.0
 offset_bottom = -20.0
 grow_horizontal = 2
@@ -169,9 +272,24 @@ size_flags_horizontal = 3
 theme_override_constants/separation = 8
 
 [node name="CreateRoomCard" type="Panel" parent="BrowserView/HBox"]
-custom_minimum_size = Vector2(340, 480)
+custom_minimum_size = Vector2(340, 460)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="Badge" type="Label" parent="BrowserView/HBox/CreateRoomCard"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -60.0
+offset_top = 10.0
+offset_right = 60.0
+offset_bottom = 26.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(0.3, 0.8, 1, 1)
+theme_override_font_sizes/font_size = 10
+text = "HOST MATCH"
+horizontal_alignment = 1
 
 [node name="Header" type="Label" parent="BrowserView/HBox/CreateRoomCard"]
 layout_mode = 1
@@ -179,47 +297,37 @@ anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
 offset_left = -140.0
-offset_top = 18.0
+offset_top = 28.0
 offset_right = 140.0
-offset_bottom = 44.0
+offset_bottom = 54.0
 grow_horizontal = 2
 theme_override_colors/font_color = Color(1, 0.88, 0.4, 1)
 theme_override_font_sizes/font_size = 16
-text = "+ CREATE NEW ROOM"
+text = "* CREATE NEW ROOM"
 horizontal_alignment = 1
-
-[node name="HSeparator" type="HSeparator" parent="BrowserView/HBox/CreateRoomCard"]
-layout_mode = 1
-anchors_preset = 10
-anchor_right = 1.0
-offset_left = 20.0
-offset_top = 48.0
-offset_right = -20.0
-offset_bottom = 56.0
-grow_horizontal = 2
 
 [node name="Desc" type="Label" parent="BrowserView/HBox/CreateRoomCard"]
 layout_mode = 1
 anchors_preset = 10
 anchor_right = 1.0
 offset_left = 24.0
-offset_top = 65.0
+offset_top = 56.0
 offset_right = -24.0
-offset_bottom = 110.0
+offset_bottom = 80.0
 grow_horizontal = 2
-theme_override_colors/font_color = Color(0.8, 0.85, 0.9, 0.8)
-theme_override_font_sizes/font_size = 12
-text = "1 player creates 1 room.
-Random 6-char PIN generated automatically."
+theme_override_colors/font_color = Color(0.7, 0.85, 0.95, 0.8)
+theme_override_font_sizes/font_size = 11
+text = "Create your own room and wait for friends"
 horizontal_alignment = 1
 
 [node name="NameLabel" type="Label" parent="BrowserView/HBox/CreateRoomCard"]
 layout_mode = 0
 offset_left = 24.0
-offset_top = 130.0
+offset_top = 96.0
 offset_right = 130.0
-offset_bottom = 150.0
-theme_override_font_sizes/font_size = 13
+offset_bottom = 116.0
+theme_override_colors/font_color = Color(0.7, 0.85, 1, 1)
+theme_override_font_sizes/font_size = 12
 text = "Room Name:"
 
 [node name="RoomNameInput" type="LineEdit" parent="BrowserView/HBox/CreateRoomCard"]
@@ -227,45 +335,67 @@ layout_mode = 1
 anchors_preset = 10
 anchor_right = 1.0
 offset_left = 24.0
-offset_top = 155.0
+offset_top = 120.0
 offset_right = -24.0
-offset_bottom = 195.0
+offset_bottom = 158.0
 grow_horizontal = 2
-placeholder_text = "e.g. Frosty Fun"
+placeholder_text = "e.g. Room 101"
 text = "Room 101"
+
+[node name="MaxPlayersLabel" type="Label" parent="BrowserView/HBox/CreateRoomCard"]
+layout_mode = 0
+offset_left = 24.0
+offset_top = 175.0
+offset_right = 130.0
+offset_bottom = 195.0
+theme_override_colors/font_color = Color(0.7, 0.85, 1, 1)
+theme_override_font_sizes/font_size = 12
+text = "Max Players:"
+
+[node name="MaxPlayersInput" type="LineEdit" parent="BrowserView/HBox/CreateRoomCard"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 24.0
+offset_top = 200.0
+offset_right = -24.0
+offset_bottom = 238.0
+grow_horizontal = 2
+text = "4"
 
 [node name="PrivateCheck" type="CheckBox" parent="BrowserView/HBox/CreateRoomCard"]
 layout_mode = 1
 anchors_preset = 10
 anchor_right = 1.0
 offset_left = 24.0
-offset_top = 210.0
+offset_top = 255.0
 offset_right = -24.0
-offset_bottom = 245.0
+offset_bottom = 290.0
 grow_horizontal = 2
 theme_override_colors/font_color = Color(1, 0.88, 0.4, 1)
 theme_override_font_sizes/font_size = 13
 text = "Private Room (PIN Only)"
 
 [node name="CreateBtn" type="Button" parent="BrowserView/HBox/CreateRoomCard"]
-custom_minimum_size = Vector2(0, 48)
+custom_minimum_size = Vector2(0, 46)
 layout_mode = 1
 anchors_preset = 12
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
 offset_left = 24.0
-offset_top = -80.0
+offset_top = -75.0
 offset_right = -24.0
-offset_bottom = -32.0
+offset_bottom = -29.0
 grow_horizontal = 2
 grow_vertical = 0
-theme_override_colors/font_color = Color(0.4, 1, 0.4, 1)
-theme_override_font_sizes/font_size = 17
+theme_override_styles/normal = SubResource("StyleBoxFlat_pill")
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 16
 text = "CREATE ROOM"
 
 [node name="JoinCodeCard" type="Panel" parent="BrowserView/HBox"]
-custom_minimum_size = Vector2(340, 480)
+custom_minimum_size = Vector2(340, 460)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_card")
 
@@ -275,91 +405,102 @@ anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
 offset_left = -140.0
-offset_top = 18.0
+offset_top = 24.0
 offset_right = 140.0
-offset_bottom = 44.0
+offset_bottom = 50.0
 grow_horizontal = 2
 theme_override_colors/font_color = Color(0.4, 0.85, 1, 1)
 theme_override_font_sizes/font_size = 16
-text = "JOIN BY ROOM PIN"
+text = "JOIN ROOM (PIN)"
 horizontal_alignment = 1
-
-[node name="HSeparator" type="HSeparator" parent="BrowserView/HBox/JoinCodeCard"]
-layout_mode = 1
-anchors_preset = 10
-anchor_right = 1.0
-offset_left = 20.0
-offset_top = 48.0
-offset_right = -20.0
-offset_bottom = 56.0
-grow_horizontal = 2
 
 [node name="Desc" type="Label" parent="BrowserView/HBox/JoinCodeCard"]
 layout_mode = 1
 anchors_preset = 10
 anchor_right = 1.0
 offset_left = 24.0
-offset_top = 65.0
+offset_top = 56.0
 offset_right = -24.0
-offset_bottom = 110.0
+offset_bottom = 80.0
 grow_horizontal = 2
-theme_override_colors/font_color = Color(0.8, 0.85, 0.9, 0.8)
-theme_override_font_sizes/font_size = 12
-text = "Join your friend's room with
-a 6-character PIN (e.g. A7X9K2)"
+theme_override_colors/font_color = Color(0.7, 0.85, 0.95, 0.8)
+theme_override_font_sizes/font_size = 11
+text = "Enter room PIN to join"
 horizontal_alignment = 1
 
 [node name="CodeLabel" type="Label" parent="BrowserView/HBox/JoinCodeCard"]
-layout_mode = 0
-offset_left = 24.0
-offset_top = 130.0
-offset_right = 150.0
-offset_bottom = 150.0
-theme_override_font_sizes/font_size = 13
-text = "Enter 6-Char PIN:"
-
-[node name="CodeInput" type="LineEdit" parent="BrowserView/HBox/JoinCodeCard"]
 layout_mode = 1
 anchors_preset = 10
 anchor_right = 1.0
-offset_left = 24.0
-offset_top = 155.0
-offset_right = -24.0
-offset_bottom = 195.0
+offset_top = 120.0
+offset_bottom = 140.0
 grow_horizontal = 2
+theme_override_colors/font_color = Color(0.7, 0.85, 1, 1)
+theme_override_font_sizes/font_size = 12
+text = "Enter 6 PIN"
+horizontal_alignment = 1
+
+[node name="CodeInput" type="LineEdit" parent="BrowserView/HBox/JoinCodeCard"]
+custom_minimum_size = Vector2(0, 52)
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 30.0
+offset_top = 148.0
+offset_right = -30.0
+offset_bottom = 200.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(0.3, 0.9, 1, 1)
+theme_override_font_sizes/font_size = 24
+text = "ABC123"
 max_length = 6
-placeholder_text = "ABC123"
 alignment = 1
 
-[node name="JoinCodeBtn" type="Button" parent="BrowserView/HBox/JoinCodeCard"]
-custom_minimum_size = Vector2(0, 48)
+[node name="PinHint" type="Label" parent="BrowserView/HBox/JoinCodeCard"]
 layout_mode = 1
-anchors_preset = 12
-anchor_top = 1.0
+anchors_preset = 10
 anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = 24.0
-offset_top = -80.0
-offset_right = -24.0
-offset_bottom = -32.0
+offset_left = 20.0
+offset_top = 215.0
+offset_right = -20.0
+offset_bottom = 245.0
 grow_horizontal = 2
-grow_vertical = 0
-theme_override_colors/font_color = Color(0.4, 0.85, 1, 1)
-theme_override_font_sizes/font_size = 17
-text = "JOIN ROOM"
+theme_override_colors/font_color = Color(0.6, 0.75, 0.9, 0.7)
+theme_override_font_sizes/font_size = 11
+text = "Room PIN is 6 digits provided by host
+(Case-insensitive)"
+horizontal_alignment = 1
 
 [node name="ErrorLabel" type="Label" parent="BrowserView/HBox/JoinCodeCard"]
 layout_mode = 1
 anchors_preset = 10
 anchor_right = 1.0
 offset_left = 20.0
-offset_top = 210.0
+offset_top = 260.0
 offset_right = -20.0
-offset_bottom = 240.0
+offset_bottom = 290.0
 grow_horizontal = 2
 theme_override_colors/font_color = Color(1, 0.4, 0.4, 1)
 theme_override_font_sizes/font_size = 12
 horizontal_alignment = 1
+
+[node name="JoinCodeBtn" type="Button" parent="BrowserView/HBox/JoinCodeCard"]
+custom_minimum_size = Vector2(0, 46)
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 24.0
+offset_top = -75.0
+offset_right = -24.0
+offset_bottom = -29.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_styles/normal = SubResource("StyleBoxFlat_pill")
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 16
+text = "JOIN ROOM"
 
 [node name="RoomView" type="Control" parent="."]
 visible = false
@@ -375,24 +516,26 @@ layout_mode = 1
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
-offset_left = -580.0
-offset_top = 20.0
-offset_right = 580.0
-offset_bottom = 80.0
+offset_left = -540.0
+offset_top = 16.0
+offset_right = 540.0
+offset_bottom = 66.0
 grow_horizontal = 2
-theme_override_constants/separation = 24
+theme_override_constants/separation = 20
 alignment = 1
 
 [node name="RoomTitle" type="Label" parent="RoomView/Header"]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(1, 0.88, 0.4, 1)
-theme_override_font_sizes/font_size = 28
-text = "ROOM 101"
+theme_override_colors/font_shadow_color = Color(0, 0.5, 0.9, 0.8)
+theme_override_constants/shadow_outline_size = 6
+theme_override_font_sizes/font_size = 26
+text = "* ROOM 101 *"
 vertical_alignment = 1
 
 [node name="CodeBox" type="Panel" parent="RoomView/Header"]
-custom_minimum_size = Vector2(280, 50)
+custom_minimum_size = Vector2(260, 44)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_code")
 
@@ -403,10 +546,11 @@ anchor_top = 0.5
 anchor_bottom = 0.5
 offset_left = 12.0
 offset_top = -12.0
-offset_right = 90.0
+offset_right = 85.0
 offset_bottom = 12.0
 grow_vertical = 2
-theme_override_font_sizes/font_size = 13
+theme_override_colors/font_color = Color(0.7, 0.85, 1, 1)
+theme_override_font_sizes/font_size = 12
 text = "ROOM PIN:"
 vertical_alignment = 1
 
@@ -417,15 +561,15 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -40.0
-offset_top = -16.0
+offset_left = -30.0
+offset_top = -14.0
 offset_right = 55.0
-offset_bottom = 16.0
+offset_bottom = 14.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_colors/font_color = Color(1, 0.9, 0.3, 1)
-theme_override_font_sizes/font_size = 22
-text = "A7X9K2"
+theme_override_font_sizes/font_size = 18
+text = "AWE6EZ"
 horizontal_alignment = 1
 vertical_alignment = 1
 
@@ -436,13 +580,14 @@ anchor_left = 1.0
 anchor_top = 0.5
 anchor_right = 1.0
 anchor_bottom = 0.5
-offset_left = -65.0
-offset_top = -16.0
+offset_left = -60.0
+offset_top = -14.0
 offset_right = -10.0
-offset_bottom = 16.0
+offset_bottom = 14.0
 grow_horizontal = 0
 grow_vertical = 2
-theme_override_font_sizes/font_size = 12
+theme_override_styles/normal = SubResource("StyleBoxFlat_pill_small")
+theme_override_font_sizes/font_size = 10
 text = "COPY"
 
 [node name="HBox" type="HBoxContainer" parent="RoomView"]
@@ -452,17 +597,17 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -580.0
-offset_top = -225.0
-offset_right = 580.0
-offset_bottom = 235.0
+offset_left = -540.0
+offset_top = -230.0
+offset_right = 540.0
+offset_bottom = 220.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/separation = 20
+theme_override_constants/separation = 16
 alignment = 1
 
 [node name="PlayerListCard" type="Panel" parent="RoomView/HBox"]
-custom_minimum_size = Vector2(340, 460)
+custom_minimum_size = Vector2(320, 450)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_card")
 
@@ -477,29 +622,19 @@ offset_right = 140.0
 offset_bottom = 40.0
 grow_horizontal = 2
 theme_override_colors/font_color = Color(0.4, 0.85, 1, 1)
-theme_override_font_sizes/font_size = 16
-text = "PLAYERS (1 / 8)"
+theme_override_font_sizes/font_size = 15
+text = "PLAYERS (1 / 4)"
 horizontal_alignment = 1
-
-[node name="HSeparator" type="HSeparator" parent="RoomView/HBox/PlayerListCard"]
-layout_mode = 1
-anchors_preset = 10
-anchor_right = 1.0
-offset_left = 16.0
-offset_top = 44.0
-offset_right = -16.0
-offset_bottom = 52.0
-grow_horizontal = 2
 
 [node name="Scroll" type="ScrollContainer" parent="RoomView/HBox/PlayerListCard"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 20.0
-offset_top = 60.0
-offset_right = -20.0
-offset_bottom = -20.0
+offset_left = 16.0
+offset_top = 50.0
+offset_right = -16.0
+offset_bottom = -16.0
 grow_horizontal = 2
 grow_vertical = 2
 
@@ -509,7 +644,7 @@ size_flags_horizontal = 3
 theme_override_constants/separation = 8
 
 [node name="HostSettingsCard" type="Panel" parent="RoomView/HBox"]
-custom_minimum_size = Vector2(400, 460)
+custom_minimum_size = Vector2(380, 450)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_card")
 
@@ -524,35 +659,26 @@ offset_right = 180.0
 offset_bottom = 40.0
 grow_horizontal = 2
 theme_override_colors/font_color = Color(1, 0.88, 0.4, 1)
-theme_override_font_sizes/font_size = 16
-text = "HOST CUSTOMIZATION"
+theme_override_font_sizes/font_size = 15
+text = "HOST SETTINGS"
 horizontal_alignment = 1
-
-[node name="HSeparator" type="HSeparator" parent="RoomView/HBox/HostSettingsCard"]
-layout_mode = 1
-anchors_preset = 10
-anchor_right = 1.0
-offset_left = 16.0
-offset_top = 44.0
-offset_right = -16.0
-offset_bottom = 52.0
-grow_horizontal = 2
 
 [node name="MaxPlayersRow" type="HBoxContainer" parent="RoomView/HBox/HostSettingsCard"]
 layout_mode = 1
 anchors_preset = 10
 anchor_right = 1.0
-offset_left = 24.0
-offset_top = 65.0
-offset_right = -24.0
-offset_bottom = 105.0
+offset_left = 20.0
+offset_top = 55.0
+offset_right = -20.0
+offset_bottom = 85.0
 grow_horizontal = 2
-theme_override_constants/separation = 12
+theme_override_constants/separation = 10
 
 [node name="Label" type="Label" parent="RoomView/HBox/HostSettingsCard/MaxPlayersRow"]
-custom_minimum_size = Vector2(100, 0)
+custom_minimum_size = Vector2(95, 0)
 layout_mode = 2
-theme_override_font_sizes/font_size = 13
+theme_override_colors/font_color = Color(0.7, 0.85, 1, 1)
+theme_override_font_sizes/font_size = 12
 text = "Max Players:"
 
 [node name="Slider" type="HSlider" parent="RoomView/HBox/HostSettingsCard/MaxPlayersRow"]
@@ -562,33 +688,34 @@ size_flags_vertical = 4
 min_value = 4.0
 max_value = 8.0
 step = 1.0
-value = 8.0
+value = 4.0
 rounded = true
 tick_count = 5
 
 [node name="ValLabel" type="Label" parent="RoomView/HBox/HostSettingsCard/MaxPlayersRow"]
-custom_minimum_size = Vector2(75, 0)
+custom_minimum_size = Vector2(70, 0)
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.9, 0.3, 1)
-theme_override_font_sizes/font_size = 13
-text = "8 Players"
+theme_override_font_sizes/font_size = 12
+text = "4 Players"
 horizontal_alignment = 2
 
 [node name="RoundsRow" type="HBoxContainer" parent="RoomView/HBox/HostSettingsCard"]
 layout_mode = 1
 anchors_preset = 10
 anchor_right = 1.0
-offset_left = 24.0
-offset_top = 115.0
-offset_right = -24.0
-offset_bottom = 155.0
+offset_left = 20.0
+offset_top = 95.0
+offset_right = -20.0
+offset_bottom = 125.0
 grow_horizontal = 2
-theme_override_constants/separation = 12
+theme_override_constants/separation = 10
 
 [node name="Label" type="Label" parent="RoomView/HBox/HostSettingsCard/RoundsRow"]
-custom_minimum_size = Vector2(100, 0)
+custom_minimum_size = Vector2(95, 0)
 layout_mode = 2
-theme_override_font_sizes/font_size = 13
+theme_override_colors/font_color = Color(0.7, 0.85, 1, 1)
+theme_override_font_sizes/font_size = 12
 text = "Match Rounds:"
 
 [node name="RoundsOpt" type="OptionButton" parent="RoomView/HBox/HostSettingsCard/RoundsRow"]
@@ -599,10 +726,10 @@ size_flags_horizontal = 3
 layout_mode = 1
 anchors_preset = 10
 anchor_right = 1.0
-offset_left = 24.0
-offset_top = 180.0
-offset_right = -24.0
-offset_bottom = 290.0
+offset_left = 20.0
+offset_top = 138.0
+offset_right = -20.0
+offset_bottom = 350.0
 grow_horizontal = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_slot")
 
@@ -611,15 +738,32 @@ layout_mode = 1
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
-offset_left = -120.0
-offset_top = 16.0
-offset_right = 120.0
-offset_bottom = 44.0
+offset_left = -140.0
+offset_top = 8.0
+offset_right = 140.0
+offset_bottom = 32.0
 grow_horizontal = 2
 theme_override_colors/font_color = Color(1, 0.9, 0.3, 1)
-theme_override_font_sizes/font_size = 18
-text = "MAP: CASTLE"
+theme_override_font_sizes/font_size = 14
+text = "MAP: SNOW TOWN"
 horizontal_alignment = 1
+
+[node name="MapImg" type="TextureRect" parent="RoomView/HBox/HostSettingsCard/MapPreview"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -140.0
+offset_top = -60.0
+offset_right = 140.0
+offset_bottom = 35.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("3_preview_snow")
+expand_mode = 1
+stretch_mode = 5
 
 [node name="GameMode" type="Label" parent="RoomView/HBox/HostSettingsCard/MapPreview"]
 layout_mode = 1
@@ -628,15 +772,15 @@ anchor_left = 0.5
 anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
-offset_left = -140.0
-offset_top = -50.0
-offset_right = 140.0
-offset_bottom = -16.0
+offset_left = -150.0
+offset_top = -48.0
+offset_right = 150.0
+offset_bottom = -8.0
 grow_horizontal = 2
 grow_vertical = 0
-theme_override_colors/font_color = Color(0.7, 0.85, 1, 0.9)
-theme_override_font_sizes/font_size = 12
-text = "Team Freeze Tag - Real-Time 3D
+theme_override_colors/font_color = Color(0.7, 0.85, 1, 0.85)
+theme_override_font_sizes/font_size = 11
+text = "Team Freeze Tag • Real-Time 3D
 Friendly Fire: Off"
 horizontal_alignment = 1
 
@@ -644,39 +788,20 @@ horizontal_alignment = 1
 layout_mode = 1
 anchors_preset = 10
 anchor_right = 1.0
-offset_left = 24.0
-offset_top = 302.0
-offset_right = -24.0
-offset_bottom = 338.0
+offset_left = 20.0
+offset_top = 360.0
+offset_right = -20.0
+offset_bottom = 390.0
 grow_horizontal = 2
-theme_override_constants/separation = 12
 
 [node name="PrivateCheck" type="CheckBox" parent="RoomView/HBox/HostSettingsCard/PrivateRow"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.88, 0.4, 1)
-theme_override_font_sizes/font_size = 13
+theme_override_font_sizes/font_size = 12
 text = "Private Room (Hidden from Browser)"
 
-[node name="HostHint" type="Label" parent="RoomView/HBox/HostSettingsCard"]
-layout_mode = 1
-anchors_preset = 12
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = 20.0
-offset_top = -60.0
-offset_right = -20.0
-offset_bottom = -20.0
-grow_horizontal = 2
-grow_vertical = 0
-theme_override_colors/font_color = Color(0.6, 0.8, 1, 0.7)
-theme_override_font_sizes/font_size = 11
-text = "Host can customize max players and map
-on the right side in real-time before starting."
-horizontal_alignment = 1
-
 [node name="MapSelectionCard" type="Panel" parent="RoomView/HBox"]
-custom_minimum_size = Vector2(360, 460)
+custom_minimum_size = Vector2(360, 450)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_card")
 
@@ -691,70 +816,55 @@ offset_right = 150.0
 offset_bottom = 40.0
 grow_horizontal = 2
 theme_override_colors/font_color = Color(0.4, 0.85, 1, 1)
-theme_override_font_sizes/font_size = 16
+theme_override_font_sizes/font_size = 15
 text = "MAP SELECTION"
 horizontal_alignment = 1
 
-[node name="HSeparator" type="HSeparator" parent="RoomView/HBox/MapSelectionCard"]
-layout_mode = 1
-anchors_preset = 10
-anchor_right = 1.0
-offset_left = 16.0
-offset_top = 44.0
-offset_right = -16.0
-offset_bottom = 52.0
-grow_horizontal = 2
-
-[node name="Grid" type="GridContainer" parent="RoomView/HBox/MapSelectionCard"]
+[node name="Grid" type="VBoxContainer" parent="RoomView/HBox/MapSelectionCard"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 offset_left = 20.0
-offset_top = 60.0
+offset_top = 50.0
 offset_right = -20.0
 offset_bottom = -20.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/h_separation = 12
-theme_override_constants/v_separation = 14
-columns = 2
-
-[node name="CastleBtn" type="Button" parent="RoomView/HBox/MapSelectionCard/Grid"]
-custom_minimum_size = Vector2(145, 105)
-layout_mode = 2
-theme_override_font_sizes/font_size = 13
-text = "CASTLE"
-
-[node name="CollegeBtn" type="Button" parent="RoomView/HBox/MapSelectionCard/Grid"]
-custom_minimum_size = Vector2(145, 105)
-layout_mode = 2
-theme_override_font_sizes/font_size = 13
-text = "COLLEGE"
-
-[node name="LabyrinthBtn" type="Button" parent="RoomView/HBox/MapSelectionCard/Grid"]
-custom_minimum_size = Vector2(145, 105)
-layout_mode = 2
-theme_override_font_sizes/font_size = 13
-text = "LABYRINTH"
-
-[node name="FactoryBtn" type="Button" parent="RoomView/HBox/MapSelectionCard/Grid"]
-custom_minimum_size = Vector2(145, 105)
-layout_mode = 2
-theme_override_font_sizes/font_size = 13
-text = "FACTORY"
+theme_override_constants/separation = 12
 
 [node name="SnowTownBtn" type="Button" parent="RoomView/HBox/MapSelectionCard/Grid"]
-custom_minimum_size = Vector2(145, 105)
+custom_minimum_size = Vector2(0, 110)
 layout_mode = 2
-theme_override_font_sizes/font_size = 13
+theme_override_styles/normal = SubResource("StyleBoxFlat_map_btn")
+theme_override_font_sizes/font_size = 12
 text = "SNOW TOWN"
+icon = ExtResource("4_map_snow")
+icon_alignment = 1
+vertical_icon_alignment = 0
+expand_icon = true
 
 [node name="SpaceStationBtn" type="Button" parent="RoomView/HBox/MapSelectionCard/Grid"]
-custom_minimum_size = Vector2(145, 105)
+custom_minimum_size = Vector2(0, 110)
 layout_mode = 2
-theme_override_font_sizes/font_size = 13
+theme_override_styles/normal = SubResource("StyleBoxFlat_map_btn")
+theme_override_font_sizes/font_size = 12
 text = "SPACE STATION"
+icon = ExtResource("5_map_space")
+icon_alignment = 1
+vertical_icon_alignment = 0
+expand_icon = true
+
+[node name="LabyrinthBtn" type="Button" parent="RoomView/HBox/MapSelectionCard/Grid"]
+custom_minimum_size = Vector2(0, 110)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_map_btn")
+theme_override_font_sizes/font_size = 12
+text = "LABYRINTH"
+icon = ExtResource("6_map_laby")
+icon_alignment = 1
+vertical_icon_alignment = 0
+expand_icon = true
 
 [node name="BottomBar" type="HBoxContainer" parent="RoomView"]
 layout_mode = 1
@@ -763,26 +873,28 @@ anchor_left = 0.5
 anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
-offset_left = -250.0
-offset_top = -65.0
-offset_right = 250.0
-offset_bottom = -20.0
+offset_left = -220.0
+offset_top = -62.0
+offset_right = 220.0
+offset_bottom = -18.0
 grow_horizontal = 2
 grow_vertical = 0
 theme_override_constants/separation = 24
 alignment = 1
 
 [node name="ActionBtn" type="Button" parent="RoomView/BottomBar"]
-custom_minimum_size = Vector2(220, 44)
+custom_minimum_size = Vector2(210, 44)
 layout_mode = 2
-theme_override_colors/font_color = Color(0.4, 1, 0.4, 1)
-theme_override_font_sizes/font_size = 17
+theme_override_styles/normal = SubResource("StyleBoxFlat_pill_green")
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 16
 text = "START GAME"
 
 [node name="LeaveBtn" type="Button" parent="RoomView/BottomBar"]
-custom_minimum_size = Vector2(150, 44)
+custom_minimum_size = Vector2(160, 44)
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.5, 0.5, 1)
+theme_override_styles/normal = SubResource("StyleBoxFlat_pill_red")
+theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 15
 text = "LEAVE ROOM"
 
@@ -792,8 +904,11 @@ anchors_preset = 2
 anchor_top = 1.0
 anchor_bottom = 1.0
 offset_left = 30.0
-offset_top = -55.0
+offset_top = -54.0
 offset_right = 160.0
-offset_bottom = -20.0
+offset_bottom = -18.0
 grow_vertical = 0
-text = "< Main Menu"
+theme_override_styles/normal = SubResource("StyleBoxFlat_pill")
+theme_override_colors/font_color = Color(0.85, 0.95, 1, 1)
+theme_override_font_sizes/font_size = 13
+text = "← MAIN MENU"

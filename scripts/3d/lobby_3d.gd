@@ -10,6 +10,7 @@ const CODE_CHARS: String = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
 # ── Browser View Nodes ──────────────────────────────────────────────────────
 @onready var player_name_input: LineEdit = $BrowserView/PlayerNameContainer/PlayerNameInput
 @onready var room_list_vbox: VBoxContainer = $BrowserView/HBox/RoomListCard/Scroll/RoomList
+@onready var refresh_btn: Button = $BrowserView/HBox/RoomListCard/HeaderBox/RefreshBtn
 @onready var create_room_name_input: LineEdit = $BrowserView/HBox/CreateRoomCard/RoomNameInput
 @onready var create_private_check: CheckBox = $BrowserView/HBox/CreateRoomCard/PrivateCheck
 @onready var create_room_btn: Button = $BrowserView/HBox/CreateRoomCard/CreateBtn
@@ -32,7 +33,8 @@ const CODE_CHARS: String = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
 @onready var rounds_opt: OptionButton = $RoomView/HBox/HostSettingsCard/RoundsRow/RoundsOpt
 @onready var host_private_check: CheckBox = $RoomView/HBox/HostSettingsCard/PrivateRow/PrivateCheck
 @onready var map_preview_lbl: Label = $RoomView/HBox/HostSettingsCard/MapPreview/MapName
-@onready var map_grid: GridContainer = $RoomView/HBox/MapSelectionCard/Grid
+@onready var map_preview_img: TextureRect = $RoomView/HBox/HostSettingsCard/MapPreview/MapImg
+@onready var map_grid: VBoxContainer = $RoomView/HBox/MapSelectionCard/Grid
 
 # Action Buttons
 @onready var action_btn: Button = $RoomView/BottomBar/ActionBtn
@@ -69,6 +71,7 @@ func _ready() -> void:
 	create_room_btn.pressed.connect(_on_create_room_pressed)
 	join_code_btn.pressed.connect(_on_join_by_code_pressed)
 	back_to_menu_btn.pressed.connect(_on_back_to_menu_pressed)
+	refresh_btn.pressed.connect(func(): if Network: Network.fetch_public_rooms())
 	
 	# Connect Room events
 	max_players_slider.drag_started.connect(func(): is_dragging_slider = true)
@@ -361,6 +364,8 @@ func _update_room_lobby_ui() -> void:
 		max_players_slider.set_value_no_signal(r["max_players"])
 	max_players_val_lbl.text = "%d Players" % r["max_players"]
 	map_preview_lbl.text = "MAP: " + r["map"]
+	_update_map_preview_image(r["map"])
+	_update_map_selection_highlight(r["map"])
 	
 	max_players_slider.editable = is_host
 	rounds_opt.disabled = not is_host
@@ -375,11 +380,9 @@ func _update_room_lobby_ui() -> void:
 	# Action Button
 	if is_host:
 		action_btn.text = "START GAME"
-		action_btn.modulate = Color(0.4, 1.0, 0.4)
 		action_btn.disabled = false
 	else:
 		action_btn.text = "READY" if not is_ready else "WAITING FOR HOST..."
-		action_btn.modulate = Color(0.4, 0.85, 1.0)
 		action_btn.disabled = is_ready
 
 func _update_player_slots(r: Dictionary) -> void:
@@ -387,15 +390,59 @@ func _update_player_slots(r: Dictionary) -> void:
 		child.queue_free()
 	
 	for i in range(r["max_players"]):
-		var slot_lbl = Label.new()
+		var slot_panel = PanelContainer.new()
+		var sb = StyleBoxFlat.new()
+		sb.set_corner_radius_all(8)
+		sb.border_width_left = 1
+		sb.border_width_top = 1
+		sb.border_width_right = 1
+		sb.border_width_bottom = 1
+		
+		var margin = MarginContainer.new()
+		margin.add_theme_constant_override("margin_left", 12)
+		margin.add_theme_constant_override("margin_right", 12)
+		margin.add_theme_constant_override("margin_top", 6)
+		margin.add_theme_constant_override("margin_bottom", 6)
+		
+		var hbox = HBoxContainer.new()
+		hbox.add_theme_constant_override("separation", 10)
+		
+		var icon_lbl = Label.new()
+		var name_lbl = Label.new()
+		name_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		name_lbl.add_theme_font_size_override("font_size", 13)
+		
 		if i < r["players"].size():
-			slot_lbl.text = "- " + str(r["players"][i])
-			slot_lbl.modulate = Color(1.0, 0.9, 0.4) if (i == 0) else Color(0.9, 0.95, 1.0)
+			var p_name = str(r["players"][i])
+			if i == 0:
+				sb.bg_color = Color(0.12, 0.22, 0.45, 0.9)
+				sb.border_color = Color(1.0, 0.85, 0.3, 0.85)
+				icon_lbl.text = "*"
+				icon_lbl.modulate = Color(1.0, 0.85, 0.2)
+				name_lbl.text = "%s  (Host)" % p_name
+				name_lbl.modulate = Color(1.0, 0.9, 0.35)
+			else:
+				sb.bg_color = Color(0.06, 0.14, 0.28, 0.85)
+				sb.border_color = Color(0.2, 0.7, 0.95, 0.6)
+				icon_lbl.text = "o"
+				icon_lbl.modulate = Color(0.3, 0.9, 1.0)
+				name_lbl.text = p_name
+				name_lbl.modulate = Color(0.9, 0.95, 1.0)
 		else:
-			slot_lbl.text = "- [Open / Waiting for player...]"
-			slot_lbl.modulate = Color(0.5, 0.6, 0.7, 0.5)
-		slot_lbl.add_theme_font_size_override("font_size", 13)
-		player_list_vbox.add_child(slot_lbl)
+			sb.bg_color = Color(0.04, 0.08, 0.16, 0.6)
+			sb.border_color = Color(0.2, 0.45, 0.7, 0.25)
+			icon_lbl.text = "-"
+			icon_lbl.modulate = Color(0.4, 0.5, 0.65)
+			name_lbl.text = "[ Empty Slot ]"
+			name_lbl.modulate = Color(0.45, 0.6, 0.75, 0.6)
+		
+		slot_panel.add_theme_stylebox_override("panel", sb)
+		hbox.add_child(icon_lbl)
+		hbox.add_child(name_lbl)
+		margin.add_child(hbox)
+		slot_panel.add_child(margin)
+		slot_panel.custom_minimum_size = Vector2(0, 36)
+		player_list_vbox.add_child(slot_panel)
 
 func _on_max_players_changed(value: float) -> void:
 	if not is_host or not active_rooms.has(current_room_code):
@@ -443,9 +490,31 @@ func _setup_map_grid_buttons() -> void:
 				selected_map = clean_name
 				active_rooms[current_room_code]["map"] = clean_name
 				map_preview_lbl.text = "MAP: " + clean_name
+				_update_map_preview_image(clean_name)
+				_update_map_selection_highlight(clean_name)
 				if Network and Network.is_connected_to_server:
 					Network.update_room_settings(active_rooms[current_room_code]["max_players"], active_rooms[current_room_code]["rounds"], clean_name, bool(active_rooms[current_room_code].get("is_private", false)))
 			)
+
+func _update_map_preview_image(map_name: String) -> void:
+	if not map_preview_img:
+		return
+	match map_name:
+		"SPACE STATION":
+			map_preview_img.texture = load("res://assets/maps/map_space_station.png")
+		"LABYRINTH":
+			map_preview_img.texture = load("res://assets/maps/map_labyrinth.png")
+		"SNOW TOWN", _:
+			map_preview_img.texture = load("res://assets/maps/map_preview_snow_town.png")
+
+func _update_map_selection_highlight(map_name: String) -> void:
+	for child in map_grid.get_children():
+		if child is Button:
+			var is_selected = (child.text.strip_edges() == map_name)
+			if is_selected:
+				child.modulate = Color(1.2, 1.2, 1.2)
+			else:
+				child.modulate = Color(0.7, 0.75, 0.85)
 
 func _on_copy_code_pressed() -> void:
 	if not current_room_code.is_empty():
