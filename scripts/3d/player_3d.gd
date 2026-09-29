@@ -312,7 +312,7 @@ func slip_on_banana() -> void:
 	is_dizzy = true
 	dizzy_timer = 2.5
 	if dizzy_stars:
-		dizzy_stars.text = "💫  ⭐  💫"
+		dizzy_stars.text = "*  *  *"
 		dizzy_stars.visible = true
 	_update_role_visuals()
 

@@ -47,7 +47,7 @@ func _setup_visuals() -> void:
 			mat.albedo_color = Color(1.0, 0.3, 0.1)
 			mat.emission = Color(1.0, 0.3, 0.1)
 		"banana":
-			label.text = "🍌 BANANA"
+			label.text = "BANANA"
 			label.modulate = Color(1.0, 0.95, 0.0)
 			mat.albedo_color = Color(1.0, 0.9, 0.0)
 			mat.emission = Color(1.0, 0.9, 0.0)

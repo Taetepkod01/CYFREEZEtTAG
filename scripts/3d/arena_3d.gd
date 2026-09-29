@@ -158,7 +158,7 @@ func _process(delta: float) -> void:
 	
 	var mins = int(round_time) / 60
 	var secs = int(round_time) % 60
-	timer_lbl.text = "🕒 %02d:%02d" % [mins, secs]
+	timer_lbl.text = "%02d:%02d" % [mins, secs]
 	
 	# Item spawn cycle for offline mode
 	if not Network or not Network.is_online_game():
@@ -211,13 +211,13 @@ func _update_role_button_ui() -> void:
 		return
 	match practice_role:
 		"tagger":
-			role_btn.text = "ROLE: 🔺 TAGGER"
+			role_btn.text = "ROLE: TAGGER"
 			role_btn.modulate = Color(1.0, 0.45, 0.45)
 		"runner":
-			role_btn.text = "ROLE: 🟢 RUNNER"
+			role_btn.text = "ROLE: RUNNER"
 			role_btn.modulate = Color(0.45, 1.0, 0.45)
 		"random", _:
-			role_btn.text = "ROLE: 🤖 RANDOM"
+			role_btn.text = "ROLE: RANDOM"
 			role_btn.modulate = Color(1.0, 0.9, 0.4)
 
 # ── Spawning Players & Items ────────────────────────────────────────────────
@@ -368,7 +368,7 @@ func spawn_banana_trap(pos: Vector3, placer = null, placer_id: String = "") -> v
 	
 	# Floating 3D Label
 	var lbl = Label3D.new()
-	lbl.text = "🍌 BANANA"
+	lbl.text = "BANANA"
 	lbl.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	lbl.font_size = 20
 	lbl.modulate = Color(1.0, 0.9, 0.2)
@@ -498,18 +498,18 @@ func _on_net_round_ended(data: Dictionary) -> void:
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 	
 	if winner == "TAGGERS":
-		game_over_title.text = "❄ 🔺 TAGGERS WIN ROUND! 🔺 ❄"
+		game_over_title.text = "TAGGERS WIN ROUND!"
 		game_over_title.modulate = Color(1.0, 0.4, 0.4)
 	else:
-		game_over_title.text = "❄ 🟢 RUNNERS WIN ROUND! 🟢 ❄"
+		game_over_title.text = "RUNNERS WIN ROUND!"
 		game_over_title.modulate = Color(0.4, 0.95, 1.0)
 	
 	score_lbl.text = "SCORE: Runners %d  -  Taggers %d" % [runners_score, taggers_score]
 	
 	if mvp and typeof(mvp) == TYPE_DICTIONARY:
-		mvp_lbl.text = "👑 MVP: %s (%d Tags / %d Rescues)" % [mvp.get("name", "Player"), mvp.get("freezeCount", 0), mvp.get("rescueCount", 0)]
+		mvp_lbl.text = "MVP: %s (%d Tags / %d Rescues)" % [mvp.get("name", "Player"), mvp.get("freezeCount", 0), mvp.get("rescueCount", 0)]
 	else:
-		mvp_lbl.text = "👑 MVP: Match Complete"
+		mvp_lbl.text = "MVP: Match Complete"
 	
 	if Network.is_host:
 		next_round_btn.visible = true
@@ -535,7 +535,7 @@ func _on_player_rescued(rescuer: CharacterBody3D, victim: CharacterBody3D) -> vo
 	_update_hud()
 
 func _on_player_item_used(item: String) -> void:
-	add_game_log("You used [color=#ffe066]%s[/color]!" % item)
+	add_game_log("You used [color=#ffe066]%s[/color]!" % item.to_upper())
 
 func _on_player_item_picked_up(item: String) -> void:
 	add_game_log("You picked up [color=#69f0ae]%s[/color]! Press [E] to use." % item.to_upper())
@@ -552,27 +552,27 @@ func _update_item_slot(item_name: String) -> void:
 	if not item_name_lbl:
 		return
 	if item_name.is_empty():
-		item_name_lbl.text = "✕ ITEM: NONE"
+		item_name_lbl.text = "NONE"
 		item_name_lbl.modulate = Color(0.6, 0.75, 0.9, 0.7)
 	else:
 		match item_name:
 			"speed":
-				item_name_lbl.text = "⚡ SPEED BOOST"
+				item_name_lbl.text = "SPEED BOOST"
 				item_name_lbl.modulate = Color(1.0, 0.9, 0.2)
 			"shield":
-				item_name_lbl.text = "🛡️ ICE SHIELD"
+				item_name_lbl.text = "ICE SHIELD"
 				item_name_lbl.modulate = Color(0.3, 1.0, 0.5)
 			"heater":
-				item_name_lbl.text = "🔥 HEATER"
+				item_name_lbl.text = "HEATER"
 				item_name_lbl.modulate = Color(1.0, 0.45, 0.2)
 			"banana":
-				item_name_lbl.text = "🍌 BANANA PEEL"
+				item_name_lbl.text = "BANANA PEEL"
 				item_name_lbl.modulate = Color(1.0, 0.95, 0.1)
 			"vortex":
-				item_name_lbl.text = "🌀 BLACK HOLE"
+				item_name_lbl.text = "BLACK HOLE"
 				item_name_lbl.modulate = Color(0.75, 0.4, 1.0)
 			"tackle":
-				item_name_lbl.text = "💥 DASH TACKLE"
+				item_name_lbl.text = "DASH TACKLE"
 				item_name_lbl.modulate = Color(1.0, 0.5, 0.1)
 
 # ── HUD Update ──────────────────────────────────────────────────────────────
@@ -592,62 +592,71 @@ func _update_hud() -> void:
 				runners_count += 1
 		
 		var row = HBoxContainer.new()
-		row.custom_minimum_size = Vector2(0, 22)
+		row.custom_minimum_size = Vector2(0, 20)
+		row.alignment = BoxContainer.ALIGNMENT_BEGIN
 		
-		var dot_lbl = Label.new()
-		dot_lbl.add_theme_font_size_override("font_size", 10)
+		# Vector dot indicator (immune to font/emoji missing glyph issues)
+		var dot = Panel.new()
+		dot.custom_minimum_size = Vector2(8, 8)
+		dot.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		var dot_style = StyleBoxFlat.new()
+		dot_style.corner_radius_top_left = 4
+		dot_style.corner_radius_top_right = 4
+		dot_style.corner_radius_bottom_right = 4
+		dot_style.corner_radius_bottom_left = 4
 		
 		var name_lbl = Label.new()
 		name_lbl.text = " " + p.player_name
 		name_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		name_lbl.add_theme_font_size_override("font_size", 12)
+		name_lbl.add_theme_font_size_override("font_size", 11)
 		name_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 		
 		var status_badge = Label.new()
 		status_badge.add_theme_font_size_override("font_size", 10)
 		
 		if p.is_frozen:
-			dot_lbl.text = "❄️"
+			dot_style.bg_color = Color(0.3, 0.9, 1.0)
 			status_badge.text = "[FROZEN]"
 			status_badge.modulate = Color(0.3, 0.9, 1.0)
 		elif p.is_rescuing:
-			dot_lbl.text = "🟡"
+			dot_style.bg_color = Color(1.0, 0.9, 0.2)
 			status_badge.text = "[RESCUING]"
 			status_badge.modulate = Color(1.0, 0.9, 0.2)
 		elif p.role == "tagger":
-			dot_lbl.text = "🔴"
+			dot_style.bg_color = Color(1.0, 0.35, 0.35)
 			status_badge.text = "[TAGGER]"
 			status_badge.modulate = Color(1.0, 0.35, 0.35)
 		else:
-			dot_lbl.text = "🟢"
+			dot_style.bg_color = Color(0.4, 0.95, 0.4)
 			status_badge.text = "[RUNNER]"
 			status_badge.modulate = Color(0.4, 0.95, 0.4)
 		
-		row.add_child(dot_lbl)
+		dot.add_theme_stylebox_override("panel", dot_style)
+		row.add_child(dot)
 		row.add_child(name_lbl)
 		row.add_child(status_badge)
 		status_container.add_child(row)
 	
-	runners_count_lbl.text = "❄ %d" % runners_count
-	taggers_count_lbl.text = "🔺 %d" % taggers_count
+	runners_count_lbl.text = str(runners_count)
+	taggers_count_lbl.text = str(taggers_count)
 	round_lbl.text = "ROUND %d / %d" % [current_round, max_rounds]
-	status_title_lbl.text = "👤 PLAYER STATUS   %d/%d" % [total_players, total_players]
+	status_title_lbl.text = "PLAYER STATUS   %d/%d" % [total_players, total_players]
 	
 	if local_player:
 		hp_bar.value = local_player.hp
 		hp_lbl.text = "%d / 100" % local_player.hp
 		player_tag_name.text = local_player.player_name
 		if local_player.is_frozen:
-			player_tag_dot.text = "❄️"
-			player_tag_role.text = "FROZEN"
+			player_tag_dot.visible = false
+			player_tag_role.text = "[FROZEN]"
 			player_tag_role.modulate = Color(0.3, 0.9, 1.0)
 		elif local_player.role == "tagger":
-			player_tag_dot.text = "🔺"
-			player_tag_role.text = "TAGGER"
+			player_tag_dot.visible = false
+			player_tag_role.text = "[TAGGER]"
 			player_tag_role.modulate = Color(1.0, 0.35, 0.35)
 		else:
-			player_tag_dot.text = "🟢"
-			player_tag_role.text = "RUNNER"
+			player_tag_dot.visible = false
+			player_tag_role.text = "[RUNNER]"
 			player_tag_role.modulate = Color(0.4, 0.95, 0.4)
 
 # ── Win / Loss & MVP Summary (Offline / Practice Mode) ──────────────────────
@@ -658,11 +667,11 @@ func _end_round(winner: String) -> void:
 	
 	if winner == "TAGGERS":
 		taggers_score += 1
-		game_over_title.text = "❄ 🔺 TAGGERS WIN ROUND! 🔺 ❄"
+		game_over_title.text = "TAGGERS WIN ROUND!"
 		game_over_title.modulate = Color(1.0, 0.4, 0.4)
 	else:
 		runners_score += 1
-		game_over_title.text = "❄ 🟢 RUNNERS WIN ROUND! 🟢 ❄"
+		game_over_title.text = "RUNNERS WIN ROUND!"
 		game_over_title.modulate = Color(0.4, 0.95, 1.0)
 	
 	score_lbl.text = "SCORE: Runners %d  -  Taggers %d" % [runners_score, taggers_score]
@@ -676,9 +685,9 @@ func _end_round(winner: String) -> void:
 			best_player = p
 	
 	if best_player:
-		mvp_lbl.text = "👑 MVP: %s (%d Tags / %d Rescues)" % [best_player.player_name, best_player.freeze_count, best_player.rescue_count]
+		mvp_lbl.text = "MVP: %s (%d Tags / %d Rescues)" % [best_player.player_name, best_player.freeze_count, best_player.rescue_count]
 	else:
-		mvp_lbl.text = "👑 MVP: Player 1 (You)"
+		mvp_lbl.text = "MVP: Player 1 (You)"
 	
 	if current_round >= max_rounds:
 		next_round_btn.text = "PLAY AGAIN"
