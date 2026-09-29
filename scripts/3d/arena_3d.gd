@@ -314,73 +314,19 @@ func spawn_banana_trap(pos: Vector3, placer = null, placer_id: String = "") -> v
 	col.position.y = 0.25
 	trap.add_child(col)
 	
-	# 3D Banana Object on the ground
-	var banana_visuals = Node3D.new()
+	# 3D Banana Model from Gorilla Tag (res://scenes/3d/banana_peel.tscn)
+	var banana_scene = preload("res://scenes/3d/banana_peel.tscn")
+	var banana_visuals = banana_scene.instantiate()
 	banana_visuals.name = "BananaModel"
 	trap.add_child(banana_visuals)
 	
-	var yellow_peel_mat = StandardMaterial3D.new()
-	yellow_peel_mat.albedo_color = Color(1.0, 0.88, 0.05) # Vibrant banana yellow
-	yellow_peel_mat.metallic = 0.1
-	yellow_peel_mat.roughness = 0.3
-	yellow_peel_mat.emission_enabled = true
-	yellow_peel_mat.emission = Color(0.85, 0.75, 0.05)
-	yellow_peel_mat.emission_energy_multiplier = 0.4
-	
-	var brown_stem_mat = StandardMaterial3D.new()
-	brown_stem_mat.albedo_color = Color(0.32, 0.18, 0.05) # Banana stem/tip brown
-	brown_stem_mat.roughness = 0.8
-	
-	# Central Stem
-	var stem = MeshInstance3D.new()
-	var stem_mesh = CylinderMesh.new()
-	stem_mesh.top_radius = 0.05
-	stem_mesh.bottom_radius = 0.12
-	stem_mesh.height = 0.35
-	stem.mesh = stem_mesh
-	stem.position = Vector3(0, 0.18, 0)
-	stem.set_surface_override_material(0, brown_stem_mat)
-	banana_visuals.add_child(stem)
-	
-	# Central Banana Core Nub
-	var core_nub = MeshInstance3D.new()
-	var nub_mesh = SphereMesh.new()
-	nub_mesh.radius = 0.14
-	nub_mesh.height = 0.22
-	core_nub.mesh = nub_mesh
-	core_nub.position = Vector3(0, 0.1, 0)
-	core_nub.set_surface_override_material(0, yellow_peel_mat)
-	banana_visuals.add_child(core_nub)
-	
-	# 3 Curved Peels spreading out on the floor
-	for i in range(3):
-		var angle = i * (TAU / 3.0)
-		var peel = MeshInstance3D.new()
-		var peel_mesh = BoxMesh.new()
-		peel_mesh.size = Vector3(0.2, 0.04, 0.6) # flat peel strip
-		peel.mesh = peel_mesh
-		peel.position = Vector3(sin(angle) * 0.28, 0.03, cos(angle) * 0.28)
-		peel.rotation = Vector3(deg_to_rad(8), angle, deg_to_rad(6))
-		peel.set_surface_override_material(0, yellow_peel_mat)
-		banana_visuals.add_child(peel)
-		
-		# Peel Tip (brown edge)
-		var tip = MeshInstance3D.new()
-		var tip_mesh = BoxMesh.new()
-		tip_mesh.size = Vector3(0.14, 0.045, 0.12)
-		tip.mesh = tip_mesh
-		tip.position = Vector3(sin(angle) * 0.55, 0.02, cos(angle) * 0.55)
-		tip.rotation = Vector3(0, angle, 0)
-		tip.set_surface_override_material(0, brown_stem_mat)
-		banana_visuals.add_child(tip)
-	
 	# Floating 3D Label
 	var lbl = Label3D.new()
-	lbl.text = "BANANA"
+	lbl.text = "🍌 BANANA"
 	lbl.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	lbl.font_size = 20
 	lbl.modulate = Color(1.0, 0.9, 0.2)
-	lbl.position = Vector3(0, 0.65, 0)
+	lbl.position = Vector3(0, 0.7, 0)
 	trap.add_child(lbl)
 	
 	trap.position = Vector3(pos.x, 0.05, pos.z)

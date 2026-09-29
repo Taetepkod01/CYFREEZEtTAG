@@ -47,10 +47,17 @@ func _setup_visuals() -> void:
 			mat.albedo_color = Color(1.0, 0.3, 0.1)
 			mat.emission = Color(1.0, 0.3, 0.1)
 		"banana":
-			label.text = "BANANA"
+			label.text = "🍌 BANANA"
 			label.modulate = Color(1.0, 0.95, 0.0)
 			mat.albedo_color = Color(1.0, 0.9, 0.0)
 			mat.emission = Color(1.0, 0.9, 0.0)
+			mesh_instance.visible = false
+			if not has_node("BananaModel"):
+				var b_scene = preload("res://scenes/3d/banana_peel.tscn")
+				var b_inst = b_scene.instantiate()
+				b_inst.name = "BananaModel"
+				b_inst.position = Vector3(0, -0.2, 0)
+				add_child(b_inst)
 		"vortex":
 			label.text = "VORTEX"
 			label.modulate = Color(0.7, 0.3, 1.0)
@@ -61,6 +68,11 @@ func _setup_visuals() -> void:
 			label.modulate = Color(1.0, 0.5, 0.1)
 			mat.albedo_color = Color(1.0, 0.4, 0.0)
 			mat.emission = Color(1.0, 0.4, 0.0)
+	
+	if item_type != "banana":
+		mesh_instance.visible = true
+		if has_node("BananaModel"):
+			get_node("BananaModel").queue_free()
 	
 	mesh_instance.set_surface_override_material(0, mat)
 
