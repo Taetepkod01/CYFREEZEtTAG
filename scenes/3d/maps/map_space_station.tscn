@@ -267,51 +267,51 @@ light_energy = 2.4
 omni_range = 16.0
 
 [node name="WallNorthL" type="CSGBox3D" parent="CentralHub"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.0, 2.0, -11)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7.0, 2.0, -11)
 use_collision = true
-size = Vector3(4, 4, 1)
+size = Vector3(8, 4, 1)
 material = SubResource("Mat_Wall")
 
 [node name="WallNorthR" type="CSGBox3D" parent="CentralHub"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.0, 2.0, -11)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7.0, 2.0, -11)
 use_collision = true
-size = Vector3(4, 4, 1)
+size = Vector3(8, 4, 1)
 material = SubResource("Mat_Wall")
 
 [node name="WallSouthL" type="CSGBox3D" parent="CentralHub"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.0, 2.0, 11)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7.0, 2.0, 11)
 use_collision = true
-size = Vector3(4, 4, 1)
+size = Vector3(8, 4, 1)
 material = SubResource("Mat_Wall")
 
 [node name="WallSouthR" type="CSGBox3D" parent="CentralHub"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.0, 2.0, 11)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7.0, 2.0, 11)
 use_collision = true
-size = Vector3(4, 4, 1)
+size = Vector3(8, 4, 1)
 material = SubResource("Mat_Wall")
 
 [node name="WallWestT" type="CSGBox3D" parent="CentralHub"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11, 2.0, -5.0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11, 2.0, -7.0)
 use_collision = true
-size = Vector3(1, 4, 4)
+size = Vector3(1, 4, 8)
 material = SubResource("Mat_Wall")
 
 [node name="WallWestB" type="CSGBox3D" parent="CentralHub"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11, 2.0, 5.0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11, 2.0, 7.0)
 use_collision = true
-size = Vector3(1, 4, 4)
+size = Vector3(1, 4, 8)
 material = SubResource("Mat_Wall")
 
 [node name="WallEastT" type="CSGBox3D" parent="CentralHub"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11, 2.0, -5.0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11, 2.0, -7.0)
 use_collision = true
-size = Vector3(1, 4, 4)
+size = Vector3(1, 4, 8)
 material = SubResource("Mat_Wall")
 
 [node name="WallEastB" type="CSGBox3D" parent="CentralHub"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11, 2.0, 5.0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11, 2.0, 7.0)
 use_collision = true
-size = Vector3(1, 4, 4)
+size = Vector3(1, 4, 8)
 material = SubResource("Mat_Wall")
 
 [node name="Corridors" type="Node3D" parent="."]
@@ -1201,27 +1201,3 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 22.5, 2.0, -10.5)
 use_collision = true
 size = Vector3(1, 4, 3)
 material = SubResource("Mat_Wall")
-
-[node name="HubToNWFloor" type="CSGBox3D" parent="DiagonalHallways"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11.5, -0.5, -11.5)
-use_collision = true
-size = Vector3(3, 1, 3)
-material = SubResource("Mat_Floor")
-
-[node name="HubToSWFloor" type="CSGBox3D" parent="DiagonalHallways"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11.5, -0.5, 11.5)
-use_collision = true
-size = Vector3(3, 1, 3)
-material = SubResource("Mat_Floor")
-
-[node name="HubToSEFloor" type="CSGBox3D" parent="DiagonalHallways"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11.5, -0.5, 11.5)
-use_collision = true
-size = Vector3(3, 1, 3)
-material = SubResource("Mat_Floor")
-
-[node name="HubToNEFloor" type="CSGBox3D" parent="DiagonalHallways"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11.5, -0.5, -11.5)
-use_collision = true
-size = Vector3(3, 1, 3)
-material = SubResource("Mat_Floor")
