@@ -670,12 +670,12 @@ function start3DRound(room: Active3DRoom) {
 
   const isSpaceStation = (room.map || "").toUpperCase().includes("SPACE");
   const spaceStationRunnerSpawns = [
-    { x: 0, y: 0.5, z: 20 },
+    { x: 0, y: 0.5, z: 22 },
     { x: -22, y: 0.5, z: 0 },
-    { x: -16, y: 0.5, z: -15 },
-    { x: 16, y: 0.5, z: 15 },
-    { x: 22, y: 0.5, z: 0 },
-    { x: -16, y: 0.5, z: 15 }
+    { x: -20, y: 0.5, z: -20 },
+    { x: 20, y: 0.5, z: 20 },
+    { x: -20, y: 0.5, z: 20 },
+    { x: 20, y: 0.5, z: -20 }
   ];
   let runnerSpawnIdx = 0;
 
@@ -691,7 +691,7 @@ function start3DRound(room: Active3DRoom) {
 
     if (isSpaceStation) {
       if (p.role === "tagger") {
-        p.x = 0; p.y = 0.5; p.z = -20;
+        p.x = 0; p.y = 0.5; p.z = -22;
       } else {
         const sp = spaceStationRunnerSpawns[runnerSpawnIdx % spaceStationRunnerSpawns.length];
         p.x = sp.x; p.y = sp.y; p.z = sp.z;

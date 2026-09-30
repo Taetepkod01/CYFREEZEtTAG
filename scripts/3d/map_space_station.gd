@@ -6,29 +6,30 @@ extends Node3D
 
 # Spawn positions for players
 var chaser_spawns: Array[Vector3] = [
-	Vector3(0.0, 0.5, -20.0),
-	Vector3(-3.0, 0.5, -21.0),
-	Vector3(3.0, 0.5, -21.0)
+	Vector3(0.0, 0.5, -22.0),
+	Vector3(-3.0, 0.5, -22.0),
+	Vector3(3.0, 0.5, -22.0)
 ]
 
 var runner_spawns: Array[Vector3] = [
-	Vector3(0.0, 0.5, 20.0),
+	Vector3(0.0, 0.5, 22.0),
 	Vector3(-22.0, 0.5, 0.0),
-	Vector3(-16.0, 0.5, -15.0),
-	Vector3(-16.0, 0.5, 15.0),
-	Vector3(16.0, 0.5, 15.0),
-	Vector3(22.0, 0.5, 0.0)
+	Vector3(-20.0, 0.5, -20.0),
+	Vector3(-20.0, 0.5, 20.0),
+	Vector3(20.0, 0.5, 20.0),
+	Vector3(20.0, 0.5, -20.0)
 ]
 
 var item_spawns: Array[Vector3] = [
 	Vector3(0.0, 0.6, 0.0),        # Central hub (near holo globe)
-	Vector3(-16.0, 0.6, -15.0),    # Cafeteria
-	Vector3(-16.0, 0.6, 15.0),     # Cargo Bay
-	Vector3(16.0, 0.6, 15.0),      # Medbay
-	Vector3(22.0, 0.6, 0.0),       # Laboratory
+	Vector3(-20.0, 0.6, -20.0),    # Cafeteria
+	Vector3(-20.0, 0.6, 20.0),     # Cargo Bay
+	Vector3(20.0, 0.6, 20.0),      # Medbay
+	Vector3(20.0, 0.6, -20.0),     # Cryo Lab
 	Vector3(-22.0, 0.6, 0.0),      # West Oxygen Bay
-	Vector3(0.0, 0.6, -10.0),      # North Corridor
-	Vector3(0.0, 0.6, 10.0)        # South Corridor
+	Vector3(22.0, 0.6, 0.0),       # East Storage
+	Vector3(0.0, 0.6, -13.0),      # North Corridor
+	Vector3(0.0, 0.6, 13.0)        # South Corridor
 ]
 
 var time_passed: float = 0.0
@@ -64,14 +65,14 @@ func get_runner_spawn(index: int = 0) -> Vector3:
 func get_random_safe_spawn() -> Vector3:
 	var all_spawns: Array[Vector3] = [
 		Vector3(0.0, 0.5, 0.0),      # Center Hub
-		Vector3(0.0, 0.5, -20.0),    # North Chaser Sector
-		Vector3(0.0, 0.5, 20.0),     # South Runner Sector
+		Vector3(0.0, 0.5, -22.0),    # North Chaser Sector
+		Vector3(0.0, 0.5, 22.0),     # South Runner Sector
 		Vector3(-22.0, 0.5, 0.0),    # West Oxygen Bay
-		Vector3(22.0, 0.5, 0.0),     # East Laboratory
-		Vector3(-21.0, 0.5, -21.0),  # Cafeteria
-		Vector3(-21.0, 0.5, 21.0),   # Cargo Bay
-		Vector3(21.0, 0.5, 21.0),    # Medbay
-		Vector3(21.0, 0.5, -21.0)    # Observatory
+		Vector3(22.0, 0.5, 0.0),     # East Storage
+		Vector3(-20.0, 0.5, -20.0),  # Cafeteria
+		Vector3(-20.0, 0.5, 20.0),   # Cargo Bay
+		Vector3(20.0, 0.5, 20.0),    # Medbay
+		Vector3(20.0, 0.5, -20.0)    # Cryo Lab
 	]
 	return all_spawns.pick_random()
 

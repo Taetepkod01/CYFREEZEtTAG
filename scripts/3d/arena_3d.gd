@@ -315,12 +315,12 @@ func _spawn_match_players() -> void:
 		return
 	
 	# Offline Practice Mode (1 Local + 3 Bots) - Tactical Space Station Spawns
-	var chaser_spawn_pos = Vector3(0, 0.5, -20) # North Room (Chaser sector from blueprint)
+	var chaser_spawn_pos = Vector3(0, 0.5, -22) # North Room (Chaser sector from blueprint)
 	var runner_spawn_positions = [
-		Vector3(0, 0.5, 20),    # South Room (Runner Primary)
-		Vector3(-22, 0.5, 0),   # West Room (Oxygen Bay)
-		Vector3(-16, 0.5, -15), # NW Cafeteria
-		Vector3(16, 0.5, 15)    # SE Medbay
+		Vector3(0, 0.5, 22),     # South Room (Runner Primary)
+		Vector3(-22, 0.5, 0),    # West Room (Oxygen Bay)
+		Vector3(-20, 0.5, -20),  # NW Cafeteria (Safe center)
+		Vector3(20, 0.5, 20)     # SE Medbay (Safe center)
 	]
 	
 	var p1_is_tagger: bool = false
