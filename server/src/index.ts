@@ -690,12 +690,12 @@ function start3DRound(room: Active3DRoom) {
     { x: 4.0, y: 0.6, z: 0.0 }
   ];
   const labyrinthRunnerSpawns = [
-    { x: -14.0, y: 0.5, z: 18.0 },
-    { x: 12.0, y: 0.6, z: 4.0 },
-    { x: 0.0, y: 0.9, z: 8.0 },
-    { x: 6.0, y: 1.4, z: -4.0 },
-    { x: -4.0, y: 1.4, z: 2.0 },
-    { x: 2.0, y: 1.3, z: 6.0 }
+    { x: -3.0, y: 3.3, z: 18.0 },
+    { x: -20.0, y: 3.1, z: 13.0 },
+    { x: 15.0, y: 8.3, z: 13.0 },
+    { x: -21.0, y: 3.2, z: -10.0 },
+    { x: 15.0, y: 3.3, z: -13.0 },
+    { x: -3.0, y: 7.2, z: -3.0 }
   ];
   let runnerSpawnIdx = 0;
 
@@ -727,7 +727,7 @@ function start3DRound(room: Active3DRoom) {
       }
     } else if (isLabyrinth) {
       if (p.role === "tagger") {
-        p.x = -12.0; p.y = 0.8; p.z = -18.0;
+        p.x = -3.0; p.y = 5.8; p.z = -22.0;
       } else {
         const sp = labyrinthRunnerSpawns[runnerSpawnIdx % labyrinthRunnerSpawns.length];
         p.x = sp.x; p.y = sp.y; p.z = sp.z;
@@ -777,13 +777,14 @@ function start3DRound(room: Active3DRoom) {
       z = spot.z;
     } else if (isLabyrinth) {
       const spots = [
-        { x: 0.0, y: 0.9, z: 8.0 },
-        { x: -12.0, y: 0.4, z: 0.0 },
-        { x: -4.0, y: 0.5, z: 10.0 },
-        { x: 8.0, y: 0.7, z: -14.0 },
-        { x: 12.0, y: 0.6, z: 4.0 },
-        { x: -10.0, y: 0.5, z: -14.0 },
-        { x: -8.0, y: 1.5, z: 0.0 }
+        { x: -13.0, y: 8.5, z: -2.0 },
+        { x: 7.0, y: 8.2, z: -3.0 },
+        { x: -3.0, y: 3.4, z: 10.0 },
+        { x: -3.0, y: 8.2, z: -13.0 },
+        { x: -18.0, y: 4.5, z: -18.0 },
+        { x: 12.0, y: 4.2, z: -18.0 },
+        { x: -18.0, y: 3.2, z: 12.0 },
+        { x: 12.0, y: 4.1, z: 12.0 }
       ];
       const spot = spots[i % spots.length];
       x = spot.x;
@@ -833,10 +834,41 @@ function start3DRound(room: Active3DRoom) {
     if (room.phase !== "playing" || room.items.size >= 6) return;
     const id = `item_${++room.itemCounter}`;
     const t = types[Math.floor(Math.random() * types.length)];
-    const x = Math.round((Math.random() * 40 - 20) * 10) / 10;
-    const z = Math.round((Math.random() * 40 - 20) * 10) / 10;
-    room.items.set(id, { id, type: t, x, y: 0.6, z });
-    broadcastToRoom(room, "item_spawned", { id, type: t, x, y: 0.6, z });
+    let x: number, y: number = 0.6, z: number;
+    if (isSpaceStation) {
+      const spot = itemSpots[Math.floor(Math.random() * itemSpots.length)];
+      x = spot.x; y = spot.y; z = spot.z;
+    } else if (isSnowTown) {
+      const spots = [
+        { x: 0.0, y: 0.8, z: -2.0 },
+        { x: 4.0, y: 0.6, z: 0.0 },
+        { x: -12.0, y: 0.6, z: 18.0 },
+        { x: 6.0, y: 0.5, z: -12.0 },
+        { x: 10.0, y: 0.6, z: -2.0 },
+        { x: -20.0, y: 0.6, z: 10.0 },
+        { x: 18.0, y: 0.5, z: -6.0 }
+      ];
+      const spot = spots[Math.floor(Math.random() * spots.length)];
+      x = spot.x; y = spot.y; z = spot.z;
+    } else if (isLabyrinth) {
+      const spots = [
+        { x: -13.0, y: 8.5, z: -2.0 },
+        { x: 7.0, y: 8.2, z: -3.0 },
+        { x: -3.0, y: 3.4, z: 10.0 },
+        { x: -3.0, y: 8.2, z: -13.0 },
+        { x: -18.0, y: 4.5, z: -18.0 },
+        { x: 12.0, y: 4.2, z: -18.0 },
+        { x: -18.0, y: 3.2, z: 12.0 },
+        { x: 12.0, y: 4.1, z: 12.0 }
+      ];
+      const spot = spots[Math.floor(Math.random() * spots.length)];
+      x = spot.x; y = spot.y; z = spot.z;
+    } else {
+      x = Math.round((Math.random() * 40 - 20) * 10) / 10;
+      z = Math.round((Math.random() * 40 - 20) * 10) / 10;
+    }
+    room.items.set(id, { id, type: t, x, y, z });
+    broadcastToRoom(room, "item_spawned", { id, type: t, x, y, z });
   }, 9000);
 }
 

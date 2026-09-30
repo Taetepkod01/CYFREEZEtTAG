@@ -3,9 +3,10 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://c7m5r8dx2wtc0"
-path="res://.godot/imported/snow_town_texture_diffuse.png-fe27aae4da11ab1e6c425bda8c0de15a.ctex"
+path.s3tc="res://.godot/imported/snow_town_texture_diffuse.png-fe27aae4da11ab1e6c425bda8c0de15a.s3tc.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc"],
+"vram_texture": true
 }
 generator_parameters={
 "md5": "ed47d5c75bcd02d5c63e6e8b29c2394b"
@@ -14,11 +15,11 @@ generator_parameters={
 [deps]
 
 source_file="res://assets/maps/snow_town_texture_diffuse.png"
-dest_files=["res://.godot/imported/snow_town_texture_diffuse.png-fe27aae4da11ab1e6c425bda8c0de15a.ctex"]
+dest_files=["res://.godot/imported/snow_town_texture_diffuse.png-fe27aae4da11ab1e6c425bda8c0de15a.s3tc.ctex"]
 
 [params]
 
-compress/mode=0
+compress/mode=2
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0
@@ -40,4 +41,4 @@ process/normal_map_invert_y=false
 process/hdr_as_srgb=false
 process/hdr_clamp_exposure=false
 process/size_limit=0
-detect_3d/compress_to=1
+detect_3d/compress_to=0

@@ -10,29 +10,30 @@ func _ready() -> void:
 			col.shape = model_node.mesh.create_trimesh_shape()
 			static_body.add_child(col)
 
-# Spawn positions for Labyrinth Maze (Right-side up corridor floors)
+# Spawn positions for Labyrinth Maze (Upright corridor floors)
 var chaser_spawns: Array[Vector3] = [
-	Vector3(-12.0, 0.8, -18.0),
-	Vector3(-10.0, 0.8, -18.0)
+	Vector3(-3.0, 5.8, -22.0),
+	Vector3(7.0, 5.5, -22.0)
 ]
 
 var runner_spawns: Array[Vector3] = [
-	Vector3(-14.0, 0.5, 18.0),
-	Vector3(12.0, 0.6, 4.0),
-	Vector3(0.0, 0.9, 8.0),
-	Vector3(6.0, 1.4, -4.0),
-	Vector3(-4.0, 1.4, 2.0),
-	Vector3(2.0, 1.3, 6.0)
+	Vector3(-3.0, 3.3, 18.0),
+	Vector3(-20.0, 3.1, 13.0),
+	Vector3(15.0, 8.3, 13.0),
+	Vector3(-21.0, 3.2, -10.0),
+	Vector3(15.0, 3.3, -13.0),
+	Vector3(-3.0, 7.2, -3.0)
 ]
 
 var item_spawns: Array[Vector3] = [
-	Vector3(0.0, 0.9, 8.0),         # Center Intersection
-	Vector3(-12.0, 0.4, 0.0),       # West Corridor
-	Vector3(-4.0, 0.5, 10.0),       # South-Central Path
-	Vector3(8.0, 0.7, -14.0),       # Northeast Path
-	Vector3(12.0, 0.6, 4.0),        # East Corridor
-	Vector3(-10.0, 0.5, -14.0),     # North-Central Path
-	Vector3(-8.0, 1.5, 0.0)         # Central Hub
+	Vector3(-13.0, 8.5, -2.0),
+	Vector3(7.0, 8.2, -3.0),
+	Vector3(-3.0, 3.4, 10.0),
+	Vector3(-3.0, 8.2, -13.0),
+	Vector3(-18.0, 4.5, -18.0),
+	Vector3(12.0, 4.2, -18.0),
+	Vector3(-18.0, 3.2, 12.0),
+	Vector3(12.0, 4.1, 12.0)
 ]
 
 func get_tagger_spawn() -> Vector3:
@@ -44,17 +45,7 @@ func get_runner_spawn(index: int = 0) -> Vector3:
 	return runner_spawns.pick_random()
 
 func get_random_safe_spawn() -> Vector3:
-	var all_spawns: Array[Vector3] = [
-		Vector3(-14.0, 0.5, 18.0),
-		Vector3(12.0, 0.6, 4.0),
-		Vector3(0.0, 0.9, 8.0),
-		Vector3(6.0, 1.4, -4.0),
-		Vector3(-4.0, 1.4, 2.0),
-		Vector3(2.0, 1.3, 6.0),
-		Vector3(-12.0, 0.4, 0.0),
-		Vector3(-10.0, 0.5, -14.0)
-	]
-	return all_spawns.pick_random()
+	return runner_spawns.pick_random()
 
 func get_random_item_spawn() -> Vector3:
 	return item_spawns.pick_random()

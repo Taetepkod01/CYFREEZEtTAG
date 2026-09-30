@@ -1,7 +1,7 @@
-[gd_scene load_steps=5 format=3 uid="uid://map_labyrinth_001"]
+[gd_scene format=3 uid="uid://bfx2m2ido76ps"]
 
-[ext_resource type="Script" path="res://scripts/3d/map_labyrinth.gd" id="1_script"]
-[ext_resource type="PackedScene" path="res://assets/maps/labyrinth.glb" id="2_model"]
+[ext_resource type="Script" uid="uid://fewwqo6ddx87" path="res://scripts/3d/map_labyrinth.gd" id="1_script"]
+[ext_resource type="PackedScene" uid="uid://bjdpkf2365se8" path="res://assets/maps/labyrinth.glb" id="2_model"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_lab"]
 sky_top_color = Color(0.2, 0.35, 0.6, 1)
@@ -21,22 +21,21 @@ tonemap_mode = 2
 glow_enabled = true
 glow_intensity = 0.6
 
-[node name="MapLabyrinth" type="Node3D"]
+[node name="MapLabyrinth" type="Node3D" unique_id=1862750635]
 script = ExtResource("1_script")
 
-[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=2144286796]
 environment = SubResource("Environment_lab")
 
-[node name="SunLight" type="DirectionalLight3D" parent="."]
+[node name="SunLight" type="DirectionalLight3D" parent="." unique_id=2065671190]
 transform = Transform3D(0.866025, -0.433013, 0.25, 0, 0.5, 0.866025, -0.5, -0.75, 0.433013, 0, 25, 0)
 light_color = Color(1, 0.9, 0.8, 1)
 light_energy = 1.2
 shadow_enabled = true
 
-[node name="LabyrinthModel" parent="." instance=ExtResource("2_model")]
-transform = Transform3D(8, 0, 0, 0, -8, 7e-07, 0, -7e-07, -8, 0, 8, 0)
+[node name="LabyrinthModel" parent="." unique_id=990144538 instance=ExtResource("2_model")]
+transform = Transform3D(8, 0, 0, 0, 8, 0, 0, 0, 8, 0, 0, 0)
 
-[node name="StaticBody3D" type="StaticBody3D" parent="."]
-transform = Transform3D(8, 0, 0, 0, -8, 7e-07, 0, -7e-07, -8, 0, 8, 0)
-collision_layer = 1
+[node name="StaticBody3D" type="StaticBody3D" parent="." unique_id=1212711476]
+transform = Transform3D(8, 0, 0, 0, 8, 0, 0, 0, 8, 0, 0, 0)
 collision_mask = 3
