@@ -231,7 +231,43 @@ func _physics_process(delta: float) -> void:
 		velocity.z = move_toward(velocity.z, 0, current_speed)
 	
 	move_and_slide()
+	
+	# Void Fall Protection: If fallen below the station/map, teleport back to safe random spawn
+	if global_position.y < -3.0:
+		_recover_from_void()
+		
 	_send_network_position(delta)
+
+func _recover_from_void() -> void:
+	velocity = Vector3.ZERO
+	var safe_pos = Vector3(0.0, 0.5, 0.0)
+	
+	var arena = get_tree().current_scene
+	if arena and "current_map_node" in arena and arena.current_map_node != null:
+		var map = arena.current_map_node
+		if map.has_method("get_random_safe_spawn"):
+			safe_pos = map.get_random_safe_spawn()
+		elif role == "tagger" and map.has_method("get_tagger_spawn"):
+			safe_pos = map.get_tagger_spawn()
+		elif map.has_method("get_runner_spawn"):
+			safe_pos = map.get_runner_spawn()
+	else:
+		var default_spawns = [
+			Vector3(0.0, 0.5, 0.0),
+			Vector3(0.0, 0.5, -20.0),
+			Vector3(0.0, 0.5, 20.0),
+			Vector3(-22.0, 0.5, 0.0),
+			Vector3(22.0, 0.5, 0.0)
+		]
+		safe_pos = default_spawns.pick_random()
+	
+	global_position = safe_pos
+	
+	if is_local_player():
+		if arena and arena.has_method("add_game_log"):
+			arena.add_game_log("[color=#ff9800]⚠️ Fell into space! Teleported back to station.[/color]")
+		if Network and Network.is_online_game():
+			Network.send_move(global_position, rotation.y)
 
 func _send_network_position(delta: float) -> void:
 	if not is_local_player() or not Network or not Network.is_online_game():

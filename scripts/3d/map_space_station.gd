@@ -61,5 +61,19 @@ func get_runner_spawn(index: int = 0) -> Vector3:
 		return runner_spawns[index]
 	return runner_spawns.pick_random()
 
+func get_random_safe_spawn() -> Vector3:
+	var all_spawns: Array[Vector3] = [
+		Vector3(0.0, 0.5, 0.0),      # Center Hub
+		Vector3(0.0, 0.5, -20.0),    # North Chaser Sector
+		Vector3(0.0, 0.5, 20.0),     # South Runner Sector
+		Vector3(-22.0, 0.5, 0.0),    # West Oxygen Bay
+		Vector3(22.0, 0.5, 0.0),     # East Laboratory
+		Vector3(-21.0, 0.5, -21.0),  # Cafeteria
+		Vector3(-21.0, 0.5, 21.0),   # Cargo Bay
+		Vector3(21.0, 0.5, 21.0),    # Medbay
+		Vector3(21.0, 0.5, -21.0)    # Observatory
+	]
+	return all_spawns.pick_random()
+
 func get_random_item_spawn() -> Vector3:
 	return item_spawns.pick_random()

@@ -151,6 +151,22 @@ func _load_arena_map() -> void:
 				child.queue_free()
 			current_map_node = map_scene.instantiate()
 			env_container.add_child(current_map_node)
+			
+			# Apply map's starry space environment to root WorldEnvironment
+			var root_world_env = get_node_or_null("WorldEnvironment") as WorldEnvironment
+			var map_world_env = current_map_node.get_node_or_null("WorldEnvironment") as WorldEnvironment
+			if root_world_env and map_world_env and map_world_env.environment:
+				root_world_env.environment = map_world_env.environment
+				map_world_env.queue_free()
+				
+			var root_light = get_node_or_null("DirectionalLight3D") as DirectionalLight3D
+			var map_light = current_map_node.get_node_or_null("SpaceSunLight") as DirectionalLight3D
+			if root_light and map_light:
+				root_light.light_color = map_light.light_color
+				root_light.light_energy = map_light.light_energy
+				root_light.transform = map_light.transform
+				map_light.queue_free()
+				
 			add_game_log("[color=#4fc3f7]Map: SPACE STATION (Alpha Sector)[/color]")
 			return
 		else:
