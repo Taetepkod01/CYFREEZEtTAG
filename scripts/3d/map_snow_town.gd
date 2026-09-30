@@ -2,13 +2,15 @@ extends Node3D
 
 func _ready() -> void:
 	var model_node = get_node_or_null("SnowTownModel/model") as MeshInstance3D
-	if model_node and model_node.mesh:
-		var static_body = get_node_or_null("StaticBody3D") as StaticBody3D
-		if static_body and static_body.get_child_count() == 0:
-			var col = CollisionShape3D.new()
-			col.name = "ModelCollision"
-			col.shape = model_node.mesh.create_trimesh_shape()
-			static_body.add_child(col)
+	if model_node:
+		var col_body = model_node.get_node_or_null("model_col") as StaticBody3D
+		if not col_body:
+			model_node.create_trimesh_collision()
+			col_body = model_node.get_node_or_null("model_col") as StaticBody3D
+		if col_body:
+			col_body.collision_layer = 1
+			col_body.collision_mask = 3
+			col_body.position.y = 0.02
 
 # Spawn positions for Snow Town (exact ground level Y ~ 0.5 - 0.8)
 var chaser_spawns: Array[Vector3] = [
