@@ -1,19 +1,20 @@
-[gd_scene load_steps=18 format=3 uid="uid://b3dmenu00001"]
+[gd_scene format=3 uid="uid://b3dmenu00001"]
 
-[ext_resource type="Script" path="res://scripts/3d/main_menu_3d.gd" id="1_menu3d"]
-[ext_resource type="Texture2D" path="res://assets/ui/ice_frame_border.png" id="2_ice_frame"]
-[ext_resource type="FontFile" path="res://assets/fonts/Audiowide.ttf" id="3_font_audio"]
-[ext_resource type="Texture2D" path="res://assets/ui/buttons/title_logo.png" id="4_title_logo"]
-[ext_resource type="Texture2D" path="res://assets/ui/buttons/btn_play.png" id="5_btn_play"]
-[ext_resource type="Texture2D" path="res://assets/ui/buttons/btn_practice.png" id="6_btn_practice"]
-[ext_resource type="Texture2D" path="res://assets/ui/buttons/btn_settings.png" id="7_btn_settings"]
-[ext_resource type="Texture2D" path="res://assets/ui/buttons/btn_quit.png" id="8_btn_quit"]
-[ext_resource type="Texture2D" path="res://assets/ui/buttons/btn_role_random_off.png" id="9_role_random_off"]
-[ext_resource type="Texture2D" path="res://assets/ui/buttons/btn_role_tagger_off.png" id="10_role_tagger_off"]
-[ext_resource type="Texture2D" path="res://assets/ui/buttons/btn_role_runner_on.png" id="11_role_runner_on"]
-[ext_resource type="Texture2D" path="res://assets/ui/buttons/btn_start_practice.png" id="12_btn_start_practice"]
-[ext_resource type="Texture2D" path="res://assets/ui/buttons/btn_cancel.png" id="13_btn_cancel"]
-[ext_resource type="Texture2D" path="res://assets/ui/buttons/btn_close.png" id="14_btn_close"]
+[ext_resource type="Script" uid="uid://dtrl5k858xhrd" path="res://scripts/3d/main_menu_3d.gd" id="1_menu3d"]
+[ext_resource type="Texture2D" uid="uid://dt81ypwyhbkk8" path="res://assets/ui/ice_frame_border.png" id="2_ice_frame"]
+[ext_resource type="FontFile" uid="uid://dnk82lv14wm8o" path="res://assets/fonts/Audiowide.ttf" id="3_font_audio"]
+[ext_resource type="Texture2D" uid="uid://cjfg7klsmanox" path="res://assets/ui/buttons/title_logo.png" id="4_title_logo"]
+[ext_resource type="Texture2D" uid="uid://tm1uihde7vtu" path="res://assets/ui/buttons/btn_play.png" id="5_btn_play"]
+[ext_resource type="Texture2D" uid="uid://dai41lyvrrbqn" path="res://assets/ui/buttons/btn_practice.png" id="6_btn_practice"]
+[ext_resource type="Texture2D" uid="uid://lplcelyqwgvu" path="res://assets/ui/buttons/btn_settings.png" id="7_btn_settings"]
+[ext_resource type="Texture2D" uid="uid://27oqy4xcpv6w" path="res://assets/ui/buttons/btn_quit.png" id="8_btn_quit"]
+[ext_resource type="Texture2D" uid="uid://b174lmscwy0yd" path="res://assets/ui/buttons/btn_role_random_off.png" id="9_role_random_off"]
+[ext_resource type="Texture2D" uid="uid://ud2yuicnxke7" path="res://assets/ui/buttons/btn_role_tagger_off.png" id="10_role_tagger_off"]
+[ext_resource type="Texture2D" uid="uid://cf8qyh3h5a3c1" path="res://assets/ui/buttons/btn_role_runner_on.png" id="11_role_runner_on"]
+[ext_resource type="Texture2D" uid="uid://cg4g1mia7rv1t" path="res://assets/ui/buttons/btn_start_practice.png" id="12_btn_start_practice"]
+[ext_resource type="Texture2D" uid="uid://0dn25e7bteoo" path="res://assets/ui/buttons/btn_cancel.png" id="13_btn_cancel"]
+[ext_resource type="Texture2D" uid="uid://yipdldjg6ll5" path="res://assets/ui/buttons/btn_close.png" id="14_btn_close"]
+[ext_resource type="Texture2D" uid="uid://cntabkqg4t2dk" path="res://assets/ui/panels/panel_practice_modal.png" id="15_panel_practice"]
 
 [sub_resource type="Curve" id="Curve_particles"]
 _data = [Vector2(0, 0.4), 0.0, 0.0, 0, 0, Vector2(0.5, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
@@ -21,6 +22,8 @@ point_count = 3
 
 [sub_resource type="Gradient" id="Gradient_particles"]
 colors = PackedColorArray(0.8, 0.95, 1, 0.7, 0.3, 0.7, 1, 0)
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_practice"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_modal_ice"]
 bg_color = Color(0.03, 0.08, 0.18, 0.95)
@@ -36,7 +39,7 @@ corner_radius_bottom_left = 18
 shadow_color = Color(0, 0.5, 0.95, 0.35)
 shadow_size = 20
 
-[node name="MainMenu3D" type="Control"]
+[node name="MainMenu3D" type="Control" unique_id=646906610]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -45,7 +48,7 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_menu3d")
 
-[node name="Background" type="ColorRect" parent="."]
+[node name="Background" type="ColorRect" parent="." unique_id=153217506]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -54,7 +57,7 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.03, 0.07, 0.18, 1)
 
-[node name="Snowflakes" type="CPUParticles2D" parent="."]
+[node name="Snowflakes" type="CPUParticles2D" parent="." unique_id=233906031]
 position = Vector2(576, -20)
 amount = 45
 lifetime = 8.0
@@ -71,7 +74,7 @@ scale_amount_max = 4.0
 scale_amount_curve = SubResource("Curve_particles")
 color_ramp = SubResource("Gradient_particles")
 
-[node name="IceBorderOverlay" type="TextureRect" parent="."]
+[node name="IceBorderOverlay" type="TextureRect" parent="." unique_id=949853337]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -82,7 +85,7 @@ mouse_filter = 2
 texture = ExtResource("2_ice_frame")
 expand_mode = 1
 
-[node name="TitleLogo" type="TextureRect" parent="."]
+[node name="TitleLogo" type="TextureRect" parent="." unique_id=1434559025]
 layout_mode = 1
 anchors_preset = 5
 anchor_left = 0.5
@@ -97,7 +100,7 @@ texture = ExtResource("4_title_logo")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="MenuButtons" type="VBoxContainer" parent="."]
+[node name="MenuButtons" type="VBoxContainer" parent="." unique_id=203857946]
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
@@ -113,31 +116,31 @@ grow_vertical = 2
 theme_override_constants/separation = 10
 alignment = 1
 
-[node name="PlayOnlineBtn" type="TextureButton" parent="MenuButtons"]
+[node name="PlayOnlineBtn" type="TextureButton" parent="MenuButtons" unique_id=1077905476]
 custom_minimum_size = Vector2(225, 49)
 layout_mode = 2
 texture_normal = ExtResource("5_btn_play")
 stretch_mode = 5
 
-[node name="PracticeBtn" type="TextureButton" parent="MenuButtons"]
+[node name="PracticeBtn" type="TextureButton" parent="MenuButtons" unique_id=57100972]
 custom_minimum_size = Vector2(225, 49)
 layout_mode = 2
 texture_normal = ExtResource("6_btn_practice")
 stretch_mode = 5
 
-[node name="HowToPlayBtn" type="TextureButton" parent="MenuButtons"]
+[node name="HowToPlayBtn" type="TextureButton" parent="MenuButtons" unique_id=367308847]
 custom_minimum_size = Vector2(225, 49)
 layout_mode = 2
 texture_normal = ExtResource("7_btn_settings")
 stretch_mode = 5
 
-[node name="QuitBtn" type="TextureButton" parent="MenuButtons"]
+[node name="QuitBtn" type="TextureButton" parent="MenuButtons" unique_id=1997862845]
 custom_minimum_size = Vector2(225, 49)
 layout_mode = 2
 texture_normal = ExtResource("8_btn_quit")
 stretch_mode = 5
 
-[node name="PracticeModal" type="Panel" parent="."]
+[node name="PracticeModal" type="Panel" parent="." unique_id=998048265]
 visible = false
 layout_mode = 1
 anchors_preset = 8
@@ -145,117 +148,84 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -220.0
-offset_top = -215.0
-offset_right = 220.0
-offset_bottom = 215.0
+offset_left = -212.0
+offset_top = -190.0
+offset_right = 212.0
+offset_bottom = 190.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_modal_ice")
+theme_override_styles/panel = SubResource("StyleBoxEmpty_practice")
 
-[node name="Title" type="Label" parent="PracticeModal"]
+[node name="Bg" type="TextureRect" parent="PracticeModal" unique_id=1238075011]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("15_panel_practice")
+expand_mode = 1
+
+[node name="RoleButtons" type="VBoxContainer" parent="PracticeModal" unique_id=1449802368]
 layout_mode = 1
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
-offset_left = -180.0
-offset_top = 16.0
-offset_right = 180.0
-offset_bottom = 48.0
+offset_left = -159.5
+offset_top = 87.0
+offset_right = 159.5
+offset_bottom = 251.0
 grow_horizontal = 2
-theme_override_fonts/font = ExtResource("3_font_audio")
-theme_override_colors/font_color = Color(0.65, 0.92, 1, 1)
-theme_override_colors/font_shadow_color = Color(0, 0.5, 0.95, 0.9)
-theme_override_constants/shadow_outline_size = 6
-theme_override_font_sizes/font_size = 20
-text = "* PRACTICE *"
-horizontal_alignment = 1
+theme_override_constants/separation = 7
 
-[node name="Subtitle" type="Label" parent="PracticeModal"]
-layout_mode = 1
-anchors_preset = 5
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = -150.0
-offset_top = 46.0
-offset_right = 150.0
-offset_bottom = 68.0
-grow_horizontal = 2
-theme_override_fonts/font = ExtResource("3_font_audio")
-theme_override_colors/font_color = Color(0.3, 0.8, 1, 1)
-theme_override_font_sizes/font_size = 11
-text = "--  CHOOSE ROLE  --"
-horizontal_alignment = 1
-
-[node name="RoleButtons" type="VBoxContainer" parent="PracticeModal"]
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -155.0
-offset_top = -80.0
-offset_right = 155.0
-offset_bottom = 85.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_constants/separation = 8
-alignment = 1
-
-[node name="RandomRoleBtn" type="TextureButton" parent="PracticeModal/RoleButtons"]
-custom_minimum_size = Vector2(307, 52)
+[node name="RandomRoleBtn" type="TextureButton" parent="PracticeModal/RoleButtons" unique_id=615439443]
+custom_minimum_size = Vector2(319, 50)
 layout_mode = 2
 texture_normal = ExtResource("9_role_random_off")
 stretch_mode = 5
 
-[node name="TaggerRoleBtn" type="TextureButton" parent="PracticeModal/RoleButtons"]
-custom_minimum_size = Vector2(307, 52)
+[node name="TaggerRoleBtn" type="TextureButton" parent="PracticeModal/RoleButtons" unique_id=1162911907]
+custom_minimum_size = Vector2(319, 50)
 layout_mode = 2
 texture_normal = ExtResource("10_role_tagger_off")
 stretch_mode = 5
 
-[node name="RunnerRoleBtn" type="TextureButton" parent="PracticeModal/RoleButtons"]
-custom_minimum_size = Vector2(307, 52)
+[node name="RunnerRoleBtn" type="TextureButton" parent="PracticeModal/RoleButtons" unique_id=22914756]
+custom_minimum_size = Vector2(319, 50)
 layout_mode = 2
 texture_normal = ExtResource("11_role_runner_on")
 stretch_mode = 5
 
-[node name="StartPracticeBtn" type="TextureButton" parent="PracticeModal"]
-custom_minimum_size = Vector2(246, 48)
+[node name="StartPracticeBtn" type="TextureButton" parent="PracticeModal" unique_id=484649291]
+custom_minimum_size = Vector2(258, 47)
 layout_mode = 1
-anchors_preset = 7
+anchors_preset = 5
 anchor_left = 0.5
-anchor_top = 1.0
 anchor_right = 0.5
-anchor_bottom = 1.0
-offset_left = -123.0
-offset_top = -92.0
-offset_right = 123.0
-offset_bottom = -44.0
+offset_left = -129.0
+offset_top = 271.0
+offset_right = 129.0
+offset_bottom = 318.0
 grow_horizontal = 2
-grow_vertical = 0
 texture_normal = ExtResource("12_btn_start_practice")
 stretch_mode = 5
 
-[node name="ClosePracticeBtn" type="TextureButton" parent="PracticeModal"]
-custom_minimum_size = Vector2(140, 36)
+[node name="ClosePracticeBtn" type="TextureButton" parent="PracticeModal" unique_id=811304944]
+custom_minimum_size = Vector2(132, 29)
 layout_mode = 1
-anchors_preset = 7
+anchors_preset = 5
 anchor_left = 0.5
-anchor_top = 1.0
 anchor_right = 0.5
-anchor_bottom = 1.0
-offset_left = -70.0
-offset_top = -38.0
-offset_right = 70.0
-offset_bottom = -4.0
+offset_left = -66.0
+offset_top = 329.0
+offset_right = 66.0
+offset_bottom = 358.0
 grow_horizontal = 2
-grow_vertical = 0
 texture_normal = ExtResource("13_btn_cancel")
 stretch_mode = 5
 
-[node name="RulesPanel" type="Panel" parent="."]
+[node name="RulesPanel" type="Panel" parent="." unique_id=1506270404]
 visible = false
 layout_mode = 1
 anchors_preset = 8
@@ -271,7 +241,7 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_modal_ice")
 
-[node name="Title" type="Label" parent="RulesPanel"]
+[node name="Title" type="Label" parent="RulesPanel" unique_id=2070808066]
 layout_mode = 1
 anchors_preset = 5
 anchor_left = 0.5
@@ -281,15 +251,15 @@ offset_top = 16.0
 offset_right = 180.0
 offset_bottom = 44.0
 grow_horizontal = 2
-theme_override_fonts/font = ExtResource("3_font_audio")
 theme_override_colors/font_color = Color(0.65, 0.92, 1, 1)
 theme_override_colors/font_shadow_color = Color(0, 0.5, 0.95, 0.9)
 theme_override_constants/shadow_outline_size = 6
+theme_override_fonts/font = ExtResource("3_font_audio")
 theme_override_font_sizes/font_size = 20
 text = "* HOW TO PLAY *"
 horizontal_alignment = 1
 
-[node name="Subtitle" type="Label" parent="RulesPanel"]
+[node name="Subtitle" type="Label" parent="RulesPanel" unique_id=792818319]
 layout_mode = 1
 anchors_preset = 5
 anchor_left = 0.5
@@ -299,13 +269,13 @@ offset_top = 46.0
 offset_right = 150.0
 offset_bottom = 66.0
 grow_horizontal = 2
-theme_override_fonts/font = ExtResource("3_font_audio")
 theme_override_colors/font_color = Color(0.3, 0.8, 1, 1)
+theme_override_fonts/font = ExtResource("3_font_audio")
 theme_override_font_sizes/font_size = 11
 text = "GAME INSTRUCTIONS"
 horizontal_alignment = 1
 
-[node name="Content" type="RichTextLabel" parent="RulesPanel"]
+[node name="Content" type="RichTextLabel" parent="RulesPanel" unique_id=295505921]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -334,7 +304,7 @@ text = "[color=#00e5ff][b]OBJECTIVE & RULES:[/b][/color]
 [color=#a78bfa][b]3D CONTROLS:[/b][/color]
 - Mouse: Orbit Camera | WASD: Move | Space: Jump | E: Use Item"
 
-[node name="CloseBtn" type="TextureButton" parent="RulesPanel"]
+[node name="CloseBtn" type="TextureButton" parent="RulesPanel" unique_id=1377338712]
 custom_minimum_size = Vector2(140, 42)
 layout_mode = 1
 anchors_preset = 7

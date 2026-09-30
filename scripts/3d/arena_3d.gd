@@ -40,26 +40,34 @@ var taggers_score: int = 0
 const TEX_NEXT_ROUND = preload("res://assets/ui/buttons/btn_next_round.png")
 const TEX_PLAY_AGAIN = preload("res://assets/ui/buttons/btn_play_again.png")
 
+const TEX_ROLE_RANDOM = preload("res://assets/ui/buttons/btn_role_random.png")
+const TEX_ROLE_RANDOM_SEL = preload("res://assets/ui/buttons/btn_role_random_sel.png")
+const TEX_ROLE_TAGGER = preload("res://assets/ui/buttons/btn_role_tagger.png")
+const TEX_ROLE_TAGGER_SEL = preload("res://assets/ui/buttons/btn_role_tagger_sel.png")
+const TEX_ROLE_RUNNER = preload("res://assets/ui/buttons/btn_role_runner.png")
+const TEX_ROLE_RUNNER_SEL = preload("res://assets/ui/buttons/btn_role_runner_sel.png")
+
 # Match Summary Panel (5.png)
 @onready var game_over_panel: Panel = $HUD/GameOverPanel
 @onready var game_over_title: Label = $HUD/GameOverPanel/Title
 @onready var score_lbl: Label = $HUD/GameOverPanel/ScoreLabel
 @onready var mvp_lbl: Label = $HUD/GameOverPanel/MVPLabel
-@onready var next_round_btn: TextureButton = $HUD/GameOverPanel/Buttons/NextButton
-@onready var exit_menu_btn: TextureButton = $HUD/GameOverPanel/Buttons/ExitButton
+@onready var next_round_btn: Button = $HUD/GameOverPanel/Buttons/NextButton
+@onready var exit_menu_btn: Button = $HUD/GameOverPanel/Buttons/ExitButton
 
 # Menu / Instructions Modal (6.png)
-@onready var menu_btn: TextureButton = $HUD/MenuButton
+@onready var menu_btn: Button = $HUD/MenuButton
 @onready var menu_modal: Panel = $HUD/MenuModal
 @onready var resume_btn: Button = $HUD/MenuModal/Buttons/ResumeBtn
 @onready var leave_btn: TextureButton = $HUD/MenuModal/Buttons/LeaveBtn
 
 # Practice Role Modal (4.png)
 @onready var practice_role_modal: Panel = $HUD/PracticeRoleModal
-@onready var opt_random: Button = $HUD/PracticeRoleModal/RoleVBox/OptRandom
-@onready var opt_tagger: Button = $HUD/PracticeRoleModal/RoleVBox/OptTagger
-@onready var opt_runner: Button = $HUD/PracticeRoleModal/RoleVBox/OptRunner
-@onready var close_role_btn: TextureButton = $HUD/PracticeRoleModal/CloseRoleBtn
+@onready var opt_random: TextureButton = $HUD/PracticeRoleModal/RoleVBox/OptRandom
+@onready var opt_tagger: TextureButton = $HUD/PracticeRoleModal/RoleVBox/OptTagger
+@onready var opt_runner: TextureButton = $HUD/PracticeRoleModal/RoleVBox/OptRunner
+@onready var start_role_btn: TextureButton = $HUD/PracticeRoleModal/StartBtn
+@onready var cancel_role_btn: TextureButton = $HUD/PracticeRoleModal/CancelBtn
 
 var player_nodes: Array[CharacterBody3D] = []
 var local_player: CharacterBody3D = null
@@ -95,10 +103,14 @@ func _ready() -> void:
 			practice_role = Network.selected_practice_role
 		_update_role_button_ui()
 		role_btn.pressed.connect(_toggle_practice_role_modal)
-		opt_random.pressed.connect(func(): _select_practice_role("random"))
-		opt_tagger.pressed.connect(func(): _select_practice_role("tagger"))
-		opt_runner.pressed.connect(func(): _select_practice_role("runner"))
-		close_role_btn.pressed.connect(func(): practice_role_modal.visible = false)
+		opt_random.pressed.connect(func(): _set_pending_role("random"))
+		opt_tagger.pressed.connect(func(): _set_pending_role("tagger"))
+		opt_runner.pressed.connect(func(): _set_pending_role("runner"))
+		start_role_btn.pressed.connect(func(): _select_practice_role(practice_role))
+		cancel_role_btn.pressed.connect(func(): _toggle_practice_role_modal())
+	
+	# Load 3D Space Station Map
+	_load_arena_map()
 	
 	# Connect Minimap
 	if minimap and minimap.has_method("setup"):
@@ -109,10 +121,24 @@ func _ready() -> void:
 	_update_item_slot("")
 	
 	if not Network or not Network.is_online_game():
-		for i in range(3):
+		for i in range(4):
 			_spawn_random_item()
 	
+	add_game_log("[color=#4fc3f7]Map: SPACE STATION (Alpha Sector)[/color]")
 	add_game_log("[color=#ffe066]Match started![/color] Round %d / %d" % [current_round, max_rounds])
+
+@onready var env_container: Node3D = $Environment
+var current_map_node: Node3D = null
+
+func _load_arena_map() -> void:
+	if not env_container:
+		return
+	var map_scene = load("res://scenes/3d/maps/map_space_station.tscn")
+	if map_scene:
+		for child in env_container.get_children():
+			child.queue_free()
+		current_map_node = map_scene.instantiate()
+		env_container.add_child(current_map_node)
 
 func _connect_network_signals() -> void:
 	if not Network:
@@ -173,10 +199,18 @@ func _process(delta: float) -> void:
 	_update_hud()
 
 # -- Modal Controls & Role Selection -----------------------------------------
+func _release_movement_keys() -> void:
+	for action in ["move_left", "move_right", "move_up", "move_down", "jump"]:
+		Input.action_release(action)
+	if local_player:
+		local_player.velocity.x = 0.0
+		local_player.velocity.z = 0.0
+
 func _toggle_menu_modal() -> void:
 	_set_menu_modal_visible(not menu_modal.visible)
 
 func _set_menu_modal_visible(v: bool) -> void:
+	_release_movement_keys()
 	menu_modal.visible = v
 	if v:
 		practice_role_modal.visible = false
@@ -186,13 +220,26 @@ func _set_menu_modal_visible(v: bool) -> void:
 			Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 
 func _toggle_practice_role_modal() -> void:
+	_release_movement_keys()
 	practice_role_modal.visible = not practice_role_modal.visible
 	if practice_role_modal.visible:
 		menu_modal.visible = false
+		_update_radio_ui()
 		Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 	else:
 		if is_game_active and not game_over_panel.visible and not menu_modal.visible:
 			Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
+
+func _set_pending_role(role_name: String) -> void:
+	practice_role = role_name
+	_update_radio_ui()
+
+func _update_radio_ui() -> void:
+	if not opt_random or not opt_tagger or not opt_runner:
+		return
+	opt_random.texture_normal = TEX_ROLE_RANDOM_SEL if practice_role == "random" else TEX_ROLE_RANDOM
+	opt_tagger.texture_normal = TEX_ROLE_TAGGER_SEL if practice_role == "tagger" else TEX_ROLE_TAGGER
+	opt_runner.texture_normal = TEX_ROLE_RUNNER_SEL if practice_role == "runner" else TEX_ROLE_RUNNER
 
 func _select_practice_role(role_name: String) -> void:
 	practice_role = role_name
@@ -233,12 +280,13 @@ func _spawn_match_players() -> void:
 		_spawn_online_players()
 		return
 	
-	# Offline Practice Mode (1 Local + 3 Bots)
-	var spawn_positions = [
-		Vector3(0, 0.5, 0),
-		Vector3(-14, 0.5, -14),
-		Vector3(14, 0.5, 14),
-		Vector3(14, 0.5, -14)
+	# Offline Practice Mode (1 Local + 3 Bots) - Tactical Space Station Spawns
+	var chaser_spawn_pos = Vector3(0, 0.5, -20) # North Room (Chaser sector from blueprint)
+	var runner_spawn_positions = [
+		Vector3(0, 0.5, 20),    # South Room (Runner Primary)
+		Vector3(-22, 0.5, 0),   # West Room (Oxygen Bay)
+		Vector3(-16, 0.5, -15), # NW Cafeteria
+		Vector3(16, 0.5, 15)    # SE Medbay
 	]
 	
 	var p1_is_tagger: bool = false
@@ -265,7 +313,7 @@ func _spawn_match_players() -> void:
 	p1.player_name = "Player 1 (You)"
 	p1.role = "tagger" if p1_is_tagger else "runner"
 	p1.is_bot = false
-	p1.position = spawn_positions[0]
+	p1.position = chaser_spawn_pos if p1_is_tagger else runner_spawn_positions[0]
 	players_container.add_child(p1)
 	player_nodes.append(p1)
 	local_player = p1
@@ -285,12 +333,17 @@ func _spawn_match_players() -> void:
 	
 	# 3 Bots
 	var bot_names = ["Player 2 (Bot)", "Player 3 (Bot)", "Player 4 (Bot)"]
+	var runner_cursor = 1 if not p1_is_tagger else 0
 	for i in range(3):
 		var bot = player_3d_scene.instantiate()
 		bot.player_name = bot_names[i]
 		bot.role = "tagger" if (i == bot_tagger_idx) else "runner"
 		bot.is_bot = true
-		bot.position = spawn_positions[i + 1]
+		if i == bot_tagger_idx:
+			bot.position = chaser_spawn_pos
+		else:
+			bot.position = runner_spawn_positions[runner_cursor % runner_spawn_positions.size()]
+			runner_cursor += 1
 		players_container.add_child(bot)
 		player_nodes.append(bot)
 		
@@ -340,14 +393,17 @@ func _spawn_online_players() -> void:
 		item.setup(str(it.get("type", "speed")), str(it.get("id", "")))
 
 func _spawn_random_item() -> void:
-	if items_container.get_child_count() >= 5:
+	if items_container.get_child_count() >= 6:
 		return
 	
 	var item_types = ["speed", "shield", "heater", "banana", "vortex", "tackle"]
 	var selected = item_types.pick_random()
 	
 	var item = item_3d_scene.instantiate()
-	item.position = Vector3(randf_range(-22, 22), 0.6, randf_range(-22, 22))
+	if current_map_node and current_map_node.has_method("get_random_item_spawn"):
+		item.position = current_map_node.get_random_item_spawn() + Vector3(randf_range(-1.2, 1.2), 0, randf_range(-1.2, 1.2))
+	else:
+		item.position = Vector3(randf_range(-18, 18), 0.6, randf_range(-18, 18))
 	items_container.add_child(item)
 	item.setup(selected)
 
@@ -516,7 +572,7 @@ func _on_net_round_ended(data: Dictionary) -> void:
 	
 	if Network.is_host:
 		next_round_btn.visible = true
-		next_round_btn.texture_normal = TEX_PLAY_AGAIN if is_match_over else TEX_NEXT_ROUND
+		next_round_btn.text = "PLAY AGAIN" if is_match_over else "NEXT ROUND (%d)" % current_round
 	else:
 		next_round_btn.visible = false
 
@@ -693,9 +749,9 @@ func _end_round(winner: String) -> void:
 		mvp_lbl.text = "MVP: Player 1 (You)"
 	
 	if current_round >= max_rounds:
-		next_round_btn.texture_normal = TEX_PLAY_AGAIN
+		next_round_btn.text = "PLAY AGAIN"
 	else:
-		next_round_btn.texture_normal = TEX_NEXT_ROUND
+		next_round_btn.text = "NEXT ROUND (%d)" % (current_round + 1)
 
 func _on_next_round_pressed() -> void:
 	if Network and Network.is_online_game():

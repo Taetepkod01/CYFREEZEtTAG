@@ -52,16 +52,23 @@ func _draw() -> void:
 	
 	var scale_factor = (radar_radius * 0.88) / (arena_size / 2.0)
 	
-	# Draw static obstacle blocks on minimap
-	var obstacles = [
-		Vector2(-8, -8),
-		Vector2(8, 8),
-		Vector2(-8, 8),
-		Vector2(8, -8)
+	# Draw Space Station modules on radar
+	var rooms = [
+		Rect2(Vector2(-7, -7), Vector2(14, 14)),   # Central Hub
+		Rect2(Vector2(-6, -26), Vector2(12, 10)),  # North Chaser Sector
+		Rect2(Vector2(-6, 16), Vector2(12, 10)),   # South Runner Sector
+		Rect2(Vector2(-26, -5), Vector2(10, 10)),  # West Oxygen Bay
+		Rect2(Vector2(16, -6), Vector2(10, 12)),   # East Lab
+		Rect2(Vector2(-22, -22), Vector2(10, 10)), # NW Cafeteria
+		Rect2(Vector2(-22, 12), Vector2(10, 10)),  # SW Cargo Bay
+		Rect2(Vector2(12, 12), Vector2(10, 10)),   # SE Medbay
 	]
-	for obs in obstacles:
-		var obs_radar_pos = center + obs * scale_factor
-		draw_rect(Rect2(obs_radar_pos - Vector2(3, 3), Vector2(6, 6)), Color(0.15, 0.40, 0.65, 0.5))
+	for r in rooms:
+		var room_rect = Rect2(center + r.position * scale_factor, r.size * scale_factor)
+		draw_rect(room_rect, Color(0.12, 0.45, 0.75, 0.35), false, 1.2)
+	
+	# Draw Earth hologram blip in center
+	draw_circle(center, 3.5 * scale_factor, Color(0.0, 0.85, 1.0, 0.5))
 	
 	# Draw Item Pickups on Radar (Yellow Diamond blips)
 	if "items_container" in arena_ref and arena_ref.items_container:

@@ -19,6 +19,10 @@ signal player_damaged(target: CharacterBody3D, amount: int)
 var freeze_count: int = 0
 var rescue_count: int = 0
 
+# Tag cooldown: prevents tagger from re-triggering tag while still overlapping
+var tag_cooldown_timer: float = 0.0
+const TAG_COOLDOWN: float = 1.2
+
 # Movement Parameters
 @export var walk_speed: float = 7.5
 @export var run_speed: float = 11.0
@@ -66,6 +70,20 @@ var last_sent_rot_y: float = 0.0
 var bot_timer: float = 0.0
 var bot_dir: Vector3 = Vector3.ZERO
 
+# Right-mouse button drag support
+var is_rmb_down: bool = false
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_APPLICATION_FOCUS_OUT or what == NOTIFICATION_WM_WINDOW_FOCUS_OUT:
+		_release_all_movement_inputs()
+
+func _release_all_movement_inputs() -> void:
+	for action in ["move_left", "move_right", "move_up", "move_down", "jump"]:
+		Input.action_release(action)
+	velocity.x = 0.0
+	velocity.z = 0.0
+	is_rmb_down = false
+
 func _ready() -> void:
 	name_tag.text = player_name
 	target_remote_pos = global_position
@@ -94,12 +112,15 @@ func _unhandled_input(event: InputEvent) -> void:
 	if not is_local_player():
 		return
 	
-	# Any mouse button click immediately recaptures mouse if lost by Alt / Alt-Tab
-	if event is InputEventMouseButton and event.pressed:
-		if Input.get_mouse_mode() != Input.MOUSE_MODE_CAPTURED:
-			Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
-			get_viewport().set_input_as_handled()
-			return
+	# Track Right Mouse Button for dragging camera even if pointer lock is lost
+	if event is InputEventMouseButton:
+		if event.button_index == MOUSE_BUTTON_RIGHT:
+			is_rmb_down = event.pressed
+		elif event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+			if Input.get_mouse_mode() != Input.MOUSE_MODE_CAPTURED:
+				Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
+				get_viewport().set_input_as_handled()
+				return
 	
 	# Toggle mouse free/lock with Alt or Escape
 	if event is InputEventKey and event.pressed and not event.echo:
@@ -108,17 +129,19 @@ func _unhandled_input(event: InputEvent) -> void:
 				Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 			else:
 				Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
+			_release_all_movement_inputs()
 			get_viewport().set_input_as_handled()
 			return
 
 	if is_frozen:
 		return
 	
-	# Third-Person Mouse Look
-	if event is InputEventMouseMotion and Input.get_mouse_mode() == Input.MOUSE_MODE_CAPTURED:
-		rotate_y(-event.relative.x * mouse_sensitivity)
-		spring_arm.rotate_x(-event.relative.y * mouse_sensitivity)
-		spring_arm.rotation.x = clamp(spring_arm.rotation.x, deg_to_rad(-65.0), deg_to_rad(45.0))
+	# Third-Person Mouse Look (supports captured mouse mode OR RMB drag)
+	if event is InputEventMouseMotion:
+		if Input.get_mouse_mode() == Input.MOUSE_MODE_CAPTURED or is_rmb_down:
+			rotate_y(-event.relative.x * mouse_sensitivity)
+			spring_arm.rotate_x(-event.relative.y * mouse_sensitivity)
+			spring_arm.rotation.x = clamp(spring_arm.rotation.x, deg_to_rad(-65.0), deg_to_rad(45.0))
 
 func _physics_process(delta: float) -> void:
 	_process_buffs(delta)
@@ -182,9 +205,23 @@ func _physics_process(delta: float) -> void:
 	# Movement Vector Calculation
 	var input_vec := Vector2.ZERO
 	if is_local_player():
-		var x = Input.get_axis("move_left", "move_right")
-		var y = Input.get_axis("move_up", "move_down")
-		input_vec = Vector2(x, y).normalized()
+		# Verify keys to avoid stuck auto-walk from lost keyup events
+		var move_l = Input.is_action_pressed("move_left") and (Input.is_key_pressed(KEY_A) or Input.is_key_pressed(KEY_LEFT))
+		var move_r = Input.is_action_pressed("move_right") and (Input.is_key_pressed(KEY_D) or Input.is_key_pressed(KEY_RIGHT))
+		var move_u = Input.is_action_pressed("move_up") and (Input.is_key_pressed(KEY_W) or Input.is_key_pressed(KEY_UP))
+		var move_d = Input.is_action_pressed("move_down") and (Input.is_key_pressed(KEY_S) or Input.is_key_pressed(KEY_DOWN))
+		
+		# Auto-release if action is stuck without physical key down
+		if Input.is_action_pressed("move_left") and not move_l: Input.action_release("move_left")
+		if Input.is_action_pressed("move_right") and not move_r: Input.action_release("move_right")
+		if Input.is_action_pressed("move_up") and not move_u: Input.action_release("move_up")
+		if Input.is_action_pressed("move_down") and not move_d: Input.action_release("move_down")
+		
+		# Accept movement input when mouse is captured OR right mouse button is being held
+		if Input.get_mouse_mode() == Input.MOUSE_MODE_CAPTURED or is_rmb_down:
+			var x = (1.0 if move_r else 0.0) - (1.0 if move_l else 0.0)
+			var y = (1.0 if move_d else 0.0) - (1.0 if move_u else 0.0)
+			input_vec = Vector2(x, y).normalized()
 	elif is_bot:
 		input_vec = _calculate_bot_input(delta)
 	
@@ -317,6 +354,8 @@ func slip_on_banana() -> void:
 	_update_role_visuals()
 
 func _process_buffs(delta: float) -> void:
+	if tag_cooldown_timer > 0.0:
+		tag_cooldown_timer -= delta
 	if speed_boost_timer > 0.0:
 		speed_boost_timer -= delta
 	if shield_timer > 0.0:
@@ -452,9 +491,17 @@ func _on_interaction_body_entered(other: Node3D) -> void:
 	# Offline practice mode collision
 	if role == "tagger" and other.role == "runner" and not other.is_frozen:
 		if not other.is_tackling and other.invincible_timer <= 0.0:
+			# Cooldown guard: prevent sticking by re-triggering too fast
+			if tag_cooldown_timer > 0.0:
+				return
+			tag_cooldown_timer = TAG_COOLDOWN
 			other.freeze()
 			freeze_count += 1
 			tagged.emit(self, other)
+			# Knockback: push tagger away from frozen runner to prevent sticking
+			var push_dir = (global_position - other.global_position).normalized()
+			push_dir.y = 0.0
+			velocity += push_dir * walk_speed * 1.5
 	elif role == "runner" and not is_frozen and other.role == "runner" and other.is_frozen:
 		other.unfreeze()
 		rescue_count += 1
