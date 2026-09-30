@@ -53,8 +53,6 @@ var my_player_name: String = "Player 1"
 var selected_map: String = "SPACE STATION"
 var is_dragging_slider: bool = false
 
-var refresh_timer: float = 0.0
-
 func _ready() -> void:
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 	code_error_lbl.text = ""
@@ -77,7 +75,7 @@ func _ready() -> void:
 	create_room_btn.pressed.connect(_on_create_room_pressed)
 	join_code_btn.pressed.connect(_on_join_by_code_pressed)
 	back_to_menu_btn.pressed.connect(_on_back_to_menu_pressed)
-	refresh_btn.pressed.connect(func(): if Network: Network.fetch_public_rooms())
+	refresh_btn.pressed.connect(_on_refresh_pressed)
 	
 	for btn in [create_room_btn, join_code_btn, back_to_menu_btn, refresh_btn, action_btn, leave_btn]:
 		if btn:
@@ -101,18 +99,13 @@ func _ready() -> void:
 	if Network and not Network.is_connected_to_server:
 		Network.connect_to_server()
 	
-	# Initially show Browser View & fetch rooms
+	# Initially show Browser View
 	_show_browser_view()
-	if Network:
-		Network.fetch_public_rooms()
 
-func _process(delta: float) -> void:
-	if browser_view.visible:
-		refresh_timer -= delta
-		if refresh_timer <= 0.0:
-			refresh_timer = 3.5
-			if Network:
-				Network.fetch_public_rooms()
+func _on_refresh_pressed() -> void:
+	if Network:
+		print("[Lobby3D] Refresh button clicked: fetching public rooms")
+		Network.fetch_public_rooms()
 
 # -- Network Signals Connection ----------------------------------------------
 func _connect_network_signals() -> void:
@@ -152,8 +145,6 @@ func _on_player_name_changed(new_text: String) -> void:
 
 func _on_network_connected() -> void:
 	code_error_lbl.text = ""
-	if Network:
-		Network.fetch_public_rooms()
 
 # -- Room Code Generator (Local Fallback) ------------------------------------
 func generate_unique_code() -> String:

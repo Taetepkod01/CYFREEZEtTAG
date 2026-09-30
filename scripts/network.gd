@@ -139,7 +139,6 @@ func _handle_state_change(new_state: int, old_state: int) -> void:
 		print("[Network] WebSocket Connected successfully!")
 		is_connected_to_server = true
 		connected_to_server.emit()
-		fetch_public_rooms()
 	elif new_state == WebSocketPeer.STATE_CLOSED:
 		var code = ws_peer.get_close_code()
 		var reason = ws_peer.get_close_reason()
