@@ -1,35 +1,6 @@
 extends Node3D
 
-# Spawn positions for Snow Town
-var chaser_spawns: Array[Vector3] = [
-	Vector3(0.0, 0.5, -18.0),
-	Vector3(-4.0, 0.5, -18.0),
-	Vector3(4.0, 0.5, -18.0)
-]
-
-var runner_spawns: Array[Vector3] = [
-	Vector3(0.0, 0.5, 18.0),
-	Vector3(-18.0, 0.5, 0.0),
-	Vector3(18.0, 0.5, 0.0),
-	Vector3(-15.0, 0.5, -15.0),
-	Vector3(15.0, 0.5, 15.0),
-	Vector3(15.0, 0.5, -15.0)
-]
-
-var item_spawns: Array[Vector3] = [
-	Vector3(0.0, 0.6, 0.0),        # Town Square
-	Vector3(-12.0, 0.6, -12.0),    # Northwest Alley
-	Vector3(12.0, 0.6, 12.0),      # Southeast Plaza
-	Vector3(-12.0, 0.6, 12.0),     # Southwest Market
-	Vector3(12.0, 0.6, -12.0),     # Northeast Street
-	Vector3(0.0, 0.6, -10.0),      # North Fountain
-	Vector3(0.0, 0.6, 10.0),       # South Gate
-	Vector3(-15.0, 0.6, 0.0),      # West Lane
-	Vector3(15.0, 0.6, 0.0)        # East Lane
-]
-
 func _ready() -> void:
-	# Ensure trimesh collision exists for glb model
 	var model_node = get_node_or_null("SnowTownModel/model") as MeshInstance3D
 	if model_node and model_node.mesh:
 		var static_body = get_node_or_null("StaticBody3D") as StaticBody3D
@@ -38,6 +9,31 @@ func _ready() -> void:
 			col.name = "ModelCollision"
 			col.shape = model_node.mesh.create_trimesh_shape()
 			static_body.add_child(col)
+
+# Spawn positions for Snow Town (exact ground level Y ~ 0.5 - 0.8)
+var chaser_spawns: Array[Vector3] = [
+	Vector3(-14.0, 0.6, -14.0),
+	Vector3(-12.0, 0.6, -12.0)
+]
+
+var runner_spawns: Array[Vector3] = [
+	Vector3(14.0, 0.5, -8.0),
+	Vector3(-18.0, 0.6, 10.0),
+	Vector3(18.0, 0.6, 14.0),
+	Vector3(0.0, 0.8, -2.0),
+	Vector3(-16.0, 0.6, 0.0),
+	Vector3(4.0, 0.6, 0.0)
+]
+
+var item_spawns: Array[Vector3] = [
+	Vector3(0.0, 0.8, -2.0),        # Town Center Square
+	Vector3(4.0, 0.6, 0.0),         # East Lane
+	Vector3(-12.0, 0.6, 18.0),      # South Market
+	Vector3(6.0, 0.5, -12.0),       # North Street
+	Vector3(10.0, 0.6, -2.0),       # East Alley
+	Vector3(-20.0, 0.6, 10.0),      # Southwest Corner
+	Vector3(18.0, 0.5, -6.0)        # Northeast Avenue
+]
 
 func get_tagger_spawn() -> Vector3:
 	return chaser_spawns.pick_random()
@@ -49,15 +45,14 @@ func get_runner_spawn(index: int = 0) -> Vector3:
 
 func get_random_safe_spawn() -> Vector3:
 	var all_spawns: Array[Vector3] = [
-		Vector3(0.0, 0.5, 0.0),
-		Vector3(0.0, 0.5, -18.0),
-		Vector3(0.0, 0.5, 18.0),
-		Vector3(-18.0, 0.5, 0.0),
-		Vector3(18.0, 0.5, 0.0),
-		Vector3(-15.0, 0.5, -15.0),
-		Vector3(15.0, 0.5, 15.0),
-		Vector3(-12.0, 0.5, 12.0),
-		Vector3(12.0, 0.5, -12.0)
+		Vector3(0.0, 0.8, -2.0),
+		Vector3(-14.0, 0.6, -14.0),
+		Vector3(14.0, 0.5, -8.0),
+		Vector3(-18.0, 0.6, 10.0),
+		Vector3(18.0, 0.6, 14.0),
+		Vector3(-16.0, 0.6, 0.0),
+		Vector3(4.0, 0.6, 0.0),
+		Vector3(-10.0, 0.6, 18.0)
 	]
 	return all_spawns.pick_random()
 

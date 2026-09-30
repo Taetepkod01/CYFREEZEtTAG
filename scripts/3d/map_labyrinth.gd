@@ -1,35 +1,6 @@
 extends Node3D
 
-# Spawn positions for Labyrinth Maze
-var chaser_spawns: Array[Vector3] = [
-	Vector3(-18.0, 0.5, -18.0),
-	Vector3(-15.0, 0.5, -18.0),
-	Vector3(-18.0, 0.5, -15.0)
-]
-
-var runner_spawns: Array[Vector3] = [
-	Vector3(18.0, 0.5, 18.0),
-	Vector3(18.0, 0.5, -18.0),
-	Vector3(-18.0, 0.5, 18.0),
-	Vector3(0.0, 0.5, 0.0),
-	Vector3(10.0, 0.5, -10.0),
-	Vector3(-10.0, 0.5, 10.0)
-]
-
-var item_spawns: Array[Vector3] = [
-	Vector3(0.0, 0.6, 0.0),        # Maze Center
-	Vector3(-10.0, 0.6, -10.0),    # Northwest Crossroad
-	Vector3(10.0, 0.6, 10.0),      # Southeast Crossroad
-	Vector3(-10.0, 0.6, 10.0),     # Southwest Junction
-	Vector3(10.0, 0.6, -10.0),     # Northeast Junction
-	Vector3(0.0, 0.6, -12.0),      # North Path
-	Vector3(0.0, 0.6, 12.0),       # South Path
-	Vector3(-12.0, 0.6, 0.0),      # West Path
-	Vector3(12.0, 0.6, 0.0)        # East Path
-]
-
 func _ready() -> void:
-	# Ensure trimesh collision exists for glb model
 	var model_node = get_node_or_null("LabyrinthModel/model") as MeshInstance3D
 	if model_node and model_node.mesh:
 		var static_body = get_node_or_null("StaticBody3D") as StaticBody3D
@@ -38,6 +9,31 @@ func _ready() -> void:
 			col.name = "ModelCollision"
 			col.shape = model_node.mesh.create_trimesh_shape()
 			static_body.add_child(col)
+
+# Spawn positions for Labyrinth Maze (exact ground level Y ~ 0.5 - 1.2)
+var chaser_spawns: Array[Vector3] = [
+	Vector3(-20.0, 1.2, -6.0),
+	Vector3(-18.0, 0.6, -6.0)
+]
+
+var runner_spawns: Array[Vector3] = [
+	Vector3(16.0, 0.6, -10.0),
+	Vector3(-16.0, 0.5, 14.0),
+	Vector3(-4.0, 0.5, 0.0),
+	Vector3(6.0, 0.6, 6.0),
+	Vector3(0.0, 0.5, 20.0),
+	Vector3(-14.0, 0.6, 8.0)
+]
+
+var item_spawns: Array[Vector3] = [
+	Vector3(-4.0, 0.5, 0.0),        # Maze Crossroads
+	Vector3(-6.0, 0.5, -10.0),      # West Passage
+	Vector3(-2.0, 0.5, 6.0),        # Central Pathway
+	Vector3(10.0, 1.0, -6.0),       # East Corridor
+	Vector3(14.0, 0.5, -12.0),      # Northeast Corner
+	Vector3(-10.0, 0.4, 20.0),      # South Gate
+	Vector3(12.0, 0.8, -12.0)       # North Route
+]
 
 func get_tagger_spawn() -> Vector3:
 	return chaser_spawns.pick_random()
@@ -49,15 +45,14 @@ func get_runner_spawn(index: int = 0) -> Vector3:
 
 func get_random_safe_spawn() -> Vector3:
 	var all_spawns: Array[Vector3] = [
-		Vector3(0.0, 0.5, 0.0),
-		Vector3(-18.0, 0.5, -18.0),
-		Vector3(18.0, 0.5, 18.0),
-		Vector3(18.0, 0.5, -18.0),
-		Vector3(-18.0, 0.5, 18.0),
-		Vector3(-10.0, 0.5, -10.0),
-		Vector3(10.0, 0.5, 10.0),
-		Vector3(-10.0, 0.5, 10.0),
-		Vector3(10.0, 0.5, -10.0)
+		Vector3(-4.0, 0.5, 0.0),
+		Vector3(16.0, 0.6, -10.0),
+		Vector3(-16.0, 0.5, 14.0),
+		Vector3(6.0, 0.6, 6.0),
+		Vector3(0.0, 0.5, 20.0),
+		Vector3(-14.0, 0.6, 8.0),
+		Vector3(-6.0, 0.5, -10.0),
+		Vector3(2.0, 0.4, 20.0)
 	]
 	return all_spawns.pick_random()
 

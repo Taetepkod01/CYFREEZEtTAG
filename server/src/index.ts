@@ -682,18 +682,20 @@ function start3DRound(room: Active3DRoom) {
     { x: 20, y: 0.5, z: -20 }
   ];
   const snowTownRunnerSpawns = [
-    { x: 0, y: 0.5, z: 18 },
-    { x: -18, y: 0.5, z: 0 },
-    { x: 18, y: 0.5, z: 0 },
-    { x: -15, y: 0.5, z: -15 },
-    { x: 15, y: 0.5, z: 15 }
+    { x: 14.0, y: 0.5, z: -8.0 },
+    { x: -18.0, y: 0.6, z: 10.0 },
+    { x: 18.0, y: 0.6, z: 14.0 },
+    { x: 0.0, y: 0.8, z: -2.0 },
+    { x: -16.0, y: 0.6, z: 0.0 },
+    { x: 4.0, y: 0.6, z: 0.0 }
   ];
   const labyrinthRunnerSpawns = [
-    { x: 18, y: 0.5, z: 18 },
-    { x: 18, y: 0.5, z: -18 },
-    { x: -18, y: 0.5, z: 18 },
-    { x: 0, y: 0.5, z: 0 },
-    { x: 10, y: 0.5, z: -10 }
+    { x: 16.0, y: 0.6, z: -10.0 },
+    { x: -16.0, y: 0.5, z: 14.0 },
+    { x: -4.0, y: 0.5, z: 0.0 },
+    { x: 6.0, y: 0.6, z: 6.0 },
+    { x: 0.0, y: 0.5, z: 20.0 },
+    { x: -14.0, y: 0.6, z: 8.0 }
   ];
   let runnerSpawnIdx = 0;
 
@@ -717,7 +719,7 @@ function start3DRound(room: Active3DRoom) {
       }
     } else if (isSnowTown) {
       if (p.role === "tagger") {
-        p.x = 0; p.y = 0.5; p.z = -18;
+        p.x = -14.0; p.y = 0.6; p.z = -14.0;
       } else {
         const sp = snowTownRunnerSpawns[runnerSpawnIdx % snowTownRunnerSpawns.length];
         p.x = sp.x; p.y = sp.y; p.z = sp.z;
@@ -725,7 +727,7 @@ function start3DRound(room: Active3DRoom) {
       }
     } else if (isLabyrinth) {
       if (p.role === "tagger") {
-        p.x = -18; p.y = 0.5; p.z = -18;
+        p.x = -20.0; p.y = 1.2; p.z = -6.0;
       } else {
         const sp = labyrinthRunnerSpawns[runnerSpawnIdx % labyrinthRunnerSpawns.length];
         p.x = sp.x; p.y = sp.y; p.z = sp.z;
@@ -743,36 +745,55 @@ function start3DRound(room: Active3DRoom) {
   room.items.clear();
   const types = ["speed", "shield", "heater", "banana", "vortex", "tackle"];
   const itemSpots = [
-    { x: 0, z: 0 },
-    { x: -16, z: -15 },
-    { x: -16, z: 15 },
-    { x: 16, z: 15 },
-    { x: 22, z: 0 },
-    { x: -22, z: 0 }
+    { x: 0, y: 0.6, z: 0 },
+    { x: -16, y: 0.6, z: -15 },
+    { x: -16, y: 0.6, z: 15 },
+    { x: 16, y: 0.6, z: 15 },
+    { x: 22, y: 0.6, z: 0 },
+    { x: -22, y: 0.6, z: 0 }
   ];
   for (let i = 0; i < 4; i++) {
     const id = `item_${++room.itemCounter}`;
     const t = types[Math.floor(Math.random() * types.length)];
-    let x: number, z: number;
+    let x: number, y: number = 0.6, z: number;
     if (isSpaceStation) {
       const spot = itemSpots[i % itemSpots.length];
       x = spot.x + Math.round((Math.random() * 2 - 1) * 10) / 10;
+      y = spot.y;
       z = spot.z + Math.round((Math.random() * 2 - 1) * 10) / 10;
     } else if (isSnowTown) {
-      const spots = [{ x: 0, z: 0 }, { x: -12, z: -12 }, { x: 12, z: 12 }, { x: -12, z: 12 }, { x: 12, z: -12 }];
+      const spots = [
+        { x: 0.0, y: 0.8, z: -2.0 },
+        { x: 4.0, y: 0.6, z: 0.0 },
+        { x: -12.0, y: 0.6, z: 18.0 },
+        { x: 6.0, y: 0.5, z: -12.0 },
+        { x: 10.0, y: 0.6, z: -2.0 },
+        { x: -20.0, y: 0.6, z: 10.0 },
+        { x: 18.0, y: 0.5, z: -6.0 }
+      ];
       const spot = spots[i % spots.length];
-      x = spot.x + Math.round((Math.random() * 2 - 1) * 10) / 10;
-      z = spot.z + Math.round((Math.random() * 2 - 1) * 10) / 10;
+      x = spot.x;
+      y = spot.y;
+      z = spot.z;
     } else if (isLabyrinth) {
-      const spots = [{ x: 0, z: 0 }, { x: -10, z: -10 }, { x: 10, z: 10 }, { x: -10, z: 10 }, { x: 10, z: -10 }];
+      const spots = [
+        { x: -4.0, y: 0.5, z: 0.0 },
+        { x: -6.0, y: 0.5, z: -10.0 },
+        { x: -2.0, y: 0.5, z: 6.0 },
+        { x: 10.0, y: 1.0, z: -6.0 },
+        { x: 14.0, y: 0.5, z: -12.0 },
+        { x: -10.0, y: 0.4, z: 20.0 },
+        { x: 12.0, y: 0.8, z: -12.0 }
+      ];
       const spot = spots[i % spots.length];
-      x = spot.x + Math.round((Math.random() * 2 - 1) * 10) / 10;
-      z = spot.z + Math.round((Math.random() * 2 - 1) * 10) / 10;
+      x = spot.x;
+      y = spot.y;
+      z = spot.z;
     } else {
       x = Math.round((Math.random() * 40 - 20) * 10) / 10;
       z = Math.round((Math.random() * 40 - 20) * 10) / 10;
     }
-    room.items.set(id, { id, type: t, x, y: 0.6, z });
+    room.items.set(id, { id, type: t, x, y, z });
   }
 
   const pList = Array.from(room.players.values()).map(p => ({
