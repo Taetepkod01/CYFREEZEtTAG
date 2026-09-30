@@ -1,21 +1,19 @@
-[gd_scene load_steps=22 format=3 uid="uid://map_space_station_001"]
+[gd_scene load_steps=23 format=3 uid="uid://map_space_station_001"]
 
 [ext_resource type="Script" path="res://scripts/3d/map_space_station.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://assets/sky/space_stars.png" id="2_stars"]
 
-[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_space"]
-sky_top_color = Color(0.015, 0.03, 0.08, 1)
-sky_horizon_color = Color(0.04, 0.08, 0.18, 1)
-ground_bottom_color = Color(0.01, 0.02, 0.04, 1)
-ground_horizon_color = Color(0.03, 0.05, 0.1, 1)
+[sub_resource type="PanoramaSkyMaterial" id="PanoramaSkyMaterial_space"]
+panorama = ExtResource("2_stars")
 
 [sub_resource type="Sky" id="Sky_space"]
-sky_material = SubResource("ProceduralSkyMaterial_space")
+sky_material = SubResource("PanoramaSkyMaterial_space")
 
 [sub_resource type="Environment" id="Environment_space"]
 background_mode = 2
 sky = SubResource("Sky_space")
 ambient_light_source = 2
-ambient_light_color = Color(0.4, 0.52, 0.72, 1)
+ambient_light_color = Color(0.35, 0.45, 0.6, 1)
 ambient_light_energy = 0.85
 tonemap_mode = 2
 glow_enabled = true
@@ -158,7 +156,6 @@ material = SubResource("Mat_WallDark")
 
 [node name="DaisGlowRing" type="CSGCylinder3D" parent="CentralHub"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.41, 0)
-use_collision = true
 radius = 3.6
 height = 0.02
 material = SubResource("Mat_CyanGlow")
@@ -331,14 +328,12 @@ material = SubResource("Mat_Floor")
 
 [node name="RedSpawnRing" type="CSGCylinder3D" parent="ChaserSector"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.05, -21)
-use_collision = true
 radius = 2.5
 height = 0.05
 material = SubResource("Mat_RedGlow")
 
 [node name="RedSpawnCore" type="CSGCylinder3D" parent="ChaserSector"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.06, -21)
-use_collision = true
 radius = 1.2
 height = 0.06
 material = SubResource("Mat_WallDark")
@@ -351,7 +346,6 @@ material = SubResource("Mat_WallDark")
 
 [node name="PillarLStripe" type="CSGBox3D" parent="ChaserSector"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.5, 2.0, -22.25)
-use_collision = true
 size = Vector3(0.4, 3.2, 0.1)
 material = SubResource("Mat_RedGlow")
 
@@ -363,7 +357,6 @@ material = SubResource("Mat_WallDark")
 
 [node name="PillarRStripe" type="CSGBox3D" parent="ChaserSector"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.5, 2.0, -22.25)
-use_collision = true
 size = Vector3(0.4, 3.2, 0.1)
 material = SubResource("Mat_RedGlow")
 
@@ -401,14 +394,12 @@ material = SubResource("Mat_Floor")
 
 [node name="BlueSpawnRing" type="CSGCylinder3D" parent="RunnerSector"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.05, 21)
-use_collision = true
 radius = 2.5
 height = 0.05
 material = SubResource("Mat_CyanGlow")
 
 [node name="BlueSpawnCore" type="CSGCylinder3D" parent="RunnerSector"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.06, 21)
-use_collision = true
 radius = 1.2
 height = 0.06
 material = SubResource("Mat_WallDark")
@@ -465,7 +456,6 @@ material = SubResource("Mat_Floor")
 
 [node name="SpawnRing" type="CSGCylinder3D" parent="OxygenBay"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -23, 0.05, 0)
-use_collision = true
 radius = 2.2
 height = 0.05
 material = SubResource("Mat_CyanGlow")
@@ -700,7 +690,6 @@ material = SubResource("Mat_CargoCrate")
 
 [node name="Crate1Stripe" type="CSGBox3D" parent="CargoBay"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -21, 1.0, 14.88)
-use_collision = true
 size = Vector3(2.0, 0.3, 0.05)
 material = SubResource("Mat_YellowHazard")
 
@@ -718,7 +707,6 @@ material = SubResource("Mat_CargoCrate")
 
 [node name="Crate2Stripe" type="CSGBox3D" parent="CargoBay"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -15, 1.0, 19.78)
-use_collision = true
 size = Vector3(2.2, 0.3, 0.05)
 material = SubResource("Mat_YellowHazard")
 

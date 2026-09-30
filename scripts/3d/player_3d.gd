@@ -205,23 +205,9 @@ func _physics_process(delta: float) -> void:
 	# Movement Vector Calculation
 	var input_vec := Vector2.ZERO
 	if is_local_player():
-		# Verify keys to avoid stuck auto-walk from lost keyup events
-		var move_l = Input.is_action_pressed("move_left") and (Input.is_key_pressed(KEY_A) or Input.is_key_pressed(KEY_LEFT))
-		var move_r = Input.is_action_pressed("move_right") and (Input.is_key_pressed(KEY_D) or Input.is_key_pressed(KEY_RIGHT))
-		var move_u = Input.is_action_pressed("move_up") and (Input.is_key_pressed(KEY_W) or Input.is_key_pressed(KEY_UP))
-		var move_d = Input.is_action_pressed("move_down") and (Input.is_key_pressed(KEY_S) or Input.is_key_pressed(KEY_DOWN))
-		
-		# Auto-release if action is stuck without physical key down
-		if Input.is_action_pressed("move_left") and not move_l: Input.action_release("move_left")
-		if Input.is_action_pressed("move_right") and not move_r: Input.action_release("move_right")
-		if Input.is_action_pressed("move_up") and not move_u: Input.action_release("move_up")
-		if Input.is_action_pressed("move_down") and not move_d: Input.action_release("move_down")
-		
-		# Accept movement input when mouse is captured OR right mouse button is being held
-		if Input.get_mouse_mode() == Input.MOUSE_MODE_CAPTURED or is_rmb_down:
-			var x = (1.0 if move_r else 0.0) - (1.0 if move_l else 0.0)
-			var y = (1.0 if move_d else 0.0) - (1.0 if move_u else 0.0)
-			input_vec = Vector2(x, y).normalized()
+		var x = Input.get_axis("move_left", "move_right")
+		var y = Input.get_axis("move_up", "move_down")
+		input_vec = Vector2(x, y).normalized()
 	elif is_bot:
 		input_vec = _calculate_bot_input(delta)
 	
