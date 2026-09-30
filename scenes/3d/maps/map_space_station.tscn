@@ -2,7 +2,6 @@
 
 [ext_resource type="Script" path="res://scripts/3d/map_space_station.gd" id="1_script"]
 
-# Sky and World Environment
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_space"]
 sky_top_color = Color(0.015, 0.03, 0.08, 1)
 sky_horizon_color = Color(0.04, 0.08, 0.18, 1)
@@ -23,7 +22,6 @@ glow_enabled = true
 glow_intensity = 0.8
 glow_bloom = 0.3
 
-# Materials
 [sub_resource type="StandardMaterial3D" id="Mat_Floor"]
 albedo_color = Color(0.14, 0.18, 0.25, 1)
 metallic = 0.35
@@ -110,7 +108,6 @@ emission_energy_multiplier = 1.0
 albedo_color = Color(0.18, 0.58, 0.22, 1)
 roughness = 0.6
 
-# Primitives
 [sub_resource type="SphereMesh" id="SphereMesh_earth"]
 material = SubResource("Mat_HoloEarth")
 radius = 1.4
@@ -132,7 +129,6 @@ material = SubResource("Mat_CryoCore")
 radius = 0.5
 height = 2.6
 
-# Root Node
 [node name="MapSpaceStation" type="Node3D"]
 script = ExtResource("1_script")
 

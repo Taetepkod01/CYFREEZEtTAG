@@ -17,7 +17,10 @@ var taggers_score: int = 0
 @onready var players_container: Node3D = $Players
 @onready var items_container: Node3D = $Items
 @onready var traps_container: Node3D = $Traps
+@onready var env_container: Node3D = $Environment
 @onready var hud: CanvasLayer = $HUD
+
+var current_map_node: Node3D = null
 
 # HUD elements
 @onready var runners_count_lbl: Label = $HUD/TopBar/RunnersBox/Count
@@ -124,21 +127,36 @@ func _ready() -> void:
 		for i in range(4):
 			_spawn_random_item()
 	
-	add_game_log("[color=#4fc3f7]Map: SPACE STATION (Alpha Sector)[/color]")
 	add_game_log("[color=#ffe066]Match started![/color] Round %d / %d" % [current_round, max_rounds])
-
-@onready var env_container: Node3D = $Environment
-var current_map_node: Node3D = null
 
 func _load_arena_map() -> void:
 	if not env_container:
+		env_container = get_node_or_null("Environment")
+	if not env_container:
 		return
-	var map_scene = load("res://scenes/3d/maps/map_space_station.tscn")
-	if map_scene:
-		for child in env_container.get_children():
-			child.queue_free()
-		current_map_node = map_scene.instantiate()
-		env_container.add_child(current_map_node)
+	
+	var chosen_map: String = "SPACE STATION"
+	if Network and "selected_map" in Network and not str(Network.selected_map).strip_edges().is_empty():
+		chosen_map = str(Network.selected_map).strip_edges()
+	elif Network and "current_match_map" in Network and not str(Network.current_match_map).strip_edges().is_empty():
+		chosen_map = str(Network.current_match_map).strip_edges()
+	
+	print("[Arena3D] Loading map: ", chosen_map)
+	
+	if chosen_map.to_upper().contains("SPACE") or chosen_map.to_upper() == "SPACE STATION":
+		var map_scene = load("res://scenes/3d/maps/map_space_station.tscn")
+		if map_scene:
+			for child in env_container.get_children():
+				env_container.remove_child(child)
+				child.queue_free()
+			current_map_node = map_scene.instantiate()
+			env_container.add_child(current_map_node)
+			add_game_log("[color=#4fc3f7]Map: SPACE STATION (Alpha Sector)[/color]")
+			return
+		else:
+			push_error("[Arena3D] Failed to load map_space_station.tscn!")
+	
+	add_game_log("[color=#4fc3f7]Map: %s[/color]" % chosen_map.to_upper())
 
 func _connect_network_signals() -> void:
 	if not Network:

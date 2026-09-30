@@ -668,6 +668,17 @@ function start3DRound(room: Active3DRoom) {
   const pKeys = Array.from(room.players.keys());
   const taggerIdx = Math.floor(Math.random() * pKeys.length);
 
+  const isSpaceStation = (room.map || "").toUpperCase().includes("SPACE");
+  const spaceStationRunnerSpawns = [
+    { x: 0, y: 0.5, z: 20 },
+    { x: -22, y: 0.5, z: 0 },
+    { x: -16, y: 0.5, z: -15 },
+    { x: 16, y: 0.5, z: 15 },
+    { x: 22, y: 0.5, z: 0 },
+    { x: -16, y: 0.5, z: 15 }
+  ];
+  let runnerSpawnIdx = 0;
+
   pKeys.forEach((id, i) => {
     const p = room.players.get(id)!;
     p.role = i === taggerIdx ? "tagger" : "runner";
@@ -677,20 +688,46 @@ function start3DRound(room: Active3DRoom) {
     p.heldItem = "";
     p.hp = 100;
     p.invincibleUntil = 0;
-    const sp = SPAWN_3D_POSITIONS[i % SPAWN_3D_POSITIONS.length];
-    p.x = sp.x;
-    p.y = sp.y;
-    p.z = sp.z;
+
+    if (isSpaceStation) {
+      if (p.role === "tagger") {
+        p.x = 0; p.y = 0.5; p.z = -20;
+      } else {
+        const sp = spaceStationRunnerSpawns[runnerSpawnIdx % spaceStationRunnerSpawns.length];
+        p.x = sp.x; p.y = sp.y; p.z = sp.z;
+        runnerSpawnIdx++;
+      }
+    } else {
+      const sp = SPAWN_3D_POSITIONS[i % SPAWN_3D_POSITIONS.length];
+      p.x = sp.x;
+      p.y = sp.y;
+      p.z = sp.z;
+    }
   });
 
   // Spawn initial items
   room.items.clear();
   const types = ["speed", "shield", "heater", "banana", "vortex", "tackle"];
+  const itemSpots = [
+    { x: 0, z: 0 },
+    { x: -16, z: -15 },
+    { x: -16, z: 15 },
+    { x: 16, z: 15 },
+    { x: 22, z: 0 },
+    { x: -22, z: 0 }
+  ];
   for (let i = 0; i < 4; i++) {
     const id = `item_${++room.itemCounter}`;
     const t = types[Math.floor(Math.random() * types.length)];
-    const x = Math.round((Math.random() * 40 - 20) * 10) / 10;
-    const z = Math.round((Math.random() * 40 - 20) * 10) / 10;
+    let x: number, z: number;
+    if (isSpaceStation) {
+      const spot = itemSpots[i % itemSpots.length];
+      x = spot.x + Math.round((Math.random() * 2 - 1) * 10) / 10;
+      z = spot.z + Math.round((Math.random() * 2 - 1) * 10) / 10;
+    } else {
+      x = Math.round((Math.random() * 40 - 20) * 10) / 10;
+      z = Math.round((Math.random() * 40 - 20) * 10) / 10;
+    }
     room.items.set(id, { id, type: t, x, y: 0.6, z });
   }
 
@@ -710,7 +747,8 @@ function start3DRound(room: Active3DRoom) {
     maxRounds: room.rounds,
     timeLeft: room.timeLeft,
     players: pList,
-    items: itemsList
+    items: itemsList,
+    map: room.map
   });
 
   if (room.timerInterval) clearInterval(room.timerInterval);

@@ -50,7 +50,7 @@ var current_room_code: String = ""
 var is_host: bool = false
 var is_ready: bool = false
 var my_player_name: String = "Player 1"
-var selected_map: String = "CASTLE"
+var selected_map: String = "SPACE STATION"
 var is_dragging_slider: bool = false
 
 var refresh_timer: float = 0.0
@@ -61,6 +61,8 @@ func _ready() -> void:
 	
 	if Network:
 		my_player_name = Network.my_player_name
+		if not Network.selected_map.is_empty():
+			selected_map = Network.selected_map
 	player_name_input.text = my_player_name
 	player_name_input.text_changed.connect(_on_player_name_changed)
 	
@@ -493,15 +495,16 @@ func _setup_map_grid_buttons() -> void:
 	for child in map_grid.get_children():
 		if child is Button:
 			child.pressed.connect(func():
-				if not is_host or not active_rooms.has(current_room_code):
-					return
 				var clean_name = child.text.strip_edges()
 				selected_map = clean_name
-				active_rooms[current_room_code]["map"] = clean_name
+				if Network:
+					Network.selected_map = clean_name
+				if active_rooms.has(current_room_code):
+					active_rooms[current_room_code]["map"] = clean_name
 				map_preview_lbl.text = "MAP: " + clean_name
 				_update_map_preview_image(clean_name)
 				_update_map_selection_highlight(clean_name)
-				if Network and Network.is_connected_to_server:
+				if is_host and active_rooms.has(current_room_code) and Network and Network.is_connected_to_server:
 					Network.update_room_settings(active_rooms[current_room_code]["max_players"], active_rooms[current_room_code]["rounds"], clean_name, bool(active_rooms[current_room_code].get("is_private", false)))
 			)
 
@@ -533,6 +536,8 @@ func _on_copy_code_pressed() -> void:
 
 func _on_action_pressed() -> void:
 	if is_host:
+		if Network:
+			Network.selected_map = selected_map
 		if Network and Network.is_connected_to_server:
 			Network.start_game()
 		else:

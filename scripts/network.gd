@@ -53,6 +53,7 @@ var current_room_code: String = ""
 var is_host: bool = false
 var is_solo_mode: bool = false
 var selected_practice_role: String = "random" # "random", "tagger", "runner"
+var selected_map: String = "SPACE STATION" # Default to SPACE STATION
 
 var room_data: Dictionary = {}
 var current_match_players: Array = []
@@ -175,6 +176,8 @@ func _handle_server_message(raw_text: String) -> void:
 			is_host = true
 			is_solo_mode = false
 			room_data = data
+			if data.has("map"):
+				selected_map = str(data["map"])
 			room_created.emit(data)
 			player_list_updated.emit()
 			
@@ -184,6 +187,8 @@ func _handle_server_message(raw_text: String) -> void:
 			is_host = bool(data.get("isHost", false))
 			is_solo_mode = false
 			room_data = data
+			if data.has("map"):
+				selected_map = str(data["map"])
 			room_joined.emit(data)
 			player_list_updated.emit()
 			
@@ -230,6 +235,7 @@ func _handle_server_message(raw_text: String) -> void:
 				room_data["rounds"] = data["rounds"]
 			if room_data.has("map") and data.has("map"):
 				room_data["map"] = data["map"]
+				selected_map = str(data["map"])
 			if data.has("isPrivate"):
 				room_data["isPrivate"] = data["isPrivate"]
 			settings_updated.emit(data)
@@ -239,6 +245,8 @@ func _handle_server_message(raw_text: String) -> void:
 			current_match_items = data.get("items", [])
 			current_round = int(data.get("round", 1))
 			max_rounds = int(data.get("maxRounds", 3))
+			if data.has("map"):
+				selected_map = str(data["map"])
 			round_started.emit(data)
 			game_started.emit()
 			
@@ -322,7 +330,8 @@ func set_player_name(new_name: String) -> void:
 	my_player_name = new_name
 	send_action("set_player_name", { "name": new_name })
 
-func create_room(r_name: String, max_p: int = 8, rounds: int = 3, map_name: String = "CASTLE", is_priv: bool = false) -> void:
+func create_room(r_name: String, max_p: int = 8, rounds: int = 3, map_name: String = "SPACE STATION", is_priv: bool = false) -> void:
+	selected_map = map_name
 	send_action("create_room", {
 		"roomName": r_name,
 		"playerName": my_player_name,
@@ -339,6 +348,7 @@ func join_room(code: String) -> void:
 	})
 
 func update_room_settings(max_p: int, rounds: int, map_name: String, is_priv: bool = false) -> void:
+	selected_map = map_name
 	send_action("update_settings", {
 		"maxPlayers": max_p,
 		"rounds": rounds,
