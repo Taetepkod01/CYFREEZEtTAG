@@ -668,7 +668,11 @@ function start3DRound(room: Active3DRoom) {
   const pKeys = Array.from(room.players.keys());
   const taggerIdx = Math.floor(Math.random() * pKeys.length);
 
-  const isSpaceStation = (room.map || "").toUpperCase().includes("SPACE");
+  const mapUpper = (room.map || "").toUpperCase();
+  const isSpaceStation = mapUpper.includes("SPACE");
+  const isSnowTown = mapUpper.includes("SNOW") || mapUpper.includes("TOWN") || mapUpper.includes("หิมะ");
+  const isLabyrinth = mapUpper.includes("LABYRINTH") || mapUpper.includes("MAZE") || mapUpper.includes("เขาวงกต");
+
   const spaceStationRunnerSpawns = [
     { x: 0, y: 0.5, z: 22 },
     { x: -22, y: 0.5, z: 0 },
@@ -676,6 +680,20 @@ function start3DRound(room: Active3DRoom) {
     { x: 20, y: 0.5, z: 20 },
     { x: -20, y: 0.5, z: 20 },
     { x: 20, y: 0.5, z: -20 }
+  ];
+  const snowTownRunnerSpawns = [
+    { x: 0, y: 0.5, z: 18 },
+    { x: -18, y: 0.5, z: 0 },
+    { x: 18, y: 0.5, z: 0 },
+    { x: -15, y: 0.5, z: -15 },
+    { x: 15, y: 0.5, z: 15 }
+  ];
+  const labyrinthRunnerSpawns = [
+    { x: 18, y: 0.5, z: 18 },
+    { x: 18, y: 0.5, z: -18 },
+    { x: -18, y: 0.5, z: 18 },
+    { x: 0, y: 0.5, z: 0 },
+    { x: 10, y: 0.5, z: -10 }
   ];
   let runnerSpawnIdx = 0;
 
@@ -694,6 +712,22 @@ function start3DRound(room: Active3DRoom) {
         p.x = 0; p.y = 0.5; p.z = -22;
       } else {
         const sp = spaceStationRunnerSpawns[runnerSpawnIdx % spaceStationRunnerSpawns.length];
+        p.x = sp.x; p.y = sp.y; p.z = sp.z;
+        runnerSpawnIdx++;
+      }
+    } else if (isSnowTown) {
+      if (p.role === "tagger") {
+        p.x = 0; p.y = 0.5; p.z = -18;
+      } else {
+        const sp = snowTownRunnerSpawns[runnerSpawnIdx % snowTownRunnerSpawns.length];
+        p.x = sp.x; p.y = sp.y; p.z = sp.z;
+        runnerSpawnIdx++;
+      }
+    } else if (isLabyrinth) {
+      if (p.role === "tagger") {
+        p.x = -18; p.y = 0.5; p.z = -18;
+      } else {
+        const sp = labyrinthRunnerSpawns[runnerSpawnIdx % labyrinthRunnerSpawns.length];
         p.x = sp.x; p.y = sp.y; p.z = sp.z;
         runnerSpawnIdx++;
       }
@@ -722,6 +756,16 @@ function start3DRound(room: Active3DRoom) {
     let x: number, z: number;
     if (isSpaceStation) {
       const spot = itemSpots[i % itemSpots.length];
+      x = spot.x + Math.round((Math.random() * 2 - 1) * 10) / 10;
+      z = spot.z + Math.round((Math.random() * 2 - 1) * 10) / 10;
+    } else if (isSnowTown) {
+      const spots = [{ x: 0, z: 0 }, { x: -12, z: -12 }, { x: 12, z: 12 }, { x: -12, z: 12 }, { x: 12, z: -12 }];
+      const spot = spots[i % spots.length];
+      x = spot.x + Math.round((Math.random() * 2 - 1) * 10) / 10;
+      z = spot.z + Math.round((Math.random() * 2 - 1) * 10) / 10;
+    } else if (isLabyrinth) {
+      const spots = [{ x: 0, z: 0 }, { x: -10, z: -10 }, { x: 10, z: 10 }, { x: -10, z: 10 }, { x: 10, z: -10 }];
+      const spot = spots[i % spots.length];
       x = spot.x + Math.round((Math.random() * 2 - 1) * 10) / 10;
       z = spot.z + Math.round((Math.random() * 2 - 1) * 10) / 10;
     } else {

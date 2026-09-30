@@ -143,8 +143,25 @@ func _load_arena_map() -> void:
 	
 	print("[Arena3D] Loading map: ", chosen_map)
 	
-	if chosen_map.to_upper().contains("SPACE") or chosen_map.to_upper() == "SPACE STATION":
-		var map_scene = load("res://scenes/3d/maps/map_space_station.tscn")
+	var upper = chosen_map.to_upper()
+	var map_scene_path: String = ""
+	var map_display_name: String = ""
+	
+	if upper.contains("SPACE"):
+		map_scene_path = "res://scenes/3d/maps/map_space_station.tscn"
+		map_display_name = "SPACE STATION (Alpha Sector)"
+	elif upper.contains("SNOW") or upper.contains("TOWN") or upper.contains("หิมะ"):
+		map_scene_path = "res://scenes/3d/maps/map_snow_town.tscn"
+		map_display_name = "SNOW TOWN"
+	elif upper.contains("LABYRINTH") or upper.contains("MAZE") or upper.contains("เขาวงกต"):
+		map_scene_path = "res://scenes/3d/maps/map_labyrinth.tscn"
+		map_display_name = "LABYRINTH"
+	else:
+		map_scene_path = "res://scenes/3d/maps/map_space_station.tscn"
+		map_display_name = chosen_map
+	
+	if not map_scene_path.is_empty():
+		var map_scene = load(map_scene_path)
 		if map_scene:
 			for child in env_container.get_children():
 				env_container.remove_child(child)
@@ -152,7 +169,7 @@ func _load_arena_map() -> void:
 			current_map_node = map_scene.instantiate()
 			env_container.add_child(current_map_node)
 			
-			# Apply map's starry space environment to root WorldEnvironment
+			# Apply map's environment to root WorldEnvironment
 			var root_world_env = get_node_or_null("WorldEnvironment") as WorldEnvironment
 			var map_world_env = current_map_node.get_node_or_null("WorldEnvironment") as WorldEnvironment
 			if root_world_env and map_world_env and map_world_env.environment:
@@ -161,16 +178,18 @@ func _load_arena_map() -> void:
 				
 			var root_light = get_node_or_null("DirectionalLight3D") as DirectionalLight3D
 			var map_light = current_map_node.get_node_or_null("SpaceSunLight") as DirectionalLight3D
+			if not map_light:
+				map_light = current_map_node.get_node_or_null("SunLight") as DirectionalLight3D
 			if root_light and map_light:
 				root_light.light_color = map_light.light_color
 				root_light.light_energy = map_light.light_energy
 				root_light.transform = map_light.transform
 				map_light.queue_free()
 				
-			add_game_log("[color=#4fc3f7]Map: SPACE STATION (Alpha Sector)[/color]")
+			add_game_log("[color=#4fc3f7]Map: %s[/color]" % map_display_name)
 			return
 		else:
-			push_error("[Arena3D] Failed to load map_space_station.tscn!")
+			push_error("[Arena3D] Failed to load %s!" % map_scene_path)
 	
 	add_game_log("[color=#4fc3f7]Map: %s[/color]" % chosen_map.to_upper())
 
@@ -314,14 +333,23 @@ func _spawn_match_players() -> void:
 		_spawn_online_players()
 		return
 	
-	# Offline Practice Mode (1 Local + 3 Bots) - Tactical Space Station Spawns
-	var chaser_spawn_pos = Vector3(0, 0.5, -22) # North Room (Chaser sector from blueprint)
+	# Tactical Map Spawns
+	var chaser_spawn_pos = Vector3(0, 0.5, -18)
 	var runner_spawn_positions = [
-		Vector3(0, 0.5, 22),     # South Room (Runner Primary)
-		Vector3(-22, 0.5, 0),    # West Room (Oxygen Bay)
-		Vector3(-20, 0.5, -20),  # NW Cafeteria (Safe center)
-		Vector3(20, 0.5, 20)     # SE Medbay (Safe center)
+		Vector3(0, 0.5, 18),
+		Vector3(-18, 0.5, 0),
+		Vector3(-15, 0.5, -15),
+		Vector3(15, 0.5, 15)
 	]
+	if current_map_node and current_map_node.has_method("get_tagger_spawn"):
+		chaser_spawn_pos = current_map_node.get_tagger_spawn()
+	if current_map_node and current_map_node.has_method("get_runner_spawn"):
+		runner_spawn_positions = [
+			current_map_node.get_runner_spawn(0),
+			current_map_node.get_runner_spawn(1),
+			current_map_node.get_runner_spawn(2),
+			current_map_node.get_runner_spawn(3)
+		]
 	
 	var p1_is_tagger: bool = false
 	var bot_tagger_idx: int = -1
