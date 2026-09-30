@@ -690,12 +690,12 @@ function start3DRound(room: Active3DRoom) {
     { x: 4.0, y: 0.6, z: 0.0 }
   ];
   const labyrinthRunnerSpawns = [
-    { x: 16.0, y: 0.6, z: -10.0 },
-    { x: -16.0, y: 0.5, z: 14.0 },
-    { x: -4.0, y: 0.5, z: 0.0 },
-    { x: 6.0, y: 0.6, z: 6.0 },
-    { x: 0.0, y: 0.5, z: 20.0 },
-    { x: -14.0, y: 0.6, z: 8.0 }
+    { x: -14.0, y: 0.5, z: 18.0 },
+    { x: 12.0, y: 0.6, z: 4.0 },
+    { x: 0.0, y: 0.9, z: 8.0 },
+    { x: 6.0, y: 1.4, z: -4.0 },
+    { x: -4.0, y: 1.4, z: 2.0 },
+    { x: 2.0, y: 1.3, z: 6.0 }
   ];
   let runnerSpawnIdx = 0;
 
@@ -727,7 +727,7 @@ function start3DRound(room: Active3DRoom) {
       }
     } else if (isLabyrinth) {
       if (p.role === "tagger") {
-        p.x = -20.0; p.y = 1.2; p.z = -6.0;
+        p.x = -12.0; p.y = 0.8; p.z = -18.0;
       } else {
         const sp = labyrinthRunnerSpawns[runnerSpawnIdx % labyrinthRunnerSpawns.length];
         p.x = sp.x; p.y = sp.y; p.z = sp.z;
@@ -777,13 +777,13 @@ function start3DRound(room: Active3DRoom) {
       z = spot.z;
     } else if (isLabyrinth) {
       const spots = [
-        { x: -4.0, y: 0.5, z: 0.0 },
-        { x: -6.0, y: 0.5, z: -10.0 },
-        { x: -2.0, y: 0.5, z: 6.0 },
-        { x: 10.0, y: 1.0, z: -6.0 },
-        { x: 14.0, y: 0.5, z: -12.0 },
-        { x: -10.0, y: 0.4, z: 20.0 },
-        { x: 12.0, y: 0.8, z: -12.0 }
+        { x: 0.0, y: 0.9, z: 8.0 },
+        { x: -12.0, y: 0.4, z: 0.0 },
+        { x: -4.0, y: 0.5, z: 10.0 },
+        { x: 8.0, y: 0.7, z: -14.0 },
+        { x: 12.0, y: 0.6, z: 4.0 },
+        { x: -10.0, y: 0.5, z: -14.0 },
+        { x: -8.0, y: 1.5, z: 0.0 }
       ];
       const spot = spots[i % spots.length];
       x = spot.x;
