@@ -400,8 +400,9 @@ func fetch_public_rooms() -> void:
 	
 	# 2. Also query REST API as fallback
 	if http_request and not server_http_url.is_empty():
-		var url = server_http_url + "/api/rooms"
-		http_request.request(url)
+		if http_request.get_http_client_status() == HTTPClient.STATUS_DISCONNECTED:
+			var url = server_http_url + "/api/rooms"
+			http_request.request(url)
 
 func _on_http_request_completed(_result: int, response_code: int, _headers: PackedStringArray, body: PackedByteArray) -> void:
 	if response_code == 200:
