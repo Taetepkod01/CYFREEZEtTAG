@@ -134,23 +134,6 @@ layout_mode = 2
 texture_normal = ExtResource("7_btn_settings")
 stretch_mode = 5
 
-[node name="Label" type="Label" parent="MenuButtons/HowToPlayBtn"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_colors/font_color = Color(0.92, 0.97, 1, 1)
-theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
-theme_override_constants/shadow_offset_x = 1
-theme_override_constants/shadow_offset_y = 2
-theme_override_fonts/font = ExtResource("3_font_audio")
-theme_override_font_sizes/font_size = 14
-text = "HOW TO PLAY"
-horizontal_alignment = 1
-vertical_alignment = 1
-
 [node name="QuitBtn" type="TextureButton" parent="MenuButtons" unique_id=1997862845]
 custom_minimum_size = Vector2(225, 49)
 layout_mode = 2
