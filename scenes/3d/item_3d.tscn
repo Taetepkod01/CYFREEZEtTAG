@@ -1,6 +1,10 @@
-[gd_scene format=3 uid="uid://b3ditem00001"]
+[gd_scene load_steps=10 format=3 uid="uid://b3ditem00001"]
 
 [ext_resource type="Script" path="res://scripts/3d/item_3d.gd" id="1_item3d"]
+[ext_resource type="PackedScene" uid="uid://btod2ume4536" path="res://assets/items/item_speed.glb" id="2_speed"]
+[ext_resource type="PackedScene" uid="uid://bilgkftj2id6p" path="res://assets/items/item_shield.glb" id="3_shield"]
+[ext_resource type="PackedScene" uid="uid://bcwjdkbicvmp0" path="res://assets/items/item_heater.glb" id="4_heater"]
+[ext_resource type="PackedScene" uid="uid://dn6kcjujj6dyg" path="res://assets/items/item_vortex.glb" id="5_vortex"]
 
 [sub_resource type="SphereShape3D" id="SphereShape3D_pickup"]
 radius = 1.0
@@ -26,7 +30,24 @@ shape = SubResource("SphereShape3D_pickup")
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="."]
 transform = Transform3D(0.707107, -0.5, 0.5, 0, 0.707107, 0.707107, -0.707107, -0.5, 0.5, 0, 0, 0)
+visible = false
 mesh = SubResource("BoxMesh_crystal")
+
+[node name="SpeedModel" parent="." instance=ExtResource("2_speed")]
+transform = Transform3D(1.6, 0, 0, 0, 1.6, 0, 0, 0, 1.6, 0, -0.4, 0)
+visible = false
+
+[node name="ShieldModel" parent="." instance=ExtResource("3_shield")]
+transform = Transform3D(1.2, 0, 0, 0, 1.2, 0, 0, 0, 1.2, 0, -0.42, 0)
+visible = false
+
+[node name="HeaterModel" parent="." instance=ExtResource("4_heater")]
+transform = Transform3D(3.8, 0, 0, 0, 3.8, 0, 0, 0, 3.8, 0, -0.38, 0)
+visible = false
+
+[node name="VortexModel" parent="." instance=ExtResource("5_vortex")]
+transform = Transform3D(1.6, 0, 0, 0, 1.6, 0, 0, 0, 1.6, 0, -0.24, 0)
+visible = false
 
 [node name="Label3D" type="Label3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0)

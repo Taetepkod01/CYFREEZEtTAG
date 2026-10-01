@@ -5,6 +5,10 @@ extends Area3D
 
 @onready var mesh_instance: MeshInstance3D = $MeshInstance3D
 @onready var label: Label3D = $Label3D
+@onready var speed_model: Node3D = get_node_or_null("SpeedModel")
+@onready var shield_model: Node3D = get_node_or_null("ShieldModel")
+@onready var heater_model: Node3D = get_node_or_null("HeaterModel")
+@onready var vortex_model: Node3D = get_node_or_null("VortexModel")
 
 var float_timer: float = 0.0
 var base_y: float = 0.0
@@ -24,6 +28,15 @@ func _setup_visuals() -> void:
 	if not label or not mesh_instance:
 		return
 	
+	if speed_model: speed_model.visible = false
+	if shield_model: shield_model.visible = false
+	if heater_model: heater_model.visible = false
+	if vortex_model: vortex_model.visible = false
+	mesh_instance.visible = false
+	
+	if has_node("BananaModel"):
+		get_node("BananaModel").queue_free()
+	
 	var mat = StandardMaterial3D.new()
 	mat.metallic = 0.5
 	mat.roughness = 0.2
@@ -34,24 +47,36 @@ func _setup_visuals() -> void:
 		"speed":
 			label.text = "SPEED"
 			label.modulate = Color(1.0, 0.9, 0.2)
-			mat.albedo_color = Color(1.0, 0.85, 0.1)
-			mat.emission = Color(1.0, 0.8, 0.1)
+			if speed_model:
+				speed_model.visible = true
+			else:
+				mesh_instance.visible = true
+				mat.albedo_color = Color(1.0, 0.85, 0.1)
+				mat.emission = Color(1.0, 0.8, 0.1)
+				mesh_instance.set_surface_override_material(0, mat)
 		"shield":
 			label.text = "SHIELD"
 			label.modulate = Color(0.3, 1.0, 0.4)
-			mat.albedo_color = Color(0.2, 0.9, 0.3)
-			mat.emission = Color(0.2, 0.9, 0.3)
+			if shield_model:
+				shield_model.visible = true
+			else:
+				mesh_instance.visible = true
+				mat.albedo_color = Color(0.2, 0.9, 0.3)
+				mat.emission = Color(0.2, 0.9, 0.3)
+				mesh_instance.set_surface_override_material(0, mat)
 		"heater":
 			label.text = "HEATER"
 			label.modulate = Color(1.0, 0.4, 0.2)
-			mat.albedo_color = Color(1.0, 0.3, 0.1)
-			mat.emission = Color(1.0, 0.3, 0.1)
+			if heater_model:
+				heater_model.visible = true
+			else:
+				mesh_instance.visible = true
+				mat.albedo_color = Color(1.0, 0.3, 0.1)
+				mat.emission = Color(1.0, 0.3, 0.1)
+				mesh_instance.set_surface_override_material(0, mat)
 		"banana":
 			label.text = "BANANA"
 			label.modulate = Color(1.0, 0.95, 0.0)
-			mat.albedo_color = Color(1.0, 0.9, 0.0)
-			mat.emission = Color(1.0, 0.9, 0.0)
-			mesh_instance.visible = false
 			if not has_node("BananaModel"):
 				var b_scene = preload("res://scenes/3d/banana_peel.tscn")
 				var b_inst = b_scene.instantiate()
@@ -61,20 +86,25 @@ func _setup_visuals() -> void:
 		"vortex":
 			label.text = "VORTEX"
 			label.modulate = Color(0.7, 0.3, 1.0)
-			mat.albedo_color = Color(0.6, 0.2, 0.9)
-			mat.emission = Color(0.6, 0.2, 0.9)
+			if vortex_model:
+				vortex_model.visible = true
+			else:
+				mesh_instance.visible = true
+				mat.albedo_color = Color(0.6, 0.2, 0.9)
+				mat.emission = Color(0.6, 0.2, 0.9)
+				mesh_instance.set_surface_override_material(0, mat)
 		"tackle":
 			label.text = "TACKLE"
 			label.modulate = Color(1.0, 0.5, 0.1)
+			mesh_instance.visible = true
 			mat.albedo_color = Color(1.0, 0.4, 0.0)
 			mat.emission = Color(1.0, 0.4, 0.0)
-	
-	if item_type != "banana":
-		mesh_instance.visible = true
-		if has_node("BananaModel"):
-			get_node("BananaModel").queue_free()
-	
-	mesh_instance.set_surface_override_material(0, mat)
+			mesh_instance.set_surface_override_material(0, mat)
+		_:
+			mesh_instance.visible = true
+			mat.albedo_color = Color(1.0, 1.0, 1.0)
+			mat.emission = Color(1.0, 1.0, 1.0)
+			mesh_instance.set_surface_override_material(0, mat)
 
 func _process(delta: float) -> void:
 	float_timer += delta
