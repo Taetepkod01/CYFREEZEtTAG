@@ -12,28 +12,28 @@ func _ready() -> void:
 			col_body.collision_mask = 3
 			col_body.position.y = 0.02
 
-# Calibrated spawns for Labyrinth Maze (Upright true floor + walls)
+# Calibrated spawns for Labyrinth Maze (Inside inner corridors)
 var chaser_spawns: Array[Vector3] = [
-	Vector3(-32.0, 9.0, -20.0),
-	Vector3(-30.0, 9.0, -18.0)
+	Vector3(-15.0, 5.6, -16.0),
+	Vector3(-17.0, 4.6, -7.0)
 ]
 
 var runner_spawns: Array[Vector3] = [
-	Vector3(-36.0, 12.3, 12.0),
-	Vector3(0.0, 5.1, 20.0),
-	Vector3(14.0, 5.2, -10.0),
-	Vector3(34.0, 8.2, 6.0),
-	Vector3(-36.0, 4.8, 0.0),
-	Vector3(-14.0, 11.0, 10.0)
+	Vector3(-15.0, 6.0, 12.0),
+	Vector3(16.0, 5.3, 14.0),
+	Vector3(7.0, 5.1, 3.0),
+	Vector3(16.0, 5.4, -2.0),
+	Vector3(-16.0, 5.2, 6.0),
+	Vector3(-5.0, 5.0, -2.0)
 ]
 
 var item_spawns: Array[Vector3] = [
-	Vector3(-8.0, 11.0, -8.0),
-	Vector3(0.0, 5.0, -8.0),
-	Vector3(-34.0, 5.2, 16.0),
-	Vector3(14.0, 12.0, -6.0),
-	Vector3(-36.0, 5.0, 2.0),
-	Vector3(-30.0, 9.1, -18.0)
+	Vector3(-4.0, 5.1, -2.0),
+	Vector3(-14.0, 5.4, 15.0),
+	Vector3(8.0, 5.2, -6.0),
+	Vector3(12.0, 5.4, 10.0),
+	Vector3(-10.0, 5.2, 5.0),
+	Vector3(5.0, 5.0, -12.0)
 ]
 
 func get_tagger_spawn() -> Vector3:

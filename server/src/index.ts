@@ -690,12 +690,12 @@ function start3DRound(room: Active3DRoom) {
     { x: 4.0, y: 0.6, z: 0.0 }
   ];
   const labyrinthRunnerSpawns = [
-    { x: -36.0, y: 12.3, z: 12.0 },
-    { x: 0.0, y: 5.1, z: 20.0 },
-    { x: 14.0, y: 5.2, z: -10.0 },
-    { x: 34.0, y: 8.2, z: 6.0 },
-    { x: -36.0, y: 4.8, z: 0.0 },
-    { x: -14.0, y: 11.0, z: 10.0 }
+    { x: -15.0, y: 6.0, z: 12.0 },
+    { x: 16.0, y: 5.3, z: 14.0 },
+    { x: 7.0, y: 5.1, z: 3.0 },
+    { x: 16.0, y: 5.4, z: -2.0 },
+    { x: -16.0, y: 5.2, z: 6.0 },
+    { x: -5.0, y: 5.0, z: -2.0 }
   ];
   let runnerSpawnIdx = 0;
 
@@ -727,7 +727,7 @@ function start3DRound(room: Active3DRoom) {
       }
     } else if (isLabyrinth) {
       if (p.role === "tagger") {
-        p.x = -32.0; p.y = 9.0; p.z = -20.0;
+        p.x = -15.0; p.y = 5.6; p.z = -16.0;
       } else {
         const sp = labyrinthRunnerSpawns[runnerSpawnIdx % labyrinthRunnerSpawns.length];
         p.x = sp.x; p.y = sp.y; p.z = sp.z;
@@ -777,12 +777,12 @@ function start3DRound(room: Active3DRoom) {
       z = spot.z;
     } else if (isLabyrinth) {
       const spots = [
-        { x: -8.0, y: 11.0, z: -8.0 },
-        { x: 0.0, y: 5.0, z: -8.0 },
-        { x: -34.0, y: 5.2, z: 16.0 },
-        { x: 14.0, y: 12.0, z: -6.0 },
-        { x: -36.0, y: 5.0, z: 2.0 },
-        { x: -30.0, y: 9.1, z: -18.0 }
+        { x: -4.0, y: 5.1, z: -2.0 },
+        { x: -14.0, y: 5.4, z: 15.0 },
+        { x: 8.0, y: 5.2, z: -6.0 },
+        { x: 12.0, y: 5.4, z: 10.0 },
+        { x: -10.0, y: 5.2, z: 5.0 },
+        { x: 5.0, y: 5.0, z: -12.0 }
       ];
       const spot = spots[i % spots.length];
       x = spot.x;
@@ -850,12 +850,12 @@ function start3DRound(room: Active3DRoom) {
       x = spot.x; y = spot.y; z = spot.z;
     } else if (isLabyrinth) {
       const spots = [
-        { x: -8.0, y: 11.0, z: -8.0 },
-        { x: 0.0, y: 5.0, z: -8.0 },
-        { x: -34.0, y: 5.2, z: 16.0 },
-        { x: 14.0, y: 12.0, z: -6.0 },
-        { x: -36.0, y: 5.0, z: 2.0 },
-        { x: -30.0, y: 9.1, z: -18.0 }
+        { x: -4.0, y: 5.1, z: -2.0 },
+        { x: -14.0, y: 5.4, z: 15.0 },
+        { x: 8.0, y: 5.2, z: -6.0 },
+        { x: 12.0, y: 5.4, z: 10.0 },
+        { x: -10.0, y: 5.2, z: 5.0 },
+        { x: 5.0, y: 5.0, z: -12.0 }
       ];
       const spot = spots[Math.floor(Math.random() * spots.length)];
       x = spot.x; y = spot.y; z = spot.z;
