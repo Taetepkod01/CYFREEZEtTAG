@@ -104,6 +104,7 @@ func _ready() -> void:
 	else:
 		# AI practice mode
 		role_btn.visible = true
+		lobby_btn.visible = false
 		if Network and "selected_practice_role" in Network:
 			practice_role = Network.selected_practice_role
 		_update_role_button_ui()
@@ -818,6 +819,7 @@ func _end_round(winner: String) -> void:
 	else:
 		mvp_lbl.text = "MVP: Player 1 (You)"
 	
+	lobby_btn.visible = false
 	if current_round >= max_rounds:
 		next_round_btn.text = "PLAY AGAIN"
 	else:

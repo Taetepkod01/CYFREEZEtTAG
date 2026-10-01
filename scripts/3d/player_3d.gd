@@ -21,7 +21,7 @@ var rescue_count: int = 0
 
 # Tag cooldown: prevents tagger from re-triggering tag while still overlapping
 var tag_cooldown_timer: float = 0.0
-const TAG_COOLDOWN: float = 1.2
+const TAG_COOLDOWN: float = 0.35
 
 # Movement Parameters
 @export var walk_speed: float = 7.5
@@ -47,6 +47,10 @@ var tackle_direction: Vector3 = Vector3.FORWARD
 # Dizzy Stars on Banana Slip
 var is_dizzy: bool = false
 var dizzy_timer: float = 0.0
+
+# Teammate rescue scatter split
+var scatter_timer: float = 0.0
+var scatter_direction: Vector3 = Vector3.ZERO
 
 # Remote Interpolation
 var target_remote_pos: Vector3 = Vector3.ZERO
@@ -215,18 +219,8 @@ func _physics_process(delta: float) -> void:
 			_send_network_position(delta)
 			return
 
-	# Check rescuing proximity for runners
-	if role == "runner" and not is_frozen:
-		var near_frozen = false
-		for b in interaction_area.get_overlapping_bodies():
-			if b is CharacterBody3D and b != self and b.role == "runner" and b.is_frozen:
-				near_frozen = true
-				break
-		if near_frozen != is_rescuing:
-			is_rescuing = near_frozen
-			_update_role_visuals()
-			if is_local_player() and Network and Network.is_online_game():
-				Network.send_rescuing(is_rescuing)
+	# Continuous proximity interactions (tagging, rescuing, rescuing visual state)
+	_check_continuous_interactions()
 
 	# Handle Jump
 	if is_local_player() and is_on_floor() and Input.is_action_just_pressed("jump"):
@@ -418,6 +412,8 @@ func slip_on_banana() -> void:
 func _process_buffs(delta: float) -> void:
 	if tag_cooldown_timer > 0.0:
 		tag_cooldown_timer -= delta
+	if scatter_timer > 0.0:
+		scatter_timer -= delta
 	if speed_boost_timer > 0.0:
 		speed_boost_timer -= delta
 	if shield_timer > 0.0:
@@ -528,19 +524,22 @@ func _update_role_visuals() -> void:
 func _on_interaction_body_entered(other: Node3D) -> void:
 	if other == self or not (other is CharacterBody3D):
 		return
+	_handle_interaction(other)
+
+func _check_continuous_interactions() -> void:
+	if not interaction_area or is_frozen:
+		return
 	
-	# Tackle hit check: If tackling runner hits opposing tagger
+	var overlapping = interaction_area.get_overlapping_bodies()
+	for other in overlapping:
+		if other == self or not (other is CharacterBody3D):
+			continue
+		_handle_interaction(other)
+
+func _handle_interaction(other: CharacterBody3D) -> void:
+	# 1. Tackle hit check: If tackling runner hits opposing tagger
 	if is_tackling and role == "runner" and other.role == "tagger":
-		is_tackling = false
-		invincible_timer = 2.0 # 2 seconds of complete invulnerability upon hit!
-		_update_role_visuals()
-		other.take_damage(20)
-		player_damaged.emit(other, 20)
-		item_used.emit("TACKLED TAGGER! (-20 HP, 2s IMMUNITY)")
-		
-		# In online multiplayer, notify server of tackle hit
-		if is_local_player() and Network and Network.is_online_game():
-			Network.send_tackle(other.network_id)
+		_handle_tackle_hit(other)
 		return
 	
 	# If tagger attempts to tag an invincible or tackling runner, ignore tag
@@ -558,23 +557,49 @@ func _on_interaction_body_entered(other: Node3D) -> void:
 		return
 	
 	# Offline practice mode collision
-	if role == "tagger" and other.role == "runner" and not other.is_frozen:
+	# Tagger tagging Runner (Instant freeze on contact!)
+	if role == "tagger" and not is_frozen and other.role == "runner" and not other.is_frozen:
 		if not other.is_tackling and other.invincible_timer <= 0.0:
-			# Cooldown guard: prevent sticking by re-triggering too fast
 			if tag_cooldown_timer > 0.0:
 				return
 			tag_cooldown_timer = TAG_COOLDOWN
 			other.freeze()
 			freeze_count += 1
 			tagged.emit(self, other)
-			# Knockback: push tagger away from frozen runner to prevent sticking
+			# Knockback tagger slightly to prevent sticking
 			var push_dir = (global_position - other.global_position).normalized()
 			push_dir.y = 0.0
 			velocity += push_dir * walk_speed * 1.5
+	
+	# Runner rescuing frozen teammate (Instant rescue & scatter in opposite directions!)
 	elif role == "runner" and not is_frozen and other.role == "runner" and other.is_frozen:
 		other.unfreeze()
 		rescue_count += 1
 		rescued.emit(self, other)
+		
+		# Scatter both runners in opposite divergent directions
+		var base_dir = (other.global_position - global_position).normalized()
+		if base_dir.is_zero_approx():
+			base_dir = -transform.basis.z.normalized()
+		base_dir.y = 0.0
+		
+		var scatter_angle = deg_to_rad(65.0)
+		scatter_timer = 2.0
+		scatter_direction = base_dir.rotated(Vector3.UP, -scatter_angle).normalized()
+		
+		other.scatter_timer = 2.0
+		other.scatter_direction = base_dir.rotated(Vector3.UP, scatter_angle).normalized()
+
+func _handle_tackle_hit(other: CharacterBody3D) -> void:
+	is_tackling = false
+	invincible_timer = 2.0 # 2 seconds of complete invulnerability upon hit!
+	_update_role_visuals()
+	other.take_damage(20)
+	player_damaged.emit(other, 20)
+	item_used.emit("TACKLED TAGGER! (-20 HP, 2s IMMUNITY)")
+	
+	if is_local_player() and Network and Network.is_online_game():
+		Network.send_tackle(other.network_id)
 
 # -- 3D Bot AI ---------------------------------------------------------------
 func _calculate_bot_direction(delta: float) -> Vector3:
@@ -603,6 +628,10 @@ func _calculate_bot_direction(delta: float) -> Vector3:
 		bot_unstuck_timer -= delta
 		return _avoid_walls(bot_unstuck_dir)
 
+	# If currently scattering after a rescue, run full speed along scatter direction
+	if scatter_timer > 0.0 and scatter_direction != Vector3.ZERO:
+		return _avoid_walls(scatter_direction)
+
 	var arena = get_parent()
 	if not arena:
 		return _avoid_walls(bot_dir)
@@ -626,7 +655,7 @@ func _calculate_bot_direction(delta: float) -> Vector3:
 			desired_dir = to_target.normalized()
 			
 			# Aggressive jump when close or pursuing around obstacle
-			if min_d < 4.0 and is_on_floor() and bot_jump_cooldown <= 0.0 and randf() < 0.04:
+			if min_d < 3.5 and is_on_floor() and bot_jump_cooldown <= 0.0 and randf() < 0.05:
 				velocity.y = jump_velocity * 0.75
 				bot_jump_cooldown = 1.8
 		else:
@@ -642,52 +671,73 @@ func _calculate_bot_direction(delta: float) -> Vector3:
 		var tagger_d: float = 99999.0
 		var nearest_frozen: CharacterBody3D = null
 		var frozen_d: float = 99999.0
+		var living_runner_repel := Vector3.ZERO
 		
 		for child in arena.get_children():
 			if child is CharacterBody3D and child != self:
 				var d = global_position.distance_to(child.global_position)
-				if child.role == "tagger":
+				# ONLY flee from taggers who are active and not frozen!
+				if child.role == "tagger" and not child.is_frozen:
 					if d < tagger_d:
 						tagger_d = d
 						nearest_tagger = child
-				elif child.role == "runner" and child.is_frozen:
-					if d < frozen_d:
-						frozen_d = d
-						nearest_frozen = child
+				elif child.role == "runner":
+					if child.is_frozen:
+						if d < frozen_d:
+							frozen_d = d
+							nearest_frozen = child
+					else:
+						# Living teammate: NEVER run away from each other!
+						# Just provide gentle non-overlapping separation if extremely close (< 2.2m)
+						if d < 2.2 and d > 0.01:
+							var away_mate = (global_position - child.global_position).normalized()
+							away_mate.y = 0.0
+							living_runner_repel += away_mate * (2.2 - d) * 0.35
 		
 		# Decision Priority:
-		# 1. Threat avoidance: Tagger is in proximity (< 16.0m) -> FLEE with lateral weaving!
-		if nearest_tagger and tagger_d < 16.0:
-			var away = (global_position - nearest_tagger.global_position)
-			away.y = 0.0
-			var lateral = away.cross(Vector3.UP).normalized() * sin(Time.get_ticks_msec() * 0.004) * 0.7
-			desired_dir = (away.normalized() + lateral).normalized()
+		# 1. Threat avoidance: Tagger is actively dangerous & in proximity (< 9.0m) -> SMART FLEE!
+		if nearest_tagger and tagger_d < 9.0:
+			desired_dir = _find_smart_escape_dir(nearest_tagger.global_position)
 			
 			# Defensive item usage:
-			if held_item == "banana" and tagger_d < 6.0:
+			if held_item == "banana" and tagger_d < 5.0:
 				use_held_item()
 			elif held_item == "heater" and is_frozen:
 				use_held_item()
-			elif held_item == "shield" and tagger_d < 8.0:
+			elif held_item == "shield" and tagger_d < 6.5:
 				use_held_item()
-			elif held_item == "speed" and tagger_d < 10.0:
+			elif held_item == "speed" and tagger_d < 8.0:
 				use_held_item()
-			elif held_item == "tackle" and tagger_d < 5.0:
+			elif held_item == "tackle" and tagger_d < 4.5:
 				var face_tagger = (nearest_tagger.global_position - global_position).normalized()
 				face_tagger.y = 0.0
 				desired_dir = face_tagger
 				use_held_item()
 			
 			# Panic jump when cornered or very close
-			if tagger_d < 4.5 and is_on_floor() and bot_jump_cooldown <= 0.0:
+			if tagger_d < 3.5 and is_on_floor() and bot_jump_cooldown <= 0.0:
 				velocity.y = jump_velocity * 0.85
 				bot_jump_cooldown = 1.6
 		
-		# 2. Rescue teammate if safe (tagger is far or not camping near frozen runner)
-		elif nearest_frozen and (tagger_d > 12.0 or nearest_frozen.global_position.distance_to(nearest_tagger.global_position if nearest_tagger else Vector3.ZERO) > 10.0):
-			var to_frozen = (nearest_frozen.global_position - global_position)
-			to_frozen.y = 0.0
-			desired_dir = to_frozen.normalized()
+		# 2. Rescue teammate: head directly to frozen teammate if tagger is not camping right on them (< 4.0m)
+		elif nearest_frozen:
+			var tagger_camping = false
+			if nearest_tagger:
+				var dist_tagger_frozen = nearest_tagger.global_position.distance_to(nearest_frozen.global_position)
+				if dist_tagger_frozen < 4.0 and tagger_d < 7.0:
+					tagger_camping = true
+			
+			if not tagger_camping:
+				var to_frozen = (nearest_frozen.global_position - global_position)
+				to_frozen.y = 0.0
+				desired_dir = to_frozen.normalized()
+			else:
+				# Tagger camping frozen body: circle around at safe distance
+				if bot_timer <= 0.0:
+					bot_timer = randf_range(1.5, 3.0)
+					var angle = randf_range(0, TAU)
+					bot_dir = Vector3(cos(angle), 0, sin(angle)).normalized()
+				desired_dir = bot_dir
 		
 		# 3. Safe roaming: active wandering so runners never stay still
 		else:
@@ -696,10 +746,67 @@ func _calculate_bot_direction(delta: float) -> Vector3:
 				var angle = randf_range(0, TAU)
 				bot_dir = Vector3(cos(angle), 0, sin(angle)).normalized()
 			desired_dir = bot_dir
+		
+		# Apply soft teammate separation so bots don't merge into one blob
+		if living_runner_repel != Vector3.ZERO:
+			desired_dir = (desired_dir + living_runner_repel).normalized()
 	
 	desired_dir = _avoid_walls(desired_dir)
 	bot_dir = desired_dir
 	return desired_dir
+
+func _find_smart_escape_dir(threat_pos: Vector3) -> Vector3:
+	var space_state = get_world_3d().direct_space_state
+	var origin = global_position + Vector3(0, 0.6, 0)
+	var base_away = (global_position - threat_pos)
+	base_away.y = 0.0
+	if base_away.is_zero_approx():
+		base_away = -transform.basis.z
+	base_away = base_away.normalized()
+	
+	if not space_state:
+		return base_away
+	
+	var angles = [-100.0, -75.0, -50.0, -25.0, 0.0, 25.0, 50.0, 75.0, 100.0]
+	var best_score = -999999.0
+	var best_dir = base_away
+	
+	for a in angles:
+		var test_dir = base_away.rotated(Vector3.UP, deg_to_rad(a)).normalized()
+		var clearance = _get_ray_clearance(origin, test_dir, 9.0, space_state)
+		
+		# Check lateral clearance to avoid tight corners and dead ends
+		var side_l = test_dir.rotated(Vector3.UP, deg_to_rad(35.0)).normalized()
+		var side_r = test_dir.rotated(Vector3.UP, deg_to_rad(-35.0)).normalized()
+		var clear_l = _get_ray_clearance(origin, side_l, 3.5, space_state)
+		var clear_r = _get_ray_clearance(origin, side_r, 3.5, space_state)
+		
+		# Score:
+		# 1. Forward clearance (open space)
+		var score = clearance * 3.0
+		# 2. Alignment away from tagger
+		score += test_dir.dot(base_away) * 4.0
+		# 3. Penalize obstacles & corner traps
+		if clearance < 2.5:
+			score -= 20.0
+		if clear_l < 1.5 and clear_r < 1.5:
+			score -= 30.0 # Corner trap penalty!
+		else:
+			score += (clear_l + clear_r) * 0.5
+		
+		if score > best_score:
+			best_score = score
+			best_dir = test_dir
+			
+	return best_dir
+
+func _get_ray_clearance(origin: Vector3, dir: Vector3, max_dist: float, space_state: PhysicsDirectSpaceState3D) -> float:
+	var query = PhysicsRayQueryParameters3D.create(origin, origin + dir * max_dist, 1)
+	query.exclude = [get_rid()]
+	var hit = space_state.intersect_ray(query)
+	if hit:
+		return origin.distance_to(hit.position)
+	return max_dist
 
 func _avoid_walls(dir: Vector3) -> Vector3:
 	if dir == Vector3.ZERO:
@@ -721,7 +828,9 @@ func _avoid_walls(dir: Vector3) -> Vector3:
 		var n = hit.normal
 		n.y = 0.0
 		n = n.normalized()
-		var deflected = (dir + n * 2.2).normalized()
+		var deflected = dir.slide(n).normalized()
+		if deflected.is_zero_approx():
+			deflected = n
 		
 		if is_on_floor() and bot_jump_cooldown <= 0.0 and randf() < 0.12:
 			velocity.y = jump_velocity * 0.75
