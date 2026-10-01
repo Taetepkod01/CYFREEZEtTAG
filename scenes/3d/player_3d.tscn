@@ -1,6 +1,8 @@
 [gd_scene load_steps=14 format=3 uid="uid://b3dplayer0001"]
 
 [ext_resource type="Script" path="res://scripts/3d/player_3d.gd" id="1_player3d"]
+[ext_resource type="PackedScene" uid="uid://dj5ibpsef48bh" path="res://assets/snowman.glb" id="2_snowman"]
+[ext_resource type="PackedScene" uid="uid://bnqyihc3oocc3" path="res://assets/penguin.glb" id="3_penguin"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_col"]
 radius = 0.45
@@ -65,15 +67,26 @@ shape = SubResource("CapsuleShape3D_col")
 
 [node name="BodyMesh" type="MeshInstance3D" parent="Visuals"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.75, 0)
+visible = false
 mesh = SubResource("CapsuleMesh_body")
 
 [node name="HeadMesh" type="MeshInstance3D" parent="Visuals"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.35, 0)
+visible = false
 mesh = SubResource("SphereMesh_head")
 
 [node name="VisorMesh" type="MeshInstance3D" parent="Visuals"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.4, -0.28)
+visible = false
 mesh = SubResource("BoxMesh_visor")
+
+[node name="SnowmanModel" parent="Visuals" instance=ExtResource("2_snowman")]
+transform = Transform3D(-0.58, 0, 0, 0, 0.58, 0, 0, 0, -0.58, 0, 0, 0)
+visible = false
+
+[node name="PenguinModel" parent="Visuals" instance=ExtResource("3_penguin")]
+transform = Transform3D(-1.85, 0, 0, 0, 1.85, 0, 0, 0, -1.85, 0, 0, 0)
+visible = false
 
 [node name="RoleRing" type="MeshInstance3D" parent="Visuals"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.05, 0)

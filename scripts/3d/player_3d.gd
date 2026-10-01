@@ -65,6 +65,10 @@ var last_sent_rot_y: float = 0.0
 @onready var dizzy_stars: Label3D = $Visuals/DizzyStars
 @onready var name_tag: Label3D = $Visuals/NameTag
 @onready var interaction_area: Area3D = $InteractionArea3D
+@onready var snowman_model: Node3D = $Visuals/SnowmanModel
+@onready var penguin_model: Node3D = $Visuals/PenguinModel
+var snowman_anim: AnimationPlayer = null
+var penguin_anim: AnimationPlayer = null
 
 # Bot AI timer
 var bot_timer: float = 0.0
@@ -85,6 +89,11 @@ func _release_all_movement_inputs() -> void:
 	is_rmb_down = false
 
 func _ready() -> void:
+	if snowman_model and snowman_model.has_node("AnimationPlayer"):
+		snowman_anim = snowman_model.get_node("AnimationPlayer")
+	if penguin_model and penguin_model.has_node("AnimationPlayer"):
+		penguin_anim = penguin_model.get_node("AnimationPlayer")
+	
 	name_tag.text = player_name
 	target_remote_pos = global_position
 	target_remote_rot_y = rotation.y
@@ -148,8 +157,21 @@ func _physics_process(delta: float) -> void:
 	
 	# If this is a remote online player, smoothly lerp to received network position
 	if is_remote:
+		var dist = global_position.distance_to(target_remote_pos)
 		global_position = global_position.lerp(target_remote_pos, 16.0 * delta)
 		visuals.rotation.y = lerp_angle(visuals.rotation.y, target_remote_rot_y, 16.0 * delta)
+		
+		var r_anim: AnimationPlayer = snowman_anim if role == "tagger" else penguin_anim
+		if r_anim:
+			if is_frozen:
+				if r_anim.is_playing():
+					r_anim.pause()
+			elif dist > 0.05:
+				if not r_anim.is_playing() or r_anim.current_animation != "ArmatureAction":
+					r_anim.play("ArmatureAction")
+			else:
+				if r_anim.is_playing():
+					r_anim.stop()
 		return
 	
 	# Apply Gravity
@@ -169,6 +191,9 @@ func _physics_process(delta: float) -> void:
 		velocity.x = move_toward(velocity.x, 0, walk_speed)
 		velocity.z = move_toward(velocity.z, 0, walk_speed)
 		move_and_slide()
+		var frozen_anim: AnimationPlayer = snowman_anim if role == "tagger" else penguin_anim
+		if frozen_anim and frozen_anim.is_playing():
+			frozen_anim.pause()
 		_send_network_position(delta)
 		return
 
@@ -231,6 +256,18 @@ func _physics_process(delta: float) -> void:
 		velocity.z = move_toward(velocity.z, 0, current_speed)
 	
 	move_and_slide()
+	
+	# Update walk animation
+	var active_anim: AnimationPlayer = snowman_anim if role == "tagger" else penguin_anim
+	if active_anim:
+		var horiz_vel = Vector2(velocity.x, velocity.z)
+		if is_on_floor() and horiz_vel.length() > 0.4:
+			if not active_anim.is_playing() or active_anim.current_animation != "ArmatureAction":
+				active_anim.play("ArmatureAction")
+			active_anim.speed_scale = clamp(horiz_vel.length() / walk_speed, 0.7, 1.8)
+		else:
+			if active_anim.is_playing():
+				active_anim.stop()
 	
 	# Void Fall Protection: If fallen below the station/map, teleport back to safe random spawn
 	if global_position.y < -3.0:
@@ -435,11 +472,18 @@ func unfreeze() -> void:
 	is_dizzy = false
 	if dizzy_stars:
 		dizzy_stars.visible = false
+	var cur_anim: AnimationPlayer = snowman_anim if role == "tagger" else penguin_anim
+	if cur_anim and cur_anim.is_playing():
+		cur_anim.stop()
 	_update_role_visuals()
 
 func _update_role_visuals() -> void:
-	if not is_inside_tree() or not body_mesh:
+	if not is_inside_tree():
 		return
+	
+	if snowman_model and penguin_model:
+		snowman_model.visible = (role == "tagger")
+		penguin_model.visible = (role == "runner")
 	
 	ice_block.visible = is_frozen
 	if shield_domain:
