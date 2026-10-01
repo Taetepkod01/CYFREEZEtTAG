@@ -431,6 +431,34 @@ wss.on("connection", (ws: WebSocket) => {
           break;
         }
 
+        // Return to Lobby (Host)
+        case "return_to_lobby": {
+          if (!currentRoom || currentRoom.hostId !== myPlayerId) return;
+          currentRoom.phase = "lobby";
+          if (currentRoom.timerInterval) clearInterval(currentRoom.timerInterval);
+          if (currentRoom.itemSpawnInterval) clearInterval(currentRoom.itemSpawnInterval);
+          currentRoom.items.clear();
+          currentRoom.currentRound = 1;
+          currentRoom.runnersScore = 0;
+          currentRoom.taggersScore = 0;
+
+          currentRoom.players.forEach(p => {
+            p.frozen = false;
+            p.isRescuing = false;
+            p.hasShield = false;
+            p.heldItem = "";
+            p.freezeCount = 0;
+            p.rescueCount = 0;
+            p.hp = 100;
+            p.invincibleUntil = 0;
+          });
+
+          broadcastToRoom(currentRoom, "returned_to_lobby", {
+            code: currentRoom.code
+          });
+          break;
+        }
+
         // 5. 3D Movement
         case "move": {
           if (!currentRoom || currentRoom.phase !== "playing") return;
@@ -661,6 +689,17 @@ wss.on("connection", (ws: WebSocket) => {
 });
 
 function start3DRound(room: Active3DRoom) {
+  if (room.phase === "ended") {
+    if (room.currentRound >= room.rounds) {
+      room.currentRound = 1;
+      room.runnersScore = 0;
+      room.taggersScore = 0;
+      room.players.forEach(p => { p.freezeCount = 0; p.rescueCount = 0; });
+    } else {
+      room.currentRound++;
+    }
+  }
+
   room.phase = "playing";
   room.timeLeft = 165; // 02:45
 

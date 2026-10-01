@@ -56,6 +56,7 @@ const TEX_ROLE_RUNNER_SEL = preload("res://assets/ui/buttons/btn_role_runner_sel
 @onready var score_lbl: Label = $HUD/GameOverPanel/ScoreLabel
 @onready var mvp_lbl: Label = $HUD/GameOverPanel/MVPLabel
 @onready var next_round_btn: Button = $HUD/GameOverPanel/Buttons/NextButton
+@onready var lobby_btn: Button = $HUD/GameOverPanel/Buttons/LobbyButton
 @onready var exit_menu_btn: Button = $HUD/GameOverPanel/Buttons/ExitButton
 
 # Menu / Instructions Modal (6.png)
@@ -85,6 +86,7 @@ func _ready() -> void:
 	practice_role_modal.visible = false
 	
 	next_round_btn.pressed.connect(_on_next_round_pressed)
+	lobby_btn.pressed.connect(_on_lobby_pressed)
 	exit_menu_btn.pressed.connect(_on_exit_to_menu_pressed)
 	
 	menu_btn.pressed.connect(_toggle_menu_modal)
@@ -220,6 +222,10 @@ func _connect_network_signals() -> void:
 		Network.time_sync.connect(_on_net_time_sync)
 	if not Network.round_ended.is_connected(_on_net_round_ended):
 		Network.round_ended.connect(_on_net_round_ended)
+	if not Network.round_started.is_connected(_on_net_round_started):
+		Network.round_started.connect(_on_net_round_started)
+	if not Network.returned_to_lobby.is_connected(_on_net_returned_to_lobby):
+		Network.returned_to_lobby.connect(_on_net_returned_to_lobby)
 	if not Network.chat_received.is_connected(func(msg): add_game_log(msg)):
 		Network.chat_received.connect(func(msg): add_game_log(msg))
 
@@ -634,9 +640,11 @@ func _on_net_round_ended(data: Dictionary) -> void:
 	
 	if Network.is_host:
 		next_round_btn.visible = true
-		next_round_btn.text = "PLAY AGAIN" if is_match_over else "NEXT ROUND (%d)" % current_round
+		next_round_btn.text = "PLAY AGAIN" if is_match_over else "NEXT ROUND (%d)" % (current_round + 1)
+		lobby_btn.visible = true
 	else:
 		next_round_btn.visible = false
+		lobby_btn.visible = true
 
 # -- Events & Log (Practice / Local) -----------------------------------------
 func _on_player_tagged(tagger: CharacterBody3D, victim: CharacterBody3D) -> void:
@@ -815,6 +823,42 @@ func _end_round(winner: String) -> void:
 	else:
 		next_round_btn.text = "NEXT ROUND (%d)" % (current_round + 1)
 
+func _on_net_round_started(data: Dictionary) -> void:
+	game_over_panel.visible = false
+	is_game_active = true
+	current_round = int(data.get("round", current_round))
+	max_rounds = int(data.get("maxRounds", max_rounds))
+	round_time = float(data.get("timeLeft", 165.0))
+	
+	# Clear previous match dynamic entities
+	for item in items_container.get_children():
+		item.queue_free()
+	for trap in traps_container.get_children():
+		trap.queue_free()
+	
+	_spawn_match_players()
+	_update_hud()
+	_update_item_slot("")
+	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
+	add_game_log("[color=#ffe066]Round %d started![/color]" % current_round)
+
+func _on_net_returned_to_lobby(_data: Dictionary) -> void:
+	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+	get_tree().change_scene_to_file("res://scenes/3d/lobby_3d.tscn")
+
+func _on_lobby_pressed() -> void:
+	if Network and Network.is_online_game():
+		if Network.is_host:
+			Network.return_to_lobby()
+		else:
+			Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+			get_tree().change_scene_to_file("res://scenes/3d/lobby_3d.tscn")
+		return
+	
+	# Practice mode: return to lobby/room selection
+	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+	get_tree().change_scene_to_file("res://scenes/3d/lobby_3d.tscn")
+
 func _on_next_round_pressed() -> void:
 	if Network and Network.is_online_game():
 		if Network.is_host:
@@ -831,7 +875,19 @@ func _on_next_round_pressed() -> void:
 	is_game_active = true
 	game_over_panel.visible = false
 	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
+	
+	# Clear items & traps for local next round
+	for item in items_container.get_children():
+		item.queue_free()
+	for trap in traps_container.get_children():
+		trap.queue_free()
+	for i in range(4):
+		_spawn_random_item()
+		
 	_spawn_match_players()
+	_update_hud()
+	_update_item_slot("")
+	add_game_log("[color=#ffe066]Next Round %d started![/color]" % current_round)
 
 func _on_exit_to_menu_pressed() -> void:
 	if Network and Network.is_online_game():

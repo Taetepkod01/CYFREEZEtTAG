@@ -70,9 +70,14 @@ var last_sent_rot_y: float = 0.0
 var snowman_anim: AnimationPlayer = null
 var penguin_anim: AnimationPlayer = null
 
-# Bot AI timer
+# Bot AI Navigation & Anti-Stuck
 var bot_timer: float = 0.0
-var bot_dir: Vector3 = Vector3.ZERO
+var bot_dir: Vector3 = Vector3.FORWARD
+var bot_last_pos: Vector3 = Vector3.ZERO
+var bot_stuck_time: float = 0.0
+var bot_unstuck_timer: float = 0.0
+var bot_unstuck_dir: Vector3 = Vector3.ZERO
+var bot_jump_cooldown: float = 0.0
 
 # Right-mouse button drag support
 var is_rmb_down: bool = false
@@ -228,16 +233,14 @@ func _physics_process(delta: float) -> void:
 		velocity.y = jump_velocity
 	
 	# Movement Vector Calculation
-	var input_vec := Vector2.ZERO
+	var move_dir := Vector3.ZERO
 	if is_local_player():
 		var x = Input.get_axis("move_left", "move_right")
 		var y = Input.get_axis("move_up", "move_down")
-		input_vec = Vector2(x, y).normalized()
+		var input_vec = Vector2(x, y).normalized()
+		move_dir = (transform.basis * Vector3(input_vec.x, 0, input_vec.y)).normalized()
 	elif is_bot:
-		input_vec = _calculate_bot_input(delta)
-	
-	# Convert input to 3D space relative to player orientation
-	var move_dir = (transform.basis * Vector3(input_vec.x, 0, input_vec.y)).normalized()
+		move_dir = _calculate_bot_direction(delta)
 	
 	var current_speed = walk_speed
 	if role == "tagger":
@@ -574,43 +577,169 @@ func _on_interaction_body_entered(other: Node3D) -> void:
 		rescued.emit(self, other)
 
 # -- 3D Bot AI ---------------------------------------------------------------
-func _calculate_bot_input(delta: float) -> Vector2:
+func _calculate_bot_direction(delta: float) -> Vector3:
 	bot_timer -= delta
+	bot_jump_cooldown -= delta
+	
+	# Anti-stuck position check
+	var dist_moved = global_position.distance_to(bot_last_pos)
+	bot_last_pos = global_position
+	
+	if dist_moved < 0.05:
+		bot_stuck_time += delta
+		if bot_stuck_time > 0.35:
+			# Stuck against an obstacle/wall!
+			bot_unstuck_timer = randf_range(0.8, 1.3)
+			var escape_angle = [-2.0, -1.2, 1.2, 2.0].pick_random()
+			bot_unstuck_dir = bot_dir.rotated(Vector3.UP, escape_angle).normalized()
+			if is_on_floor() and bot_jump_cooldown <= 0.0:
+				velocity.y = jump_velocity * 0.85
+				bot_jump_cooldown = 1.4
+			bot_stuck_time = 0.0
+	else:
+		bot_stuck_time = max(0.0, bot_stuck_time - delta * 1.5)
+	
+	if bot_unstuck_timer > 0.0:
+		bot_unstuck_timer -= delta
+		return _avoid_walls(bot_unstuck_dir)
+
 	var arena = get_parent()
 	if not arena:
-		return Vector2.ZERO
+		return _avoid_walls(bot_dir)
+	
+	var desired_dir := Vector3.ZERO
 	
 	if role == "tagger":
-		var closest: CharacterBody3D = null
+		# TAGGER AI: Relentlessly seek the closest unfrozen runner
+		var closest_runner: CharacterBody3D = null
 		var min_d: float = 99999.0
 		for child in arena.get_children():
 			if child is CharacterBody3D and child != self and child.role == "runner" and not child.is_frozen:
 				var d = global_position.distance_to(child.global_position)
 				if d < min_d:
 					min_d = d
-					closest = child
-		if closest:
-			var to_target = (closest.global_position - global_position).normalized()
-			return Vector2(to_target.x, to_target.z)
+					closest_runner = child
+		
+		if closest_runner:
+			var to_target = (closest_runner.global_position - global_position)
+			to_target.y = 0.0
+			desired_dir = to_target.normalized()
+			
+			# Aggressive jump when close or pursuing around obstacle
+			if min_d < 4.0 and is_on_floor() and bot_jump_cooldown <= 0.0 and randf() < 0.04:
+				velocity.y = jump_velocity * 0.75
+				bot_jump_cooldown = 1.8
+		else:
+			# If all runners are frozen or none in range, keep actively moving
+			if bot_timer <= 0.0:
+				bot_timer = randf_range(2.0, 3.5)
+				var angle = randf_range(0, TAU)
+				bot_dir = Vector3(cos(angle), 0, sin(angle)).normalized()
+			desired_dir = bot_dir
 	else:
-		var tagger_bot: CharacterBody3D = null
-		var frozen_bot: CharacterBody3D = null
+		# RUNNER AI: Dynamic survival, teammate rescue & evasion
+		var nearest_tagger: CharacterBody3D = null
+		var tagger_d: float = 99999.0
+		var nearest_frozen: CharacterBody3D = null
+		var frozen_d: float = 99999.0
+		
 		for child in arena.get_children():
 			if child is CharacterBody3D and child != self:
+				var d = global_position.distance_to(child.global_position)
 				if child.role == "tagger":
-					tagger_bot = child
+					if d < tagger_d:
+						tagger_d = d
+						nearest_tagger = child
 				elif child.role == "runner" and child.is_frozen:
-					frozen_bot = child
+					if d < frozen_d:
+						frozen_d = d
+						nearest_frozen = child
 		
-		if tagger_bot and global_position.distance_to(tagger_bot.global_position) < 14.0:
-			var flee = (global_position - tagger_bot.global_position).normalized()
-			return Vector2(flee.x, flee.z)
-		elif frozen_bot:
-			var rescue_dir = (frozen_bot.global_position - global_position).normalized()
-			return Vector2(rescue_dir.x, rescue_dir.z)
-		elif bot_timer <= 0.0:
-			bot_timer = randf_range(2.0, 4.0)
-			bot_dir = Vector3(randf_range(-1, 1), 0, randf_range(-1, 1)).normalized()
-		return Vector2(bot_dir.x, bot_dir.z)
+		# Decision Priority:
+		# 1. Threat avoidance: Tagger is in proximity (< 16.0m) -> FLEE with lateral weaving!
+		if nearest_tagger and tagger_d < 16.0:
+			var away = (global_position - nearest_tagger.global_position)
+			away.y = 0.0
+			var lateral = away.cross(Vector3.UP).normalized() * sin(Time.get_ticks_msec() * 0.004) * 0.7
+			desired_dir = (away.normalized() + lateral).normalized()
+			
+			# Defensive item usage:
+			if held_item == "banana" and tagger_d < 6.0:
+				use_held_item()
+			elif held_item == "heater" and is_frozen:
+				use_held_item()
+			elif held_item == "shield" and tagger_d < 8.0:
+				use_held_item()
+			elif held_item == "speed" and tagger_d < 10.0:
+				use_held_item()
+			elif held_item == "tackle" and tagger_d < 5.0:
+				var face_tagger = (nearest_tagger.global_position - global_position).normalized()
+				face_tagger.y = 0.0
+				desired_dir = face_tagger
+				use_held_item()
+			
+			# Panic jump when cornered or very close
+			if tagger_d < 4.5 and is_on_floor() and bot_jump_cooldown <= 0.0:
+				velocity.y = jump_velocity * 0.85
+				bot_jump_cooldown = 1.6
 		
-	return Vector2.ZERO
+		# 2. Rescue teammate if safe (tagger is far or not camping near frozen runner)
+		elif nearest_frozen and (tagger_d > 12.0 or nearest_frozen.global_position.distance_to(nearest_tagger.global_position if nearest_tagger else Vector3.ZERO) > 10.0):
+			var to_frozen = (nearest_frozen.global_position - global_position)
+			to_frozen.y = 0.0
+			desired_dir = to_frozen.normalized()
+		
+		# 3. Safe roaming: active wandering so runners never stay still
+		else:
+			if bot_timer <= 0.0:
+				bot_timer = randf_range(2.0, 4.0)
+				var angle = randf_range(0, TAU)
+				bot_dir = Vector3(cos(angle), 0, sin(angle)).normalized()
+			desired_dir = bot_dir
+	
+	desired_dir = _avoid_walls(desired_dir)
+	bot_dir = desired_dir
+	return desired_dir
+
+func _avoid_walls(dir: Vector3) -> Vector3:
+	if dir == Vector3.ZERO:
+		return dir
+	
+	var space_state = get_world_3d().direct_space_state
+	if not space_state:
+		return dir
+	
+	var origin = global_position + Vector3(0, 0.6, 0)
+	var ray_dist = 2.4
+	
+	# Probe forward
+	var fwd_query = PhysicsRayQueryParameters3D.create(origin, origin + dir.normalized() * ray_dist, 1)
+	fwd_query.exclude = [get_rid()]
+	var hit = space_state.intersect_ray(fwd_query)
+	
+	if hit:
+		var n = hit.normal
+		n.y = 0.0
+		n = n.normalized()
+		var deflected = (dir + n * 2.2).normalized()
+		
+		if is_on_floor() and bot_jump_cooldown <= 0.0 and randf() < 0.12:
+			velocity.y = jump_velocity * 0.75
+			bot_jump_cooldown = 1.8
+		
+		return deflected
+	
+	# Probe 35-degree left and right feelers
+	var left_dir = dir.rotated(Vector3.UP, deg_to_rad(35.0))
+	var left_query = PhysicsRayQueryParameters3D.create(origin, origin + left_dir * (ray_dist * 0.8), 1)
+	left_query.exclude = [get_rid()]
+	if space_state.intersect_ray(left_query):
+		return dir.rotated(Vector3.UP, deg_to_rad(-45.0)).normalized()
+	
+	var right_dir = dir.rotated(Vector3.UP, deg_to_rad(-35.0))
+	var right_query = PhysicsRayQueryParameters3D.create(origin, origin + right_dir * (ray_dist * 0.8), 1)
+	right_query.exclude = [get_rid()]
+	if space_state.intersect_ray(right_query):
+		return dir.rotated(Vector3.UP, deg_to_rad(45.0)).normalized()
+	
+	return dir

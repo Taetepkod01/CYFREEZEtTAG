@@ -99,8 +99,25 @@ func _ready() -> void:
 	if Network and not Network.is_connected_to_server:
 		Network.connect_to_server()
 	
-	# Initially show Browser View
-	_show_browser_view()
+	# If returning from game while still in a room, restore Room View
+	if Network and not Network.current_room_code.is_empty():
+		current_room_code = Network.current_room_code
+		is_host = Network.is_host
+		if not Network.room_data.is_empty():
+			active_rooms[current_room_code] = {
+				"name": Network.room_data.get("name", "Room " + current_room_code),
+				"code": current_room_code,
+				"host": Network.room_data.get("hostName", "Host"),
+				"host_id": Network.room_data.get("hostId", ""),
+				"players": Network.room_data.get("players", []),
+				"max_players": int(Network.room_data.get("maxPlayers", 6)),
+				"map": Network.room_data.get("map", "Space Station"),
+				"rounds": int(Network.room_data.get("rounds", 3)),
+				"is_private": bool(Network.room_data.get("isPrivate", false))
+			}
+		_show_room_view()
+	else:
+		_show_browser_view()
 
 func _on_refresh_pressed() -> void:
 	if Network:

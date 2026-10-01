@@ -29,6 +29,7 @@ signal banana_placed(pos: Vector3, placer_id: String)
 signal player_damaged(data: Dictionary)
 signal vortex_spawned(pos: Vector3)
 signal round_ended(data: Dictionary)
+signal returned_to_lobby(data: Dictionary)
 signal chat_received(msg: String)
 
 # Legacy signals for backwards-compatibility if referenced
@@ -312,6 +313,9 @@ func _handle_server_message(raw_text: String) -> void:
 			
 		"round_ended":
 			round_ended.emit(data)
+			
+		"returned_to_lobby":
+			returned_to_lobby.emit(data)
 			game_ended.emit(str(data.get("winner", "")))
 			
 		"public_rooms_updated":
@@ -357,6 +361,9 @@ func update_room_settings(max_p: int, rounds: int, map_name: String, is_priv: bo
 
 func start_game() -> void:
 	send_action("start_game")
+
+func return_to_lobby() -> void:
+	send_action("return_to_lobby")
 
 func send_move(pos: Vector3, rot_y: float) -> void:
 	send_action("move", {

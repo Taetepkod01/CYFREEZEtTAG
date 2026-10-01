@@ -787,17 +787,17 @@ anchor_left = 0.5
 anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
-offset_left = -190.0
+offset_left = -270.0
 offset_top = -65.0
-offset_right = 190.0
+offset_right = 270.0
 offset_bottom = -25.0
 grow_horizontal = 2
 grow_vertical = 0
-theme_override_constants/separation = 20
+theme_override_constants/separation = 14
 alignment = 1
 
 [node name="NextButton" type="Button" parent="HUD/GameOverPanel/Buttons" unique_id=890520081]
-custom_minimum_size = Vector2(192, 46)
+custom_minimum_size = Vector2(170, 46)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.85, 0.97, 1, 1)
 theme_override_font_sizes/font_size = 14
@@ -806,8 +806,18 @@ theme_override_styles/pressed = SubResource("StyleBoxFlat_btn_next_round")
 theme_override_styles/hover = SubResource("StyleBoxFlat_pill_hover")
 text = "NEXT ROUND"
 
+[node name="LobbyButton" type="Button" parent="HUD/GameOverPanel/Buttons" unique_id=987654321]
+custom_minimum_size = Vector2(180, 46)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.97, 1, 1)
+theme_override_font_sizes/font_size = 14
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_next_round")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_btn_next_round")
+theme_override_styles/hover = SubResource("StyleBoxFlat_pill_hover")
+text = "RETURN TO ROOM"
+
 [node name="ExitButton" type="Button" parent="HUD/GameOverPanel/Buttons" unique_id=1261220861]
-custom_minimum_size = Vector2(136, 46)
+custom_minimum_size = Vector2(120, 46)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.85, 0.97, 1, 1)
 theme_override_font_sizes/font_size = 14
