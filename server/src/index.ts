@@ -72,6 +72,8 @@ export interface Active3DRoom {
 }
 
 const active3DRooms: Map<string, Active3DRoom> = new Map();
+const MAX_TOTAL_ROOMS = 50; // Maximum concurrent rooms to prevent memory overflow
+const ROOM_CREATE_COOLDOWN_MS = 3000; // 3 seconds cooldown per player
 
 // Public rooms API for Godot Lobby Browser (private rooms excluded)
 app.get("/api/rooms", async (_req, res) => {
@@ -223,6 +225,7 @@ function sendTo(ws: WebSocket, event: string, data: unknown) {
 wss.on("connection", (ws: WebSocket) => {
   let currentRoom: Active3DRoom | null = null;
   let myPlayerId = `p_${Math.random().toString(36).substring(2, 9)}`;
+  let lastRoomCreateTime = 0;
 
   ws.on("message", (rawMsg: Buffer | string) => {
     try {
@@ -246,8 +249,28 @@ wss.on("connection", (ws: WebSocket) => {
           break;
         }
 
-        // 1. Create Room (Host)
+        // 1. Create Room (Host with Rate Limiting & Room Cap)
         case "create_room": {
+          const now = Date.now();
+          // Rate Limit Check 1: Cooldown (3 seconds)
+          if (now - lastRoomCreateTime < ROOM_CREATE_COOLDOWN_MS) {
+            sendTo(ws, "error", { message: "Please wait 3 seconds before creating another room." });
+            return;
+          }
+
+          // Rate Limit Check 2: Already in a room
+          if (currentRoom) {
+            sendTo(ws, "error", { message: "You are already in an active room! Leave first." });
+            return;
+          }
+
+          // Rate Limit Check 3: Server maximum concurrent rooms capacity
+          if (active3DRooms.size >= MAX_TOTAL_ROOMS) {
+            sendTo(ws, "error", { message: `Server room limit reached (max ${MAX_TOTAL_ROOMS} rooms). Please join an existing room.` });
+            return;
+          }
+
+          lastRoomCreateTime = now;
           const code = generateCode();
           const rName = String(msg.roomName || `Room ${code}`);
           const pName = String(msg.playerName || "Host").slice(0, 16);
