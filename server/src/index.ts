@@ -49,6 +49,7 @@ export interface ActivePlayer {
   rescueCount: number;
   hp: number;
   invincibleUntil: number;
+  isReady: boolean;
 }
 
 export interface Active3DRoom {
@@ -75,8 +76,37 @@ const active3DRooms: Map<string, Active3DRoom> = new Map();
 const MAX_TOTAL_ROOMS = 50; // Maximum concurrent rooms to prevent memory overflow
 const ROOM_CREATE_COOLDOWN_MS = 3000; // 3 seconds cooldown per player
 
+// Ghost Room & Dead Socket Sweeper
+function cleanupGhostRooms() {
+  for (const [code, r] of active3DRooms.entries()) {
+    // Remove any player whose WebSocket is no longer OPEN
+    for (const [pId, p] of r.players.entries()) {
+      if (!p.ws || p.ws.readyState !== WebSocket.OPEN) {
+        r.players.delete(pId);
+      }
+    }
+    // If room has 0 players, purge it immediately from RAM
+    if (r.players.size === 0) {
+      if (r.timerInterval) clearInterval(r.timerInterval);
+      if (r.itemSpawnInterval) clearInterval(r.itemSpawnInterval);
+      active3DRooms.delete(code);
+      console.log(`[Cleaner] Ghost room ${code} purged (0 active players).`);
+    } else if (!r.players.has(r.hostId)) {
+      const newHost = r.players.keys().next().value;
+      if (newHost) {
+        r.hostId = newHost;
+        const hostPlayer = r.players.get(newHost);
+        if (hostPlayer) hostPlayer.isReady = true;
+        broadcastToRoom(r, "host_changed", { newHostId: newHost });
+      }
+    }
+  }
+}
+setInterval(cleanupGhostRooms, 4000);
+
 // Public rooms API for Godot Lobby Browser (private rooms excluded)
 app.get("/api/rooms", async (_req, res) => {
+  cleanupGhostRooms();
   const list: Array<{
     code: string;
     name: string;
@@ -316,7 +346,8 @@ wss.on("connection", (ws: WebSocket) => {
             freezeCount: 0,
             rescueCount: 0,
             hp: 100,
-            invincibleUntil: 0
+            invincibleUntil: 0,
+            isReady: true // Host is ready by default
           };
 
           newRoom.players.set(myPlayerId, p);
@@ -332,14 +363,15 @@ wss.on("connection", (ws: WebSocket) => {
             rounds,
             map,
             isPrivate,
-            players: [{ id: p.id, name: p.name, isHost: true }]
+            players: [{ id: p.id, name: p.name, isHost: true, isReady: true }]
           });
           console.log(`[WS Server] Room created: ${code} (${isPrivate ? "PRIVATE" : "PUBLIC"}) by ${pName}`);
           break;
         }
 
-        // Get Public Rooms List (Excludes private rooms)
+        // Get Public Rooms List (Excludes private rooms & purges ghost rooms)
         case "get_rooms": {
+          cleanupGhostRooms();
           const list: Array<any> = [];
           active3DRooms.forEach((r) => {
             if (r.isPrivate) return; // Do not send private rooms to public browser
@@ -359,6 +391,7 @@ wss.on("connection", (ws: WebSocket) => {
 
         // 2. Join Room by Code
         case "join_room": {
+          cleanupGhostRooms();
           const code = String(msg.roomCode || "").toUpperCase().trim();
           const pName = String(msg.playerName || "Player").slice(0, 16);
 
@@ -394,7 +427,8 @@ wss.on("connection", (ws: WebSocket) => {
             freezeCount: 0,
             rescueCount: 0,
             hp: 100,
-            invincibleUntil: 0
+            invincibleUntil: 0,
+            isReady: false // Non-host joins as not ready
           };
 
           room.players.set(myPlayerId, newPlayer);
@@ -403,7 +437,8 @@ wss.on("connection", (ws: WebSocket) => {
           const pList = Array.from(room.players.values()).map(pl => ({
             id: pl.id,
             name: pl.name,
-            isHost: pl.id === room.hostId
+            isHost: pl.id === room.hostId,
+            isReady: pl.id === room.hostId ? true : Boolean(pl.isReady)
           }));
 
           sendTo(ws, "room_joined", {
@@ -422,6 +457,7 @@ wss.on("connection", (ws: WebSocket) => {
             id: newPlayer.id,
             name: newPlayer.name,
             isHost: false,
+            isReady: false,
             playersCount: room.players.size,
             maxPlayers: room.maxPlayers
           }, ws);
@@ -447,25 +483,64 @@ wss.on("connection", (ws: WebSocket) => {
           break;
         }
 
-        // 4. Start Game (Host)
+        // Set Ready State (Non-Host)
+        case "set_ready": {
+          if (!currentRoom) return;
+          const room = currentRoom;
+          const p = room.players.get(myPlayerId);
+          if (!p) return;
+          p.isReady = Boolean(msg.isReady !== undefined ? msg.isReady : !p.isReady);
+
+          const pList = Array.from(room.players.values()).map(pl => ({
+            id: pl.id,
+            name: pl.name,
+            isHost: pl.id === room.hostId,
+            isReady: pl.id === room.hostId ? true : Boolean(pl.isReady)
+          }));
+
+          broadcastToRoom(room, "player_ready_updated", {
+            id: myPlayerId,
+            isReady: p.isReady,
+            players: pList
+          });
+          break;
+        }
+
+        // 4. Start Game (Host - Validates that all non-host players are READY)
         case "start_game": {
           if (!currentRoom || currentRoom.hostId !== myPlayerId) return;
-          start3DRound(currentRoom);
+          const room = currentRoom;
+
+          // Check if all other players are ready!
+          let unreadyCount = 0;
+          room.players.forEach(p => {
+            if (p.id !== room.hostId && !p.isReady) {
+              unreadyCount++;
+            }
+          });
+
+          if (unreadyCount > 0) {
+            sendTo(ws, "error", { message: `Cannot start! Waiting for ${unreadyCount} player(s) to press READY.` });
+            return;
+          }
+
+          start3DRound(room);
           break;
         }
 
         // Return to Lobby (Host)
         case "return_to_lobby": {
           if (!currentRoom || currentRoom.hostId !== myPlayerId) return;
-          currentRoom.phase = "lobby";
-          if (currentRoom.timerInterval) clearInterval(currentRoom.timerInterval);
-          if (currentRoom.itemSpawnInterval) clearInterval(currentRoom.itemSpawnInterval);
-          currentRoom.items.clear();
-          currentRoom.currentRound = 1;
-          currentRoom.runnersScore = 0;
-          currentRoom.taggersScore = 0;
+          const room = currentRoom;
+          room.phase = "lobby";
+          if (room.timerInterval) clearInterval(room.timerInterval);
+          if (room.itemSpawnInterval) clearInterval(room.itemSpawnInterval);
+          room.items.clear();
+          room.currentRound = 1;
+          room.runnersScore = 0;
+          room.taggersScore = 0;
 
-          currentRoom.players.forEach(p => {
+          room.players.forEach(p => {
             p.frozen = false;
             p.isRescuing = false;
             p.hasShield = false;
@@ -474,11 +549,60 @@ wss.on("connection", (ws: WebSocket) => {
             p.rescueCount = 0;
             p.hp = 100;
             p.invincibleUntil = 0;
+            p.isReady = (p.id === room.hostId); // Host is ready, non-hosts must ready up again
           });
 
-          broadcastToRoom(currentRoom, "returned_to_lobby", {
-            code: currentRoom.code
+          const pList = Array.from(room.players.values()).map(pl => ({
+            id: pl.id,
+            name: pl.name,
+            isHost: pl.id === room.hostId,
+            isReady: pl.id === room.hostId ? true : Boolean(pl.isReady)
+          }));
+
+          broadcastToRoom(room, "returned_to_lobby", {
+            code: room.code,
+            name: room.name,
+            hostId: room.hostId,
+            maxPlayers: room.maxPlayers,
+            rounds: room.rounds,
+            map: room.map,
+            isPrivate: room.isPrivate,
+            players: pList
           });
+          break;
+        }
+
+        // Leave Room explicitly
+        case "leave_room": {
+          if (currentRoom) {
+            const p = currentRoom.players.get(myPlayerId);
+            currentRoom.players.delete(myPlayerId);
+
+            if (currentRoom.players.size === 0) {
+              if (currentRoom.timerInterval) clearInterval(currentRoom.timerInterval);
+              if (currentRoom.itemSpawnInterval) clearInterval(currentRoom.itemSpawnInterval);
+              active3DRooms.delete(currentRoom.code);
+              console.log(`[WS Server] Room ${currentRoom.code} deleted by leave_room.`);
+            } else {
+              if (currentRoom.hostId === myPlayerId) {
+                const newHostKey = currentRoom.players.keys().next().value;
+                if (newHostKey) {
+                  currentRoom.hostId = newHostKey;
+                  const newHost = currentRoom.players.get(newHostKey);
+                  if (newHost) newHost.isReady = true;
+                  broadcastToRoom(currentRoom, "host_changed", { newHostId: newHostKey });
+                }
+              }
+              broadcastToRoom(currentRoom, "player_left", {
+                id: myPlayerId,
+                name: p ? p.name : "Player",
+                playersCount: currentRoom.players.size
+              });
+            }
+            currentRoom = null;
+            sendTo(ws, "left_room", {});
+            cleanupGhostRooms();
+          }
           break;
         }
 
@@ -702,12 +826,15 @@ wss.on("connection", (ws: WebSocket) => {
           const newHostKey = currentRoom.players.keys().next().value;
           if (newHostKey) {
             currentRoom.hostId = newHostKey;
+            const newHost = currentRoom.players.get(newHostKey);
+            if (newHost) newHost.isReady = true;
             broadcastToRoom(currentRoom, "host_changed", { newHostId: newHostKey });
           }
         }
         check3DEndCondition(currentRoom);
       }
     }
+    cleanupGhostRooms();
   });
 });
 

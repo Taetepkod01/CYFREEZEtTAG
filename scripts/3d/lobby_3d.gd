@@ -103,13 +103,14 @@ func _ready() -> void:
 	if Network and not Network.current_room_code.is_empty():
 		current_room_code = Network.current_room_code
 		is_host = Network.is_host
+		is_ready = is_host
 		if not Network.room_data.is_empty():
 			active_rooms[current_room_code] = {
 				"name": Network.room_data.get("name", "Room " + current_room_code),
 				"code": current_room_code,
 				"host": Network.room_data.get("hostName", "Host"),
 				"host_id": Network.room_data.get("hostId", ""),
-				"players": Network.room_data.get("players", []),
+				"players": Network.room_data.get("players", []).duplicate(),
 				"max_players": int(Network.room_data.get("maxPlayers", 6)),
 				"map": Network.room_data.get("map", "Space Station"),
 				"rounds": int(Network.room_data.get("rounds", 3)),
@@ -141,6 +142,8 @@ func _connect_network_signals() -> void:
 		Network.settings_updated.connect(_on_network_settings_updated)
 	if not Network.player_name_updated.is_connected(_on_network_player_name_updated):
 		Network.player_name_updated.connect(_on_network_player_name_updated)
+	if not Network.player_ready_updated.is_connected(_on_network_player_ready_updated):
+		Network.player_ready_updated.connect(_on_network_player_ready_updated)
 	if not Network.public_rooms_updated.is_connected(_on_network_public_rooms_updated):
 		Network.public_rooms_updated.connect(_on_network_public_rooms_updated)
 	if not Network.round_started.is_connected(_on_network_round_started):
@@ -254,7 +257,7 @@ func _join_room_by_code(code: String) -> void:
 		if Network:
 			Network.connect_to_server()
 
-# -- Network Handlers --------------------------------------------------------
+#// -- Network Handlers --------------------------------------------------------
 func _on_network_room_created(data: Dictionary) -> void:
 	code_error_lbl.text = ""
 	current_room_code = str(data.get("code", ""))
@@ -263,7 +266,7 @@ func _on_network_room_created(data: Dictionary) -> void:
 	
 	var r_players = []
 	for p in data.get("players", []):
-		r_players.append(str(p.get("name", "Player")) + (" (Host)" if p.get("isHost", false) else ""))
+		r_players.append(p)
 	
 	active_rooms[current_room_code] = {
 		"name": str(data.get("name", "Room")),
@@ -285,7 +288,7 @@ func _on_network_room_joined(data: Dictionary) -> void:
 	
 	var r_players = []
 	for p in data.get("players", []):
-		r_players.append(str(p.get("name", "Player")) + (" (Host)" if p.get("isHost", false) else ""))
+		r_players.append(p)
 	
 	active_rooms[current_room_code] = {
 		"name": str(data.get("name", "Room")),
@@ -302,16 +305,29 @@ func _on_network_room_joined(data: Dictionary) -> void:
 func _on_network_player_joined(data: Dictionary) -> void:
 	if active_rooms.has(current_room_code):
 		var r = active_rooms[current_room_code]
-		var p_name = str(data.get("name", "New Player"))
-		r["players"].append(p_name)
+		r["players"].append({
+			"id": str(data.get("id", "")),
+			"name": str(data.get("name", "New Player")),
+			"isHost": bool(data.get("isHost", false)),
+			"isReady": bool(data.get("isReady", false))
+		})
 		_update_room_lobby_ui()
 
 func _on_network_player_left(data: Dictionary) -> void:
 	if active_rooms.has(current_room_code):
 		var r = active_rooms[current_room_code]
+		var p_id = str(data.get("id", ""))
 		var p_name = str(data.get("name", ""))
 		for i in range(r["players"].size() - 1, -1, -1):
-			if r["players"][i].begins_with(p_name):
+			var item = r["players"][i]
+			var match_found = false
+			if typeof(item) == TYPE_DICTIONARY:
+				if (!p_id.is_empty() and str(item.get("id")) == p_id) or str(item.get("name")) == p_name:
+					match_found = true
+			elif typeof(item) == TYPE_STRING:
+				if item.begins_with(p_name):
+					match_found = true
+			if match_found:
 				r["players"].remove_at(i)
 				break
 		_update_room_lobby_ui()
@@ -329,10 +345,26 @@ func _on_network_player_name_updated(_data: Dictionary) -> void:
 	if active_rooms.has(current_room_code):
 		var r = active_rooms[current_room_code]
 		if Network and Network.room_data.has("players"):
-			var r_players = []
-			for p in Network.room_data["players"]:
-				r_players.append(str(p.get("name", "Player")) + (" (Host)" if p.get("isHost", false) else ""))
-			r["players"] = r_players
+			r["players"] = Network.room_data["players"].duplicate()
+		_update_room_lobby_ui()
+
+func _on_network_player_ready_updated(data: Dictionary) -> void:
+	if active_rooms.has(current_room_code):
+		var r = active_rooms[current_room_code]
+		if data.has("players") and typeof(data["players"]) == TYPE_ARRAY:
+			r["players"] = data["players"].duplicate()
+		else:
+			var p_id = str(data.get("id", ""))
+			var p_ready = bool(data.get("isReady", false))
+			for p in r["players"]:
+				if typeof(p) == TYPE_DICTIONARY and str(p.get("id")) == p_id:
+					p["isReady"] = p_ready
+					break
+		if not is_host and Network:
+			for p in r["players"]:
+				if typeof(p) == TYPE_DICTIONARY and str(p.get("id")) == Network.player_id:
+					is_ready = bool(p.get("isReady", false))
+					break
 		_update_room_lobby_ui()
 
 func _on_network_public_rooms_updated(rooms: Array) -> void:
@@ -361,6 +393,16 @@ func _on_network_round_started(_data: Dictionary) -> void:
 
 func _on_network_error(msg: String) -> void:
 	code_error_lbl.text = msg
+	if room_view.visible:
+		player_count_header.text = msg.to_upper()
+		player_count_header.modulate = Color(1.0, 0.35, 0.35)
+		var t = get_tree().create_timer(3.5)
+		t.timeout.connect(func():
+			if is_instance_valid(player_count_header) and active_rooms.has(current_room_code):
+				var cr = active_rooms[current_room_code]
+				player_count_header.text = "PLAYERS (%d / %d)" % [cr["players"].size(), cr["max_players"]]
+				player_count_header.modulate = Color(0.4, 0.85, 1.0)
+		)
 
 # -- In-Room UI & Customization ----------------------------------------------
 func _update_room_lobby_ui() -> void:
@@ -374,6 +416,7 @@ func _update_room_lobby_ui() -> void:
 	room_header_lbl.text = r["name"].to_upper()
 	room_code_lbl.text = r["code"]
 	player_count_header.text = "PLAYERS (%d / %d)" % [r["players"].size(), r["max_players"]]
+	player_count_header.modulate = Color(0.4, 0.85, 1.0)
 	
 	# Player List
 	_update_player_slots(r)
@@ -400,9 +443,24 @@ func _update_room_lobby_ui() -> void:
 	if is_host:
 		action_btn.texture_normal = TEX_START_GAME
 		action_btn.disabled = false
+		var all_ready = true
+		for p in r["players"]:
+			var p_is_host = false
+			var p_is_ready = false
+			if typeof(p) == TYPE_DICTIONARY:
+				p_is_host = bool(p.get("isHost", false))
+				p_is_ready = bool(p.get("isReady", false))
+			if not p_is_host and not p_is_ready:
+				all_ready = false
+				break
+		if all_ready:
+			action_btn.modulate = Color(1.0, 1.0, 1.0, 1.0)
+		else:
+			action_btn.modulate = Color(0.65, 0.65, 0.65, 0.75)
 	else:
 		action_btn.texture_normal = TEX_WAITING if is_ready else TEX_READY
-		action_btn.disabled = is_ready
+		action_btn.disabled = false
+		action_btn.modulate = Color(1.0, 1.0, 1.0, 1.0)
 
 func _update_player_slots(r: Dictionary) -> void:
 	for child in player_list_vbox.get_children():
@@ -431,22 +489,56 @@ func _update_player_slots(r: Dictionary) -> void:
 		name_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		name_lbl.add_theme_font_size_override("font_size", 13)
 		
+		var status_badge = Label.new()
+		status_badge.add_theme_font_size_override("font_size", 11)
+		
 		if i < r["players"].size():
-			var p_name = str(r["players"][i])
-			if i == 0:
+			var item = r["players"][i]
+			var p_name = ""
+			var p_is_host = false
+			var p_is_ready = false
+			
+			if typeof(item) == TYPE_DICTIONARY:
+				p_name = str(item.get("name", "Player %d" % (i + 1)))
+				p_is_host = bool(item.get("isHost", i == 0))
+				p_is_ready = bool(item.get("isReady", false))
+			else:
+				p_name = str(item)
+				p_is_host = (i == 0)
+				p_is_ready = false
+			
+			# Clean up any leftover duplicate "(Host)"
+			while p_name.ends_with("(Host)"):
+				p_name = p_name.trim_suffix("(Host)").strip_edges()
+			
+			if p_is_host:
 				sb.bg_color = Color(0.12, 0.22, 0.45, 0.9)
 				sb.border_color = Color(1.0, 0.85, 0.3, 0.85)
-				icon_lbl.text = "*"
+				icon_lbl.text = "★"
 				icon_lbl.modulate = Color(1.0, 0.85, 0.2)
-				name_lbl.text = "%s  (Host)" % p_name
-				name_lbl.modulate = Color(1.0, 0.9, 0.35)
-			else:
-				sb.bg_color = Color(0.06, 0.14, 0.28, 0.85)
-				sb.border_color = Color(0.2, 0.7, 0.95, 0.6)
-				icon_lbl.text = "o"
-				icon_lbl.modulate = Color(0.3, 0.9, 1.0)
 				name_lbl.text = p_name
-				name_lbl.modulate = Color(0.9, 0.95, 1.0)
+				name_lbl.modulate = Color(1.0, 0.9, 0.35)
+				status_badge.text = "[HOST]"
+				status_badge.modulate = Color(1.0, 0.85, 0.2)
+			else:
+				if p_is_ready:
+					sb.bg_color = Color(0.08, 0.22, 0.16, 0.85)
+					sb.border_color = Color(0.2, 0.85, 0.4, 0.8)
+					icon_lbl.text = "✓"
+					icon_lbl.modulate = Color(0.3, 1.0, 0.5)
+					name_lbl.text = p_name
+					name_lbl.modulate = Color(0.8, 1.0, 0.85)
+					status_badge.text = "[READY]"
+					status_badge.modulate = Color(0.3, 1.0, 0.5)
+				else:
+					sb.bg_color = Color(0.06, 0.14, 0.28, 0.85)
+					sb.border_color = Color(0.2, 0.7, 0.95, 0.6)
+					icon_lbl.text = "○"
+					icon_lbl.modulate = Color(0.3, 0.9, 1.0)
+					name_lbl.text = p_name
+					name_lbl.modulate = Color(0.85, 0.92, 1.0)
+					status_badge.text = "[WAITING]"
+					status_badge.modulate = Color(0.5, 0.75, 0.95)
 		else:
 			sb.bg_color = Color(0.04, 0.08, 0.16, 0.6)
 			sb.border_color = Color(0.2, 0.45, 0.7, 0.25)
@@ -454,10 +546,13 @@ func _update_player_slots(r: Dictionary) -> void:
 			icon_lbl.modulate = Color(0.4, 0.5, 0.65)
 			name_lbl.text = "[ Empty Slot ]"
 			name_lbl.modulate = Color(0.45, 0.6, 0.75, 0.6)
+			status_badge.text = ""
 		
 		slot_panel.add_theme_stylebox_override("panel", sb)
 		hbox.add_child(icon_lbl)
 		hbox.add_child(name_lbl)
+		if status_badge.text != "":
+			hbox.add_child(status_badge)
 		margin.add_child(hbox)
 		slot_panel.add_child(margin)
 		slot_panel.custom_minimum_size = Vector2(0, 36)
@@ -544,6 +639,32 @@ func _on_copy_code_pressed() -> void:
 
 func _on_action_pressed() -> void:
 	if is_host:
+		if active_rooms.has(current_room_code):
+			var r = active_rooms[current_room_code]
+			var unready_names: Array = []
+			for p in r["players"]:
+				var p_is_host = false
+				var p_is_ready = false
+				var p_name = "Player"
+				if typeof(p) == TYPE_DICTIONARY:
+					p_is_host = bool(p.get("isHost", false))
+					p_is_ready = bool(p.get("isReady", false))
+					p_name = str(p.get("name", "Player"))
+				if not p_is_host and not p_is_ready:
+					unready_names.append(p_name)
+			
+			if unready_names.size() > 0:
+				player_count_header.text = "WAITING FOR READY: %s" % (", ".join(unready_names))
+				player_count_header.modulate = Color(1.0, 0.4, 0.4)
+				var t = get_tree().create_timer(3.0)
+				t.timeout.connect(func():
+					if is_instance_valid(player_count_header) and active_rooms.has(current_room_code):
+						var cr = active_rooms[current_room_code]
+						player_count_header.text = "PLAYERS (%d / %d)" % [cr["players"].size(), cr["max_players"]]
+						player_count_header.modulate = Color(0.4, 0.85, 1.0)
+				)
+				return
+		
 		if Network:
 			Network.selected_map = selected_map
 		if Network and Network.is_connected_to_server:
@@ -551,24 +672,17 @@ func _on_action_pressed() -> void:
 		else:
 			get_tree().change_scene_to_file("res://scenes/3d/arena_3d.tscn")
 	else:
-		is_ready = true
+		is_ready = not is_ready
+		if Network and Network.is_connected_to_server:
+			Network.set_ready(is_ready)
 		_update_room_lobby_ui()
 
 func _on_leave_room_pressed() -> void:
-	if active_rooms.has(current_room_code):
-		if is_host:
-			active_rooms.erase(current_room_code)
-		else:
-			var r = active_rooms[current_room_code]
-			for i in range(r["players"].size() - 1, -1, -1):
-				if str(r["players"][i]).begins_with("Player"):
-					r["players"].remove_at(i)
-					break
+	if Network and Network.is_connected_to_server:
+		Network.leave_room()
 	
-	if Network:
-		Network.disconnect_from_server()
-		# Reconnect to keep browser alive
-		Network.connect_to_server()
+	if active_rooms.has(current_room_code):
+		active_rooms.erase(current_room_code)
 	
 	current_room_code = ""
 	is_host = false
@@ -576,6 +690,7 @@ func _on_leave_room_pressed() -> void:
 	_show_browser_view()
 
 func _on_back_to_menu_pressed() -> void:
-	if Network:
+	if Network and Network.is_connected_to_server:
+		Network.leave_room()
 		Network.disconnect_from_server()
 	get_tree().change_scene_to_file("res://scenes/3d/main_menu_3d.tscn")

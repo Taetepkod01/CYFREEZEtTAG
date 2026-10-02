@@ -12,6 +12,7 @@ signal player_joined(data: Dictionary)
 signal player_left(data: Dictionary)
 signal host_changed(new_host_id: String)
 signal player_name_updated(data: Dictionary)
+signal player_ready_updated(data: Dictionary)
 signal settings_updated(data: Dictionary)
 signal public_rooms_updated(rooms: Array)
 
@@ -315,8 +316,22 @@ func _handle_server_message(raw_text: String) -> void:
 			round_ended.emit(data)
 			
 		"returned_to_lobby":
+			room_data = data
 			returned_to_lobby.emit(data)
 			game_ended.emit(str(data.get("winner", "")))
+			
+		"player_ready_updated":
+			if data.has("players") and typeof(data["players"]) == TYPE_ARRAY:
+				room_data["players"] = data["players"]
+			elif room_data.has("players") and typeof(room_data["players"]) == TYPE_ARRAY:
+				var p_id = str(data.get("id", ""))
+				var p_ready = bool(data.get("isReady", false))
+				for p in room_data["players"]:
+					if typeof(p) == TYPE_DICTIONARY and str(p.get("id")) == p_id:
+						p["isReady"] = p_ready
+						break
+			player_ready_updated.emit(data)
+			player_list_updated.emit()
 			
 		"public_rooms_updated":
 			if typeof(data) == TYPE_ARRAY:
@@ -329,6 +344,12 @@ func _handle_server_message(raw_text: String) -> void:
 			connection_error.emit(str(data.get("message", "Unknown server error")))
 
 # ── Outbound Action Helpers ───────────────────────────────────────────────────
+func set_ready(ready: bool) -> void:
+	send_action("set_ready", { "isReady": ready })
+
+func leave_room() -> void:
+	send_action("leave_room", { "playerName": my_player_name })
+
 func set_player_name(new_name: String) -> void:
 	my_player_name = new_name
 	send_action("set_player_name", { "name": new_name })

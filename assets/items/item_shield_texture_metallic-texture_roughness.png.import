@@ -3,9 +3,10 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://bdq8a70tjglmp"
-path="res://.godot/imported/item_shield_texture_metallic-texture_roughness.png-18c8f70e2a8e20c3bf2304c11996dadb.ctex"
+path.s3tc="res://.godot/imported/item_shield_texture_metallic-texture_roughness.png-18c8f70e2a8e20c3bf2304c11996dadb.s3tc.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc"],
+"vram_texture": true
 }
 generator_parameters={
 "md5": "bed0d4fb812fde3029908e62a832cb9a"
@@ -14,11 +15,11 @@ generator_parameters={
 [deps]
 
 source_file="res://assets/items/item_shield_texture_metallic-texture_roughness.png"
-dest_files=["res://.godot/imported/item_shield_texture_metallic-texture_roughness.png-18c8f70e2a8e20c3bf2304c11996dadb.ctex"]
+dest_files=["res://.godot/imported/item_shield_texture_metallic-texture_roughness.png-18c8f70e2a8e20c3bf2304c11996dadb.s3tc.ctex"]
 
 [params]
 
-compress/mode=0
+compress/mode=2
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0
@@ -40,4 +41,4 @@ process/normal_map_invert_y=false
 process/hdr_as_srgb=false
 process/hdr_clamp_exposure=false
 process/size_limit=0
-detect_3d/compress_to=1
+detect_3d/compress_to=0
