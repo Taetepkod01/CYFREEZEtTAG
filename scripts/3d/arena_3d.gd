@@ -625,12 +625,19 @@ func _on_net_round_ended(data: Dictionary) -> void:
 	game_over_panel.visible = true
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 	
+	var reason = str(data.get("reason", ""))
 	if winner == "TAGGERS":
 		game_over_title.text = "TAGGERS WIN ROUND!"
 		game_over_title.modulate = Color(1.0, 0.4, 0.4)
 	else:
-		game_over_title.text = "RUNNERS WIN ROUND!"
+		if reason == "All Taggers Disconnected":
+			game_over_title.text = "TAGGER LEFT! RUNNERS WIN!"
+		else:
+			game_over_title.text = "RUNNERS WIN ROUND!"
 		game_over_title.modulate = Color(0.4, 0.95, 1.0)
+	
+	if not reason.is_empty():
+		add_game_log("[color=#ffe066]Round Ended: %s[/color]" % reason)
 	
 	score_lbl.text = "SCORE: Runners %d  -  Taggers %d" % [runners_score, taggers_score]
 	

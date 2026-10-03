@@ -79,10 +79,12 @@ const ROOM_CREATE_COOLDOWN_MS = 3000; // 3 seconds cooldown per player
 // Ghost Room & Dead Socket Sweeper
 function cleanupGhostRooms() {
   for (const [code, r] of active3DRooms.entries()) {
+    let deletedCount = 0;
     // Remove any player whose WebSocket is no longer OPEN
     for (const [pId, p] of r.players.entries()) {
       if (!p.ws || p.ws.readyState !== WebSocket.OPEN) {
         r.players.delete(pId);
+        deletedCount++;
       }
     }
     // If room has 0 players, purge it immediately from RAM
@@ -91,13 +93,18 @@ function cleanupGhostRooms() {
       if (r.itemSpawnInterval) clearInterval(r.itemSpawnInterval);
       active3DRooms.delete(code);
       console.log(`[Cleaner] Ghost room ${code} purged (0 active players).`);
-    } else if (!r.players.has(r.hostId)) {
-      const newHost = r.players.keys().next().value;
-      if (newHost) {
-        r.hostId = newHost;
-        const hostPlayer = r.players.get(newHost);
-        if (hostPlayer) hostPlayer.isReady = true;
-        broadcastToRoom(r, "host_changed", { newHostId: newHost });
+    } else {
+      if (!r.players.has(r.hostId)) {
+        const newHost = r.players.keys().next().value;
+        if (newHost) {
+          r.hostId = newHost;
+          const hostPlayer = r.players.get(newHost);
+          if (hostPlayer) hostPlayer.isReady = true;
+          broadcastToRoom(r, "host_changed", { newHostId: newHost });
+        }
+      }
+      if (deletedCount > 0) {
+        check3DEndCondition(r);
       }
     }
   }
@@ -575,29 +582,31 @@ wss.on("connection", (ws: WebSocket) => {
         // Leave Room explicitly
         case "leave_room": {
           if (currentRoom) {
-            const p = currentRoom.players.get(myPlayerId);
-            currentRoom.players.delete(myPlayerId);
+            const roomToLeave = currentRoom;
+            const p = roomToLeave.players.get(myPlayerId);
+            roomToLeave.players.delete(myPlayerId);
 
-            if (currentRoom.players.size === 0) {
-              if (currentRoom.timerInterval) clearInterval(currentRoom.timerInterval);
-              if (currentRoom.itemSpawnInterval) clearInterval(currentRoom.itemSpawnInterval);
-              active3DRooms.delete(currentRoom.code);
-              console.log(`[WS Server] Room ${currentRoom.code} deleted by leave_room.`);
+            if (roomToLeave.players.size === 0) {
+              if (roomToLeave.timerInterval) clearInterval(roomToLeave.timerInterval);
+              if (roomToLeave.itemSpawnInterval) clearInterval(roomToLeave.itemSpawnInterval);
+              active3DRooms.delete(roomToLeave.code);
+              console.log(`[WS Server] Room ${roomToLeave.code} deleted by leave_room.`);
             } else {
-              if (currentRoom.hostId === myPlayerId) {
-                const newHostKey = currentRoom.players.keys().next().value;
+              if (roomToLeave.hostId === myPlayerId) {
+                const newHostKey = roomToLeave.players.keys().next().value;
                 if (newHostKey) {
-                  currentRoom.hostId = newHostKey;
-                  const newHost = currentRoom.players.get(newHostKey);
+                  roomToLeave.hostId = newHostKey;
+                  const newHost = roomToLeave.players.get(newHostKey);
                   if (newHost) newHost.isReady = true;
-                  broadcastToRoom(currentRoom, "host_changed", { newHostId: newHostKey });
+                  broadcastToRoom(roomToLeave, "host_changed", { newHostId: newHostKey });
                 }
               }
-              broadcastToRoom(currentRoom, "player_left", {
+              broadcastToRoom(roomToLeave, "player_left", {
                 id: myPlayerId,
                 name: p ? p.name : "Player",
-                playersCount: currentRoom.players.size
+                playersCount: roomToLeave.players.size
               });
+              check3DEndCondition(roomToLeave);
             }
             currentRoom = null;
             sendTo(ws, "left_room", {});
@@ -1059,10 +1068,34 @@ function start3DRound(room: Active3DRoom) {
 
 function check3DEndCondition(room: Active3DRoom) {
   if (room.phase !== "playing") return;
+
+  let taggersCount = 0;
   let activeRunners = 0;
+  let totalRunners = 0;
+
   room.players.forEach(p => {
-    if (p.role === "runner" && !p.frozen) activeRunners++;
+    if (p.role === "tagger") {
+      taggersCount++;
+    } else if (p.role === "runner") {
+      totalRunners++;
+      if (!p.frozen) activeRunners++;
+    }
   });
+
+  // 1. If all taggers left / disconnected, runners win immediately!
+  if (taggersCount === 0) {
+    broadcastToRoom(room, "chat_message", { msg: "👑 All Taggers left the match! RUNNERS WIN!" });
+    end3DRound(room, "RUNNERS", "All Taggers Disconnected");
+    return;
+  }
+
+  // 2. If no runners remain in the room, taggers win
+  if (totalRunners === 0) {
+    end3DRound(room, "TAGGERS", "All Runners Left");
+    return;
+  }
+
+  // 3. If all remaining runners are frozen, taggers win
   if (activeRunners === 0) {
     end3DRound(room, "TAGGERS", "All Runners Frozen");
   }
