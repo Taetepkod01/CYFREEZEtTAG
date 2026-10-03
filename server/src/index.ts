@@ -50,6 +50,7 @@ export interface ActivePlayer {
   hp: number;
   invincibleUntil: number;
   isReady: boolean;
+  lastTackleTime?: number;
 }
 
 export interface Active3DRoom {
@@ -263,6 +264,9 @@ wss.on("connection", (ws: WebSocket) => {
   let currentRoom: Active3DRoom | null = null;
   let myPlayerId = `p_${Math.random().toString(36).substring(2, 9)}`;
   let lastRoomCreateTime = 0;
+  let lastJoinAttemptTime = 0;
+  let failedJoinAttempts = 0;
+  let lockoutUntil = 0;
 
   ws.on("message", (rawMsg: Buffer | string) => {
     try {
@@ -396,17 +400,35 @@ wss.on("connection", (ws: WebSocket) => {
           break;
         }
 
-        // 2. Join Room by Code
+        // 2. Join Room by Code (with Anti-Brute Force Protection)
         case "join_room": {
           cleanupGhostRooms();
+          const now = Date.now();
+          if (now < lockoutUntil) {
+            const waitSec = Math.ceil((lockoutUntil - now) / 1000);
+            sendTo(ws, "error", { message: `Too many failed attempts. Please wait ${waitSec}s.` });
+            return;
+          }
+          if (now - lastJoinAttemptTime < 600) {
+            sendTo(ws, "error", { message: "Joining too fast. Please slow down." });
+            return;
+          }
+          lastJoinAttemptTime = now;
+
           const code = String(msg.roomCode || "").toUpperCase().trim();
           const pName = String(msg.playerName || "Player").slice(0, 16);
 
           const room = active3DRooms.get(code);
           if (!room) {
+            failedJoinAttempts++;
+            if (failedJoinAttempts >= 5) {
+              lockoutUntil = now + 5000; // 5-second lockout after 5 consecutive failures
+              failedJoinAttempts = 0;
+            }
             sendTo(ws, "error", { message: `Room not found: "${code}"` });
             return;
           }
+          failedJoinAttempts = 0; // Reset on valid room code
           if (room.phase !== "lobby") {
             sendTo(ws, "error", { message: `Match already in progress for room "${code}"` });
             return;
@@ -615,16 +637,24 @@ wss.on("connection", (ws: WebSocket) => {
           break;
         }
 
-        // 5. 3D Movement
+        // 5. 3D Movement (with coordinate & NaN/Infinity sanity check)
         case "move": {
           if (!currentRoom || currentRoom.phase !== "playing") return;
           const p = currentRoom.players.get(myPlayerId);
           if (!p || p.frozen) return;
 
-          p.x = Number(msg.x) || p.x;
-          p.y = Number(msg.y) || p.y;
-          p.z = Number(msg.z) || p.z;
-          if (typeof msg.rotY === "number") p.rotY = msg.rotY;
+          const rawX = Number(msg.x);
+          const rawY = Number(msg.y);
+          const rawZ = Number(msg.z);
+
+          // Discard NaN, Infinity, or out-of-bounds coordinates (-40m to +40m)
+          if (!Number.isFinite(rawX) || !Number.isFinite(rawY) || !Number.isFinite(rawZ)) return;
+          if (Math.abs(rawX) > 40 || Math.abs(rawZ) > 40 || rawY < -10 || rawY > 30) return;
+
+          p.x = rawX;
+          p.y = rawY;
+          p.z = rawZ;
+          if (typeof msg.rotY === "number" && Number.isFinite(msg.rotY)) p.rotY = msg.rotY;
 
           broadcastToRoom(currentRoom, "player_moved", {
             id: myPlayerId,
@@ -636,12 +666,20 @@ wss.on("connection", (ws: WebSocket) => {
           break;
         }
 
-        // 6. Tag Player
+        // 6. Tag Player (with Distance & Immunity verification)
         case "tag_player": {
           if (!currentRoom || currentRoom.phase !== "playing") return;
           const tagger = currentRoom.players.get(myPlayerId);
           const victim = currentRoom.players.get(String(msg.victimId));
           if (!tagger || !victim || tagger.role !== "tagger" || victim.role !== "runner" || victim.frozen) return;
+
+          // Anti-Cheat: Validate Euclidean distance between Tagger and Victim
+          const dist = Math.hypot(tagger.x - victim.x, tagger.z - victim.z);
+          const MAX_TAG_DIST = 4.5; // Max reach (1.5m collision radius + latency/speed buffer)
+          if (dist > MAX_TAG_DIST) {
+            console.warn(`[AntiCheat] Blocked distant tag attempt by ${tagger.name} on ${victim.name} (${dist.toFixed(2)}m)`);
+            return;
+          }
 
           // Runner is immune from Dash Tackle!
           if (victim.invincibleUntil && victim.invincibleUntil > Date.now()) {
@@ -667,12 +705,20 @@ wss.on("connection", (ws: WebSocket) => {
           break;
         }
 
-        // 7. Rescue Player
+        // 7. Rescue Player (with Distance verification)
         case "rescue_player": {
           if (!currentRoom || currentRoom.phase !== "playing") return;
           const rescuer = currentRoom.players.get(myPlayerId);
           const victim = currentRoom.players.get(String(msg.victimId));
           if (!rescuer || !victim || rescuer.role !== "runner" || rescuer.frozen || !victim.frozen) return;
+
+          // Anti-Cheat: Validate Euclidean distance
+          const dist = Math.hypot(rescuer.x - victim.x, rescuer.z - victim.z);
+          const MAX_RESCUE_DIST = 4.5;
+          if (dist > MAX_RESCUE_DIST) {
+            console.warn(`[AntiCheat] Blocked distant rescue attempt by ${rescuer.name} on ${victim.name} (${dist.toFixed(2)}m)`);
+            return;
+          }
 
           victim.frozen = false;
           rescuer.rescueCount += 1;
@@ -763,15 +809,30 @@ wss.on("connection", (ws: WebSocket) => {
           break;
         }
 
-        // 11. Tackle Player (Runner dashes into Tagger)
+        // 11. Tackle Player (Runner dashes into Tagger with Cooldown & Distance verification)
         case "tackle_player": {
           if (!currentRoom || currentRoom.phase !== "playing") return;
           const runner = currentRoom.players.get(myPlayerId);
           const tagger = currentRoom.players.get(String(msg.targetId));
           if (!runner || !tagger || runner.role !== "runner" || tagger.role !== "tagger") return;
 
+          const now = Date.now();
+          // Anti-Spam: Enforce 2.0s cooldown per runner on server
+          if (runner.lastTackleTime && now - runner.lastTackleTime < 2000) {
+            return;
+          }
+
+          // Anti-Cheat: Validate Euclidean distance between Runner and Tagger
+          const dist = Math.hypot(runner.x - tagger.x, runner.z - tagger.z);
+          const MAX_TACKLE_DIST = 5.0; // Dash tackle reach
+          if (dist > MAX_TACKLE_DIST) {
+            console.warn(`[AntiCheat] Blocked distant tackle attempt by ${runner.name} on ${tagger.name} (${dist.toFixed(2)}m)`);
+            return;
+          }
+
+          runner.lastTackleTime = now;
           tagger.hp = Math.max(0, (tagger.hp !== undefined ? tagger.hp : 100) - 20);
-          runner.invincibleUntil = Date.now() + 2000; // 2 seconds invulnerability upon hit
+          runner.invincibleUntil = now + 2000; // 2 seconds invulnerability upon hit
 
           broadcastToRoom(currentRoom, "player_damaged", {
             targetId: tagger.id,
