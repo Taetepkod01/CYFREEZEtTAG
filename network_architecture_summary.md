@@ -95,7 +95,35 @@
 
 ---
 
-## 6. Capacity, Scalability & Bandwidth Estimation
+## 6. Room Discovery: Public vs Private Rooms (ระบบห้องสาธารณะและห้องส่วนตัว)
+
+| คุณสมบัติ | ห้องสาธารณะ (Public Room) | ห้องส่วนตัว (Private Room) |
+| :--- | :--- | :--- |
+| **การมองเห็นในรายการห้อง** | แสดงใน Public Browser และ REST API `/api/rooms` | **ถูกซ่อน 100%** (Server คัดกรองทิ้ง ไม่ส่งให้ผู้เล่นอื่นเห็น) |
+| **วิธีการเข้าร่วม (Join Method)** | 1. คลิกปุ่ม Join จากรายการห้องในหน้าเบราว์เซอร์<br>2. หรือเข้าร่วมผ่าน Room PIN 6 หลัก | **ต้องเข้าร่วมผ่าน Room PIN 6 หลักเท่านั้น** (Join by Code) |
+| **การตั้งค่า (Configuration)** | สร้างห้องโดยไม่ติ๊ก Private Room | ติ๊กถูกที่ช่อง `Private Room` ตั้งแต่หน้าสร้างห้อง หรือสลับใน Host Settings |
+| **การสลับสถานะแบบ Real-time** | Host สามารถเปลี่ยนเป็น Private ได้ตลอดเวลา | Host สามารถปลดเป็น Public ได้ตลอดเวลาผ่านหน้าห้อง |
+
+### รายละเอียดการทำงานของระบบ Public / Private ในโค้ด:
+* **การกรองข้อมูลบน Server (Server-side Filtering):**
+  * ทั้งใน REST API (`GET /api/rooms`) และ WebSocket Action (`get_rooms`) เซิร์ฟเวอร์จะมีเงื่อนไข:
+    `if (r.isPrivate) return;` 
+    ทำให้ห้องส่วนตัวจะไม่ถูกส่งไปยังเบราว์เซอร์ของผู้เล่นอื่นอย่างสิ้นเชิง (`server/src/index.ts: L121, L377`)
+* **การแชร์รหัสห้อง (Room Code / PIN Sharing):**
+  * รหัสห้องสุ่ม 6 ตัวอักษร จากชุดอักษรไร้ความสับสน 32 ตัว (`CHARS` ตัดตัวที่คล้ายกันออก เช่น 0, O, 1, I) (`index.ts: L223-226`) มีความเป็นไปได้ถึง $32^6 \approx 1.07$ พันล้านรูปแบบ ป้องกันการสุ่มเดารหัสเข้าห้อง Private
+  * ฝั่ง Client มีปุ่ม **"COPY PIN"** ให้ Host คัดลอกรหัสเข้า Clipboard อัตโนมัติ เพื่อนำไปส่งให้เพื่อนในกลุ่ม (`scripts/3d/lobby_3d.gd: L29, L566-571`)
+* **การสลับสถานะแบบ Real-time ในห้อง:**
+  * เมื่อ Host ติ๊กสลับ Checkbox `isPrivate` ในห้อง ระบบจะส่ง Action `update_settings` ไปยัง Server (`network.gd: L374-381`) 
+  * Server จะอัปเดต `currentRoom.isPrivate` และ Broadcast อีเวนต์ `settings_updated` ให้ทุกคนในห้องรับทราบทันที (`index.ts: L475-482`)
+* **การตรวจสอบสิทธิ์การเข้าห้อง (Join Validation):**
+  * ไม่ว่าจะเป็นห้อง Public หรือ Private เมื่อมีผู้เล่นส่ง `join_room` พร้อมรหัสห้อง เซิร์ฟเวอร์จะตรวจสอบ:
+    1. รหัสห้องมีอยู่จริงหรือไม่ (`active3DRooms.has(code)`) (`index.ts: L398-402`)
+    2. ห้องเริ่มเล่นไปแล้วหรือไม่ (`room.phase === "lobby"`) (`index.ts: L403-406`)
+    3. ห้องเต็มแล้วหรือไม่ (`room.players.size < room.maxPlayers`) (`index.ts: L407-410`)
+
+---
+
+## 7. Capacity, Scalability & Bandwidth Estimation
 
 * **ขีดจำกัดห้อง (Room Cap):** จำกัดสูงสุด 50 ห้องพร้อมกัน (`MAX_TOTAL_ROOMS = 50` ใน `index.ts: L76`)
 * **Rate Limiting:**
@@ -112,7 +140,7 @@
 
 ---
 
-## 7. Security & Input Validation Analysis
+## 8. Security & Input Validation Analysis
 
 * **ส่วนที่มีการ Validate ป้องกันไว้:**
   * **ชื่อผู้เล่น (Player Name):** แปลงเป็น String, ตัดช่องว่าง และจำกัดความยาวไม่เกิน 16 ตัวอักษร (`index.ts: L268`)
@@ -127,7 +155,7 @@
 
 ---
 
-## 8. Deployment Configuration
+## 9. Deployment Configuration
 * **Service Provider:** Render.com
 * **Configuration File:** `render.yaml` อยู่ที่ Root Directory
 * **Build Command:** `npm install && npm run build`
