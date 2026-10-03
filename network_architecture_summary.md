@@ -80,14 +80,23 @@
 
 ## 5. Connection Lifecycle & Disconnect Handling
 
+* **Application-Level Heartbeat (Ping/Pong) & Half-Open Connection Handling (อัปเดตล่าสุด):**
+  * **ปัญหา Half-Open Connection:** เมื่อผู้เล่นดึงสายแลนออก หรือสัญญาณ WiFi ดับกะทันหัน Client จะไม่มีโอกาสส่งแพ็กเก็ต `TCP FIN` หรือ `RST` มาบอก Server ทำให้ OS Kernel ของ Server ยังมองว่าท่อ TCP เปิดอยู่ (หากรอ TCP Keep-Alive ปกติของ OS อาจค้างนาน 1–2 นาที กลายเป็น "หุ่นนิ่ง" ยืนค้างในเกม)
+  * **กลไก Heartbeat บนเซิร์ฟเวอร์ (`index.ts: L216-242`):**
+    * เซิร์ฟเวอร์รันรอบตรวจทุก 5 วินาที (`HEARTBEAT_INTERVAL_MS = 5000`) ยิงคำสั่ง `ws.ping()` (RFC 6455 Control Frame Opcode `0x9`) ไปยังทุก Client ที่เชื่อมต่ออยู่ พร้อมมาร์กสถานะ `isAlive = false`
+    * หาก Client ยังทำงานปกติ Protocol Stack ของเบราว์เซอร์หรือ Godot 4 `WebSocketPeer` จะส่ง Frame `Pong` (Opcode `0xA`) กลับมาให้อัตโนมัติ เซิร์ฟเวอร์จะคืนค่า `extWs.isAlive = true`
+    * นอกจากนี้ หาก Client มีการส่งแพ็กเก็ตข้อมูลใดๆ (เช่น เดิน, ใช้ไอเทม, แชท) เซิร์ฟเวอร์จะรีเซ็ต `extWs.isAlive = true` ทันทีเช่นกัน
+    * **Dead Socket Termination:** หากผู้เล่นดึงสายแลน/เน็ตตัด และไม่ตอบ Pong กลับมาในรอบตรวจ เซิร์ฟเวอร์จะพบว่า `ws.isAlive === false` และจะสั่ง **`ws.terminate()`** ทันที เพื่อทำลายท่อ TCP ขยะทิ้ง
+    * การสั่ง `ws.terminate()` จะทำให้เกิดอีเวนต์ `ws.on("close")` บนเซิร์ฟเวอร์ทันที ส่งผลให้ผู้เล่นผีถูกเตะออกจากห้อง, โอน Host Migration หรือตัดสินแพ้ชนะภายใน **5–10 วินาที** อย่างแม่นยำ
+  * **Application-Layer Latency Ping (`action: "ping"`):** เซิร์ฟเวอร์รองรับ Message `ping` ระดับแอปพลิเคชัน เพื่อส่งคืน `pong` พร้อม `serverTime` และ Client Timestamp สำหรับให้ Client นำไปคำนวณ Round-Trip Time (RTT) ได้
 * **Ghost Room & Dead Socket Sweeper:**
-  * ฟังก์ชัน `cleanupGhostRooms()` ทำงานทุก 4 วินาที และทำงานซ้ำทุกครั้งที่มีการดึงรายชื่อห้อง (`index.ts: L80-105`)
+  * ฟังก์ชัน `cleanupGhostRooms()` ทำงานทุก 4 วินาที และทำงานซ้ำทุกครั้งที่มีการดึงรายชื่อห้อง (`index.ts: L80-113`)
   * ตรวจสอบถ้า Socket ใด `readyState !== WebSocket.OPEN` จะถูกคัดออกจากห้องทันที
   * หากห้องเหลือ 0 คน จะสั่งล้าง Interval Timer ทั้งหมด และลบห้องออกจาก RAM ทันที ป้องกัน Memory Leak
 * **Host Migration:**
-  * หาก Host หลุด ระบบจะส่งต่อตำแหน่ง Host ให้ผู้เล่นคนถัดไปทันที พร้อมส่งอีเวนต์ `host_changed` (`index.ts: L825-833`)
+  * หาก Host หลุด ระบบจะส่งต่อตำแหน่ง Host ให้ผู้เล่นคนถัดไปทันที พร้อมส่งอีเวนต์ `host_changed` (`index.ts: L922-930`)
 * **Chaser / Tagger Disconnect Rule (อัปเดตล่าสุด):**
-  * ถ้า Tagger หลุดหรือออกจากห้องจนหมด (`taggersCount === 0`) ระหว่างแข่ง $\rightarrow$ **ฝ่าย Runners จะชนะทันที** โดยระบบจะ Broadcast แจ้งเตือนและจบเกมด้วยเหตุผล `"All Taggers Disconnected"` (`index.ts: L1069-1090`)
+  * ถ้า Tagger หลุดหรือออกจากห้องจนหมด (`taggersCount === 0`) ระหว่างแข่ง $\rightarrow$ **ฝ่าย Runners จะชนะทันที** โดยระบบจะ Broadcast แจ้งเตือนและจบเกมด้วยเหตุผล `"All Taggers Disconnected"` (`index.ts: L1146-1151`)
 * **Runner Disconnect Rule:**
   * ถ้า Runner คนที่ถูกแช่แข็งหลุดไป แล้วทำให้ในห้องไม่เหลือ Runner ที่รอดชีวิตอยู่เลย (`activeRunners === 0`) $\rightarrow$ **ฝ่าย Taggers จะชนะทันที** ("All Runners Frozen")
 * **Reconnection & Grace Period:**

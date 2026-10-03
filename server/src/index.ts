@@ -208,6 +208,33 @@ gameServer.define("game_room", GameRoom);
 // ── Direct High-Speed WebSocket Server for Godot 3D Client (/ws) ─────────────
 const wss = new WebSocketServer({ noServer: true });
 
+// ── Application-Level Heartbeat (Ping/Pong) to Detect Half-Open Connections ───
+// Pulled LAN cables or sudden WiFi drops do not send TCP FIN/RST packets.
+// To prevent ghost players, the server pings every client every 5 seconds.
+// If a client fails to respond with a pong within the interval (isAlive remains false),
+// the socket is terminated immediately (ws.terminate()), which fires ws.on("close")
+// to purge the player, migrate host, or trigger round end within 5-10 seconds.
+const HEARTBEAT_INTERVAL_MS = 5000;
+const heartbeatInterval = setInterval(() => {
+  wss.clients.forEach((client) => {
+    const ws = client as WebSocket & { isAlive?: boolean };
+    if (ws.isAlive === false) {
+      console.log("[Heartbeat] Terminating half-open / dead socket (missed pong response).");
+      return ws.terminate();
+    }
+    ws.isAlive = false;
+    try {
+      ws.ping();
+    } catch (_err) {
+      ws.terminate();
+    }
+  });
+}, HEARTBEAT_INTERVAL_MS);
+
+wss.on("close", () => {
+  clearInterval(heartbeatInterval);
+});
+
 // Unified HTTP Upgrade dispatcher routing /ws to Godot and all other endpoints to Colyseus
 server.on("upgrade", (request, socket, head) => {
   try {
@@ -261,6 +288,13 @@ function sendTo(ws: WebSocket, event: string, data: unknown) {
 }
 
 wss.on("connection", (ws: WebSocket) => {
+  const extWs = ws as WebSocket & { isAlive?: boolean };
+  extWs.isAlive = true;
+
+  ws.on("pong", () => {
+    extWs.isAlive = true;
+  });
+
   let currentRoom: Active3DRoom | null = null;
   let myPlayerId = `p_${Math.random().toString(36).substring(2, 9)}`;
   let lastRoomCreateTime = 0;
@@ -269,6 +303,7 @@ wss.on("connection", (ws: WebSocket) => {
   let lockoutUntil = 0;
 
   ws.on("message", (rawMsg: Buffer | string) => {
+    extWs.isAlive = true;
     try {
       const msg = JSON.parse(rawMsg.toString());
       const action = msg.action || msg.type || "";
@@ -871,11 +906,21 @@ wss.on("connection", (ws: WebSocket) => {
           });
           break;
         }
+
+        // 13. Application-layer Ping / Pong for RTT latency checks
+        case "ping": {
+          sendTo(ws, "pong", {
+            clientTime: msg.time ?? msg.timestamp ?? 0,
+            serverTime: Date.now()
+          });
+          break;
+        }
       }
     } catch (_err) {}
   });
 
   ws.on("close", () => {
+    extWs.isAlive = false;
     if (currentRoom) {
       const p = currentRoom.players.get(myPlayerId);
       currentRoom.players.delete(myPlayerId);
