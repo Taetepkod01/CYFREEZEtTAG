@@ -120,6 +120,12 @@
     1. รหัสห้องมีอยู่จริงหรือไม่ (`active3DRooms.has(code)`) (`index.ts: L398-402`)
     2. ห้องเริ่มเล่นไปแล้วหรือไม่ (`room.phase === "lobby"`) (`index.ts: L403-406`)
     3. ห้องเต็มแล้วหรือไม่ (`room.players.size < room.maxPlayers`) (`index.ts: L407-410`)
+* **ระบบกดปุ่ม Refresh และการ Fetch รายชื่อห้อง (Dual-Channel Architecture):**
+  * เมื่อผู้เล่นกดปุ่ม Refresh (`lobby_3d.gd: L78, L123`) Client จะใช้กลยุทธ์แบบสองช่องทางคู่ขนาน (`network.gd: L423-433`):
+    1. **ช่องทางหลัก (WebSocket):** ส่ง Action `get_rooms` เข้าทาง WebSocket ทันที ให้ความเร็วระดับมิลลิวินาที (Zero-handshake latency)
+    2. **ช่องทางสำรอง (HTTP REST Fallback):** ยิง `HTTPRequest` ไปยัง `GET /api/rooms` สำรองไว้ เพื่อรับประกันว่าหาก WebSocket กำลัง Reconnect จะยังได้รายชื่อห้องแน่นอน
+  * **Server-side Active Sweeping:** ทุกครั้งที่เซิร์ฟเวอร์ได้รับ Request ขอรายชื่อห้อง (ไม่ว่าจะทาง WS หรือ HTTP) จะสั่งรัน `cleanupGhostRooms()` ทันที เพื่อกำจัด Dead Sockets และลบห้องร้างที่เหลือ 0 คนทิ้งก่อนส่งผลลัพธ์ ทำให้ผู้เล่นได้ข้อมูลที่สดใหม่เสมอ (`index.ts: L109, L374`)
+  * **Reactive Client Rendering:** เมื่อ Client ได้รับอีเวนต์ `public_rooms_updated` จะทำการ Clear รายการห้องเดิม แล้ว Render การ์ดห้องใหม่ทั้งหมด พร้อมแสดงชื่อห้อง, แผนที่, จำนวนรอบ และจำนวนผู้เล่นปัจจุบัน เช่น `(1 / 8)` (`lobby_3d.gd: L365-385`)
 
 ---
 
