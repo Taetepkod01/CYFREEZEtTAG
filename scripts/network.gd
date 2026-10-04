@@ -67,6 +67,10 @@ var max_rounds: int = 3
 var move_throttle_timer: float = 0.0
 const MOVE_SEND_RATE: float = 0.05 # 20 Hz updates
 
+# Keep-alive ping to maintain connection through cloud reverse proxies
+var ping_timer: float = 0.0
+const PING_INTERVAL: float = 5.0
+
 func _ready() -> void:
 	_init_urls()
 	
@@ -131,6 +135,11 @@ func _process(delta: float) -> void:
 		last_ws_state = state
 	
 	if state == WebSocketPeer.STATE_OPEN:
+		ping_timer -= delta
+		if ping_timer <= 0.0:
+			ping_timer = PING_INTERVAL
+			send_action("ping", {"time": Time.get_ticks_msec()})
+			
 		while ws_peer.get_available_packet_count() > 0:
 			var pkt = ws_peer.get_packet()
 			var text = pkt.get_string_from_utf8()
@@ -140,8 +149,10 @@ func _handle_state_change(new_state: int, old_state: int) -> void:
 	if new_state == WebSocketPeer.STATE_OPEN:
 		print("[Network] WebSocket Connected successfully!")
 		is_connected_to_server = true
+		ping_timer = PING_INTERVAL
 		connected_to_server.emit()
 	elif new_state == WebSocketPeer.STATE_CLOSED:
+		ping_timer = 0.0
 		var code = ws_peer.get_close_code()
 		var reason = ws_peer.get_close_reason()
 		print("[Network] WebSocket Closed. Code: %d, Reason: %s" % [code, reason])
@@ -342,6 +353,9 @@ func _handle_server_message(raw_text: String) -> void:
 			
 		"error":
 			connection_error.emit(str(data.get("message", "Unknown server error")))
+			
+		"pong":
+			pass
 
 # ── Outbound Action Helpers ───────────────────────────────────────────────────
 func set_ready(ready: bool) -> void:

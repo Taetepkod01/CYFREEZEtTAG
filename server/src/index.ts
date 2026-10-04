@@ -208,28 +208,31 @@ gameServer.define("game_room", GameRoom);
 // ── Direct High-Speed WebSocket Server for Godot 3D Client (/ws) ─────────────
 const wss = new WebSocketServer({ noServer: true });
 
-// ── Application-Level Heartbeat (Ping/Pong) to Detect Half-Open Connections ───
-// Pulled LAN cables or sudden WiFi drops do not send TCP FIN/RST packets.
-// To prevent ghost players, the server pings every client every 5 seconds.
-// If a client fails to respond with a pong within the interval (isAlive remains false),
-// the socket is terminated immediately (ws.terminate()), which fires ws.on("close")
-// to purge the player, migrate host, or trigger round end within 5-10 seconds.
-const HEARTBEAT_INTERVAL_MS = 5000;
+// ── Application-Level Heartbeat & Idle Timeout (Detect Half-Open Connections) ──
+// Checks every 10 seconds. Sockets are kept alive by:
+// 1. Any client message (movement, action, chat)
+// 2. Client keepalive ping: { action: "ping" }
+// 3. Low-level WebSocket pong response
+// If a client is completely silent for > 35 seconds, it is terminated as a dead socket.
+const HEARTBEAT_CHECK_INTERVAL_MS = 10000;
+const SOCKET_IDLE_TIMEOUT_MS = 35000;
+
 const heartbeatInterval = setInterval(() => {
+  const now = Date.now();
   wss.clients.forEach((client) => {
-    const ws = client as WebSocket & { isAlive?: boolean };
-    if (ws.isAlive === false) {
-      console.log("[Heartbeat] Terminating half-open / dead socket (missed pong response).");
+    const ws = client as WebSocket & { lastActiveTime?: number };
+    const lastActive = ws.lastActiveTime ?? now;
+    if (now - lastActive > SOCKET_IDLE_TIMEOUT_MS) {
+      console.log(`[Heartbeat] Terminating dead/half-open socket (silent for ${((now - lastActive) / 1000).toFixed(1)}s).`);
       return ws.terminate();
     }
-    ws.isAlive = false;
     try {
       ws.ping();
     } catch (_err) {
       ws.terminate();
     }
   });
-}, HEARTBEAT_INTERVAL_MS);
+}, HEARTBEAT_CHECK_INTERVAL_MS);
 
 wss.on("close", () => {
   clearInterval(heartbeatInterval);
@@ -288,11 +291,11 @@ function sendTo(ws: WebSocket, event: string, data: unknown) {
 }
 
 wss.on("connection", (ws: WebSocket) => {
-  const extWs = ws as WebSocket & { isAlive?: boolean };
-  extWs.isAlive = true;
+  const extWs = ws as WebSocket & { lastActiveTime?: number };
+  extWs.lastActiveTime = Date.now();
 
   ws.on("pong", () => {
-    extWs.isAlive = true;
+    extWs.lastActiveTime = Date.now();
   });
 
   let currentRoom: Active3DRoom | null = null;
@@ -303,7 +306,7 @@ wss.on("connection", (ws: WebSocket) => {
   let lockoutUntil = 0;
 
   ws.on("message", (rawMsg: Buffer | string) => {
-    extWs.isAlive = true;
+    extWs.lastActiveTime = Date.now();
     try {
       const msg = JSON.parse(rawMsg.toString());
       const action = msg.action || msg.type || "";
@@ -907,8 +910,9 @@ wss.on("connection", (ws: WebSocket) => {
           break;
         }
 
-        // 13. Application-layer Ping / Pong for RTT latency checks
+        // 13. Application-layer Ping / Pong for RTT latency checks & keep-alive
         case "ping": {
+          extWs.lastActiveTime = Date.now();
           sendTo(ws, "pong", {
             clientTime: msg.time ?? msg.timestamp ?? 0,
             serverTime: Date.now()
@@ -920,7 +924,6 @@ wss.on("connection", (ws: WebSocket) => {
   });
 
   ws.on("close", () => {
-    extWs.isAlive = false;
     if (currentRoom) {
       const p = currentRoom.players.get(myPlayerId);
       currentRoom.players.delete(myPlayerId);
