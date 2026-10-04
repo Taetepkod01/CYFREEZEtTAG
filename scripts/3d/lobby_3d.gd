@@ -165,6 +165,8 @@ func _on_player_name_changed(new_text: String) -> void:
 
 func _on_network_connected() -> void:
 	code_error_lbl.text = ""
+	if browser_view and browser_view.visible and Network:
+		Network.fetch_public_rooms()
 
 # -- Room Code Generator (Local Fallback) ------------------------------------
 func generate_unique_code() -> String:
@@ -183,6 +185,8 @@ func _show_browser_view() -> void:
 	back_to_menu_btn.visible = true
 	code_error_lbl.text = ""
 	_update_room_list_browser()
+	if Network and Network.is_connected_to_server:
+		Network.fetch_public_rooms()
 
 func _show_room_view() -> void:
 	browser_view.visible = false
@@ -206,18 +210,63 @@ func _update_room_list_browser() -> void:
 	
 	for code in active_rooms:
 		var r = active_rooms[code]
-		var item_btn = Button.new()
-		var p_count = r["players"].size()
-		var max_p = r["max_players"]
-		item_btn.text = "%s   [%s]   (%d/%d)   %s" % [r["name"], r["code"], p_count, max_p, r["map"]]
-		item_btn.alignment = HORIZONTAL_ALIGNMENT_LEFT
-		item_btn.add_theme_font_size_override("font_size", 13)
+		var pin_code: String = str(r.get("code", code)).to_upper()
+		var r_name: String = str(r.get("name", "Room " + pin_code))
+		var p_count: int = r.get("players", []).size()
+		var max_p: int = int(r.get("max_players", 8))
+		var map_name: String = str(r.get("map", "CASTLE"))
+		var is_full: bool = (p_count >= max_p)
+		var in_progress: bool = bool(r.get("has_started", false))
 		
-		if p_count >= max_p or r.get("has_started", false):
+		var item_btn = Button.new()
+		item_btn.custom_minimum_size = Vector2(0, 52)
+		item_btn.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		
+		# Cyber card styling
+		var sb_normal = StyleBoxFlat.new()
+		sb_normal.bg_color = Color(0.06, 0.12, 0.22, 0.9)
+		sb_normal.border_color = Color(0.25, 0.65, 0.95, 0.5)
+		sb_normal.set_border_width_all(1)
+		sb_normal.set_corner_radius_all(6)
+		sb_normal.content_margin_left = 10
+		sb_normal.content_margin_right = 10
+		sb_normal.content_margin_top = 6
+		sb_normal.content_margin_bottom = 6
+		item_btn.add_theme_stylebox_override("normal", sb_normal)
+		
+		var sb_hover = sb_normal.duplicate()
+		sb_hover.bg_color = Color(0.10, 0.20, 0.36, 0.95)
+		sb_hover.border_color = Color(0.4, 0.85, 1.0, 0.9)
+		item_btn.add_theme_stylebox_override("hover", sb_hover)
+		
+		var sb_pressed = sb_normal.duplicate()
+		sb_pressed.bg_color = Color(0.04, 0.08, 0.16, 0.95)
+		item_btn.add_theme_stylebox_override("pressed", sb_pressed)
+		
+		var sb_disabled = sb_normal.duplicate()
+		sb_disabled.bg_color = Color(0.05, 0.08, 0.14, 0.5)
+		sb_disabled.border_color = Color(0.3, 0.4, 0.5, 0.3)
+		item_btn.add_theme_stylebox_override("disabled", sb_disabled)
+		
+		var status_str = ""
+		if is_full:
+			status_str = " [FULL]"
+		elif in_progress:
+			status_str = " [IN PROGRESS]"
+		
+		# Prominently display the 6-character room PIN
+		item_btn.text = "%s  [PIN: %s]\nPlayers: %d/%d  |  %s%s" % [
+			r_name, pin_code, p_count, max_p, map_name, status_str
+		]
+		item_btn.add_theme_font_size_override("font_size", 12)
+		
+		if is_full or in_progress:
 			item_btn.disabled = true
-			item_btn.text += " [FULL]" if (p_count >= max_p) else " [IN PROGRESS]"
 		else:
-			item_btn.pressed.connect(func(): _join_room_by_code(code))
+			item_btn.pressed.connect(func():
+				join_code_input.text = pin_code
+				_join_room_by_code(pin_code)
+			)
 		
 		room_list_vbox.add_child(item_btn)
 
@@ -373,9 +422,9 @@ func _on_network_public_rooms_updated(rooms: Array) -> void:
 	for r in rooms:
 		if bool(r.get("isPrivate", false)):
 			continue
-		var code = str(r.get("code", ""))
+		var code = str(r.get("code", "")).to_upper()
 		new_dict[code] = {
-			"name": str(r.get("name", "Room")),
+			"name": str(r.get("name", "Room " + code)),
 			"code": code,
 			"host": "Host",
 			"max_players": int(r.get("maxPlayers", 8)),
