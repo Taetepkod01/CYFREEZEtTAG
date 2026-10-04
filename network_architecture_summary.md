@@ -181,3 +181,104 @@
 * **Build Command:** `npm install && npm run build`
 * **Start Command:** `npm run start`
 * **Static Client Serving:** ให้ Express โฮสต์ไฟล์ Web Build ของ Godot (`index.html`, `index.pck`, `index.wasm`) จากโฟลเดอร์ `server/public` พร้อมตั้งค่า Header `Cross-Origin-Opener-Policy: same-origin` และ `Cross-Origin-Embedder-Policy: require-corp` สำหรับ WebAssembly SharedArrayBuffer
+
+---
+
+## 10. Computer Networking Oral Defense & Theory Reference (คลังความรู้การสอบปากเปล่าวิศวกรรมเครือข่าย 30 ข้อ)
+
+### หมวด 1: ความหน่วงและเวลาแฝง (Latency)
+1. **องค์ประกอบของ Nodal Delay ($d_{\text{nodal}} = d_{\text{proc}} + d_{\text{queue}} + d_{\text{trans}} + d_{\text{prop}}$):**
+   * $d_{\text{proc}}$ (Processing Delay): เวลาตรวจ Header, Checksum, Route lookup ในเราเตอร์และเซิร์ฟเวอร์ ($< 1\text{ ms}$)
+   * $d_{\text{queue}}$ (Queuing Delay): เวลาจอดรอคิวใน Output Buffer ของเราเตอร์ แปรผันตาม Traffic Intensity ($La/R$)
+   * $d_{\text{trans}}$ (Transmission Delay): เวลาผลักบิตลงสาย คำนวณจาก $L/R$
+   * $d_{\text{prop}}$ (Propagation Delay): เวลาคลื่นแสงเดินทางตามระยะทาง $d/s$
+   * **ส่วนที่ลดไม่ได้ตามกฎฟิสิกส์:** $d_{\text{prop}}$ เพราะความเร็วแสงในสายไฟเบอร์มีขีดจำกัดสูงสุดที่ $\approx 200,000\text{ km/s}$ ($c/n, n \approx 1.47$)
+2. **RTT vs One-Way Delay:**
+   * One-way delay คือเวลาเดินทางขาเดียว ($A \rightarrow B$)
+   * RTT คือเวลาไป-กลับรวมการประมวลผล ($A \rightarrow B \rightarrow A$)
+   * Ping วัด One-way ตรงๆ ไม่ได้เพราะ: (1) ปัญหา Clock Synchronization ข้ามเครื่อง และ (2) Asymmetric Routing (ขาไปกับขากลับวิ่งคนละเส้นทาง)
+3. **โจทย์คำนวณ $d_{\text{trans}}$ vs $d_{\text{prop}}$:**
+   * แพ็กเก็ต $150\text{ B} = 1,200\text{ bits}$, ลิงก์ $10\text{ Mbps}$, ระยะ $3,000\text{ km}$:
+     * $d_{\text{trans}} = 1,200 / 10,000,000 = \mathbf{0.12\text{ ms}}$
+     * $d_{\text{prop}} = 3,000\text{ km} / 200,000\text{ km/s} = \mathbf{15.0\text{ ms}}$
+     * **Propagation Delay (15 ms) เด่นกว่า Transmission Delay (0.12 ms) ถึง 125 เท่า!**
+4. **ทำไมอัปเกรดเน็ต 100M เป็น 1G ปิงแทบไม่ลด:**
+   * การอัปเกรดแบนด์วิธลดเฉพาะ $d_{\text{trans}}$ (ประหยัดได้แค่ $0.01\text{ ms}$) แต่ปิงถูกครอบงำด้วย $d_{\text{prop}}$ (ระยะทางสายไฟเบอร์) ซึ่งไม่เปลี่ยนแปลง
+5. **Queuing Delay & Bufferbloat:**
+   * เกิดที่ Output Buffer ของเราเตอร์ที่บ้านและ ISP Gateway
+   * Bufferbloat คือการใส่บัฟเฟอร์ขนาดใหญ่เกินไปเพื่อเลี่ยง Packet Loss เมื่อผู้ใช้โหลดไฟล์เต็มท่อ แพ็กเก็ตใหญ่จะอัดเต็มคิว ทำให้แพ็กเก็ตเล็กของเกมต้องต่อคิวยาว ปิงจึงพุ่งทะลุ 400ms
+
+### หมวด 2: ความแปรปรวนและการสูญหายของแพ็กเก็ต (Jitter & Packet Loss)
+6. **Jitter:**
+   * ความแปรปรวนของเวลาที่แพ็กเก็ตเดินทางมาถึง (Inter-arrival time variation) เกิดจาก Queuing Delay ผันผวน, การส่งซ้ำบน Wi-Fi, และ Dynamic Routing วัดด้วย `iperf3 -u` หรือสมการ RFC 3550
+7. **สาเหตุของ Packet Loss:**
+   * Buffer Overflow ในเราเตอร์ (สาเหตุหลัก) และ Bit Error จากสัญญาณรบกวนใน Wi-Fi ตรวจพบใน TCP ด้วย Retransmission Timeout (RTO) และ Triple Duplicate ACKs
+8. **TCP กับ Packet Loss และ Head-of-Line (HoL) Blocking:**
+   * TCP ซ่อมแพ็กเก็ตด้วย Fast Retransmit หรือ RTO
+   * แพ็กเก็ตที่มาถึงทีหลังจะถูกกักไว้ใน Receive Buffer ของ Kernel ไม่ยอมส่งขึ้นแอปพลิเคชันจนกว่าตัวที่หายจะถูกส่งซ่อมมาถึง ผู้ใช้จะเห็นเกมหยุดนิ่งชั่วขณะแล้ววาร์ปพุ่งไปข้างหน้า
+9. **ทำไม Loss 2% ทำให้ TCP Throughput ตกหนัก:**
+   * เพราะ TCP ถือว่า Loss คือสัญญาณเตือน Congestion จึงสั่งตัด Congestion Window (cwnd) ลงครึ่งหนึ่งทันที (Multiplicative Decrease) ตามสมการ Mathis Throughput $\propto \frac{1}{\text{RTT}\sqrt{p}}$ ค่า cwnd จึงไม่สามารถโตได้
+10. **ทำไมค่าเฉลี่ยปิงบอกอะไรไม่ได้:**
+    * ค่าเฉลี่ยเกลี่ย Spike ให้ดูเรียบ (เช่น 99 แพ็กเก็ต 40ms + 1 แพ็กเก็ต 400ms = เฉลี่ย 43.6ms แต่ผู้ใช้กระตุกไปแล้ว) ต้องดู Percentile ($P_{95}, P_{99}$), Max Latency และ Jitter แทน
+
+### หมวด 3: แบนด์วิธและ Throughput (พร้อมโจทย์คำนวณ)
+11. **Bandwidth vs Throughput vs Goodput:**
+    * Bandwidth = ขีดจำกัดทางทฤษฎีสูงสุด
+    * Throughput = อัตราข้อมูลจริงรวม Header และ Retransmit
+    * Goodput = เฉพาะ Application Payload ที่ส่งสำเร็จ ($\text{Goodput} < \text{Throughput} \le \text{Bandwidth}$)
+12. **Small Packet Problem & Header Overhead:**
+    * Payload 100 ไบต์ + Ethernet (18B) + IPv4 (20B) + TCP (20B) + TLS 1.3 (21B) + WebSocket (6B) $\approx 185\text{ ไบต์}$
+    * สัดส่วน Header สูงถึง 46%–60% สิ้นเปลืองเมื่อส่งถี่
+13. **โจทย์คำนวณที่ 1 (แบนด์วิธต่อผู้เล่น 1 คน):**
+    * ผู้เล่น 1 คนส่ง 100B 20 Hz, รับจาก 7 คน คนละ 20 Hz (รวมรับ 140 msg/s):
+      * ไม่รวม overhead: Uplink = $2\text{ KB/s}$ (16 Kbps), Downlink = $14\text{ KB/s}$ (112 Kbps)
+      * รวม overhead 50B (แพ็กเก็ต 150B): Uplink = $3\text{ KB/s}$ (24 Kbps), Downlink = $21\text{ KB/s}$ (168 Kbps)
+      * สัดส่วน Overhead = $50/150 = \mathbf{33.33\%}$ (เพิ่มขึ้น +50% ของ Payload)
+14. **โจทย์คำนวณที่ 2 (ภาระเซิร์ฟเวอร์ที่ 400 ผู้ใช้ 50 ห้อง):**
+    * ขาเข้า: $400 \times 20 = \mathbf{8,000\text{ msg/s}}$
+    * ขาออก (Fan-out $\times 7$): $8,000 \times 7 = \mathbf{56,000\text{ msg/s}}$
+    * แบนด์วิธขาออก (ที่ 150B รวม overhead): $56,000 \times 150\text{ B} = 8.4\text{ MB/s} = \mathbf{67.2\text{ Mbps}}$
+    * สมการเติบโตต่อห้อง: $R_{\text{out}} = N(N-1)f \approx \mathbf{O(N^2)}$
+    * **ทำไม CPU ตันก่อน Bandwidth:** ท่อ Cloud รองรับได้ 1 Gbps (ใช้ไปแค่ 6.7%) แต่ Node.js เป็น Single Thread การส่ง 56,000 msg/s ทำให้ CPU แตะ 100% จนเกิด Event Loop Starvation
+15. **5 ทางเลือกในการลด Bandwidth 50%:**
+    * ลดความถี่ (20 $\rightarrow$ 10 Hz), เปลี่ยนเป็น Binary (Protobuf/MsgPack), Threshold Filtering (หยุดส่งตอนยืนนิ่ง), Delta Compression, Message Batching
+16. **Message Batching Trade-off:**
+    * ลด Overhead เพราะแชร์ Header ชุดเดียว แต่เพิ่ม Latency เพราะแพ็กเก็ตแรกต้องจอดรอในคิวรวมก้อน
+
+### หมวด 4: เจาะลึกกลไก TCP
+17. **Handshake RTT Budget:**
+    * TCP 3-Way Handshake = 1 RTT, TLS 1.3 = 1 RTT รวมก่อนส่งข้อมูลจริงได้ = 2 RTTs
+18. **Flow Control vs Congestion Control:**
+    * Flow Control ป้องกัน Receiver Buffer ล้น (ควบคุมด้วย rwnd), Congestion Control ป้องกัน Network Link ล้น (ควบคุมด้วย cwnd)
+19. **Slow Start & cwnd:**
+    * เริ่มจาก cwnd ต่ำ แล้วโตแบบ Exponential ($2^n$) ทุก 1 RTT การเชื่อมต่อใหม่จึงส่งได้ช้ากว่าการเชื่อมต่อเก่าที่ cwnd ขยายเต็ม BDP แล้ว
+20. **Nagle's Algorithm + Delayed ACK = Latency Trap:**
+    * Nagle รอ ACK แต่ Delayed ACK รอข้อมูล ทำให้ข้อความเล็กหน่วงค้าง 40–200ms ต้องแก้ด้วย `TCP_NODELAY`
+21. **Half-Open Connection & Keepalive Lessons Learned:**
+    * การดึงสายแลนไม่ส่ง FIN/RST ท่อ TCP จึงค้างเงียบ
+    * **บทเรียนจากระบบจริง:** การใช้ `ws.ping()` 5s ตัดเร็วเกินไปจะติดปัญหา Cloud Reverse Proxy บล็อก Opcode 0x9/0xA ทำให้เตะผู้ใช้มั่ว จึงปรับมาใช้ **Client 5s Keep-Alive Ping + Server 35s Idle Timeout** เป็นเกณฑ์ที่เสถียรที่สุด
+
+### หมวด 5: โครงสร้างเส้นทางและการนำส่งข้อมูล
+22. **Path of Packet & Traceroute:**
+    * เดินทางผ่าน Wi-Fi $\rightarrow$ Home Router $\rightarrow$ ISP Gateway $\rightarrow$ Backbone/IXP $\rightarrow$ Cloud Edge Proxy $\rightarrow$ Server
+    * Traceroute วัด RTT ราย Hop เพื่อหาจุดคอขวด
+23. **TTL (Time-To-Live):**
+    * ป้องกันแพ็กเก็ตวนลูป เมื่อ TTL=0 เราเตอร์ทิ้งแพ็กเก็ตแล้วส่ง ICMP Time Exceeded กลับมา Traceroute ใช้หลักการนี้โดยส่ง TTL เริ่มต้นที่ 1, 2, 3...
+24. **NAT Traversal & P2P Difficulty:**
+    * NAT สลับ Private IP เป็น Public IP ในตาราง NAT Table ทำให้คนนอกต่อเข้ามาหาเครื่องเราไม่ได้ P2P จึงต้องใช้ STUN/TURN หรือ Hole Punching
+25. **DNS Resolution Impact:**
+    * ใช้เวลา 10–100ms มีผลเฉพาะตอนเริ่มต่อครั้งแรกครั้งเดียว เพราะหลังจากนั้นต่อตรงผ่าน IP เดิมตลอด
+26. **MTU & Fragmentation:**
+    * MTU ปกติคือ 1,500 ไบต์ ถ้าใหญ่กว่าจะเกิด IP Fragmentation แต่แพ็กเก็ตเกมมีขนาดเพียง 150–200 ไบต์ จึงไม่เจอปัญหานี้แน่นอน
+
+### หมวด 6: การวัดผล ความปลอดภัย และสถาปัตยกรรม
+27. **เครื่องมือวัดเครือข่าย:**
+    * `ping` (RTT/Loss รวม), `traceroute/mtr` (หา Hop ที่ช้า), `Wireshark` (ดู TCP Flags/Retransmits), `iperf3` (วัด Max Throughput/Jitter), `tc netem` (ฉีด Delay/Loss จำลอง)
+28. **การจำลองสภาวะเครือข่ายแย่ (ปิง 300ms, Loss 5%):**
+    * ใช้ `tc qdisc add dev eth0 root netem delay 300ms 20ms loss 5%` วัด TCP Retransmit Rate, Event Loop Lag, และ Entity Interpolation
+29. **Wireshark กับ TLS Traffic:**
+    * สิ่งที่เห็น: Handshake, SNI Domain, IP/Port, Packet Size, Packet Timing
+    * สิ่งที่ไม่เห็น: Application Payload (พิกัดและคำสั่งใน JSON ถูกเข้ารหัสเป็น Ciphertext)
+30. **การปรับแต่งที่ระดับแอปพลิเคชัน และการเปลี่ยนเป็นแอปแชตกลุ่ม:**
+    * ปรับ `TCP_NODELAY` + Client-Side Prediction + Entity Interpolation + Threshold Filtering
+    * หากเปลี่ยนเป็นแอปแชต: ใช้ WebSocket และ Heartbeat เดิมได้ แต่ต้องเปลี่ยนเป็น Event-Driven (ไม่ส่ง 20 Hz), เพิ่ม Database เก็บ Message History, และมี Message Delivery ACKs
