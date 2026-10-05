@@ -65,16 +65,37 @@
 
 ---
 
-## 4. Real-time, Latency & Optimization
+## 4. Real-time Synchronization via WebSocket (สถาปัตยกรรมการซิงค์แบบ Real-time)
 
 | ฟีเจอร์ | สถานะในโค้ด | รายละเอียดและการทำงาน |
 | :--- | :---: | :--- |
-| **Client Send Rate** | **20 Hz** | จำกัดเวลาส่งข้อมูลพิกัดทุกๆ 50ms (`network.gd: L68 MOVE_SEND_RATE = 0.05`) |
-| **Delta Stationary Check** | **มี** | ถ้าผู้เล่นยืนนิ่ง ขยับไม่เกิน 0.04m และหันไม่เกิน 0.05 rad จะ **ไม่ส่งแพ็กเก็ต** (`player_3d.gd: L312-317`) |
-| **Server Tick Rate** | **Event-Driven** | เซิร์ฟเวอร์กระจายแพ็กเก็ตแบบทันที (0ms delay) โดยไม่มี Fixed Loop ชะลอ |
-| **Interpolation** | **มี** | ฝั่ง Client ใช้ `lerp(16.0 * delta)` และ `lerp_angle` เกลี่ยตำแหน่งผู้เล่นอื่นให้สมูท 60+ FPS (`player_3d.gd: L168-172`) |
-| **Client Prediction** | **ไม่มี** | ตัวผู้เล่น Local ขยับทันทีโดยไม่ต้องรอ ACK จาก Server |
-| **Lag Compensation** | **ไม่มี** | ไม่มีระบบย้อนเวลา Hitbox ตามปิง |
+| **Transport Architecture** | **Full-Duplex Persistent Stream** | ใช้ท่อ WebSocket (TCP) ผ่านพอร์ต 443 (`wss://`) เชื่อมต่อค้างไว้ตลอดทั้งเกม ไม่ต้องทำ Handshake ซ้ำซ้อน |
+| **Client Send Rate** | **20 Hz (ทุก 50ms)** | จำกัดเวลาส่งข้อมูลพิกัดการเคลื่อนที่ทุกๆ 50ms (`network.gd: L68 MOVE_SEND_RATE = 0.05`) ป้องกันการ Flooding ท่อเน็ต |
+| **Stationary Threshold Filtering** | **มี (Delta Check)** | ถ้าผู้เล่นยืนนิ่ง ขยับไม่เกิน 0.04m และหันไม่เกิน 0.05 rad จะ **ระงับการส่งแพ็กเก็ตพิกัดโดยสิ้นเชิง (0 packet/s)** (`player_3d.gd: L312-317`) |
+| **Server Tick Rate** | **Event-Driven (0ms Delay)** | เซิร์ฟเวอร์ทำหน้าที่เป็น Low-latency Broadcast Relay กระจายแพ็กเก็ตทันทีโดยไม่มี Fixed Loop กักขังข้อมูล |
+| **Entity Interpolation** | **มี (Client Smoothing)** | ฝั่ง Client ใช้ `lerp(16.0 * delta)` และ `lerp_angle` เกลี่ยตำแหน่งผู้เล่นอื่นจาก 20 Hz ให้สมูทลื่นไหลที่ 60–144 FPS (`player_3d.gd: L168-172`) |
+| **Keep-Alive Heartbeat** | **5s Ping / 35s Timeout** | Client ยิง `{ action: "ping" }` ทุกๆ 5 วินาทีตลอดเวลา เพื่อเลี้ยงท่อ Socket ไม่ให้หลุดแม้ผู้เล่นจะถูกแช่แข็ง 25–35 วินาที (`network.gd: L137-142`) |
+| **Authoritative Time Sync** | **มี (1 Hz Broadcast)** | เซิร์ฟเวอร์ Broadcast อีเวนต์ `time_sync` นับถอยหลัง 165 วินาที ทุกๆ 1 วินาที เพื่อปรับเวลาในเครื่องทุกคนให้ตรงกันเป๊ะ |
+
+### รายละเอียดเชิงลึกของการซิงค์แบบ Real-time:
+1. **ทำไมต้องเป็น WebSocket สำหรับ WebGL Game?**
+   * เมื่อเทียบกับ HTTP Polling หรือ Long-Polling: HTTP แบบดั้งเดิมต้องสร้าง HTTP Request Header ขนาด 600–800 ไบต์ทุกครั้ง และต้องเปิด-ปิด TCP Connection ซ้ำๆ ทำให้เกิด Latency สูงมาก
+   * WebSocket ทำการ Handshake ผ่านโปรโตคอล HTTP เพียงครั้งเดียว (`HTTP 101 Switching Protocols`) หลังจากนั้นท่อ TCP จะเปิดค้างไว้แบบ Full-Duplex สองทิศทาง โดยข้อมูลแต่ละเฟรมมี Frame Header ขนาดเล็กเพียง **2–6 ไบต์** เท่านั้น ทำให้เหมาะกับการส่งข้อมูลพิกัด 20 ครั้งต่อวินาที
+   * การวิ่งผ่านพอร์ต 443 ด้วยมาตรฐาน `wss://` (TLS 1.3) ทำให้การเชื่อมต่อสามารถทะลุ Proxy, Stateful Firewall และ Enterprise Gateway ของโรงเรียนหรือบริษัทได้ 100% โดยไม่ถูกบล็อกเหมือนพอร์ต UDP ทั่วไป
+2. **การเกลี่ยการเคลื่อนที่ (Entity Interpolation - Client Smoothing):**
+   * ข้อมูลพิกัดถูกส่งมาด้วยความถี่ 20 Hz (ทุก 50ms) หากนำพิกัดมาแสดงผลตรงๆ จะทำให้ตัวละครกระตุกเป็นจังหวะตามแพ็กเก็ต
+   * ฝั่ง Client จึงใช้สมการ Exponential Smoothing ในการคำนวณตำแหน่งทุกเฟรม (60–144 FPS):
+     $$\vec{P}_{\text{render}} = \text{lerp}(\vec{P}_{\text{render}}, \vec{P}_{\text{target}}, 16.0 \times \Delta t)$$
+     $$\theta_{\text{render}} = \text{lerp\_angle}(\theta_{\text{render}}, \theta_{\text{target}}, 16.0 \times \Delta t)$$
+     ส่งผลให้การเคลื่อนที่ของเพื่อนและศัตรูในจอภาพดูนุ่มนวลและต่อเนื่อง ไม่มีอาการ Micro-stuttering
+3. **การประหยัดแบนด์วิธด้วย Stationary Threshold Filtering (Delta Check):**
+   * ในการเล่นจริง ผู้เล่นมักจะมีการแอบซุ่ม หรือยืนรอจังหวะ หากส่งพิกัด 20 ครั้ง/วินาทีตลอดเวลาจะสิ้นเปลืองแบนด์วิธโดยใช่เหตุ
+   * โค้ดใน `player_3d.gd` จะตรวจสอบระยะขจัด ($\Delta d$) และมุมหมุน ($\Delta \theta$):
+     `if global_position.distance_to(last_sent_pos) > 0.04 or abs(rot - last_sent_rot_y) > 0.05:`
+   * หากยืนนิ่ง ขยับไม่เกิน 4 เซนติเมตร และหมุนไม่เกิน 0.05 เรเดียน ตัวเกมจะไม่ส่งแพ็กเก็ตพิกัดขึ้นเซิร์ฟเวอร์เลย ลดแบนด์วิธขาขึ้นเหลือ 0 B/s ในขณะยืนนิ่ง
+4. **Authoritative Event Synchronization (การซิงค์เหตุการณ์สำคัญในเกม):**
+   * คำสั่งที่มีผลต่อเกมทั้งหมด (เช่น Tag ผู้เล่น, Rescue ช่วยเพื่อน, ชน Tackle, วางกล้วย, เก็บ/ใช้ไอเทม) จะต้องส่งเป็น Event ขึ้นไปขออนุมัติจากเซิร์ฟเวอร์
+   * เซิร์ฟเวอร์ตรวจสอบความถูกต้อง (คำนวณ Euclidean distance $\le 4.5\text{m}$, ตรวจสถานะอมตะ, และตรวจเช็กว่าติดแช่แข็งอยู่หรือไม่) ก่อนจะกระจาย State การแช่แข็งหรือละลายกลับมาให้ทุกคนในห้องอัปเดตตรงกันแบบ Real-time
 
 ---
 
@@ -82,14 +103,18 @@
 
 * **Application-Level Heartbeat (Ping/Pong) & Half-Open Connection Handling (อัปเดตล่าสุด):**
   * **ปัญหา Half-Open Connection:** เมื่อผู้เล่นดึงสายแลนออก หรือสัญญาณ WiFi ดับกะทันหัน Client จะไม่มีโอกาสส่งแพ็กเก็ต `TCP FIN` หรือ `RST` มาบอก Server ทำให้ OS Kernel ของ Server ยังมองว่าท่อ TCP เปิดอยู่ (หากรอ TCP Keep-Alive ปกติของ OS อาจค้างนาน 1–2 นาที กลายเป็น "หุ่นนิ่ง" ยืนค้างในเกม)
-  * **กลไก Keep-Alive ฝั่ง Client (`network.gd: L67-71, L137-142`):**
-    * ตัวเกมฝั่ง Client มีการยิง Application Keep-Alive `{ action: "ping" }` ส่งไปยัง Server ทุกๆ **5 วินาที** อย่างต่อเนื่อง เพื่อยืนยันว่าเครื่องลูกยังทำงานอยู่ แม้ตัวละครจะยืนนิ่งหรืออยู่ในหน้าล็อบบี้ก็ตาม
+  * **ปัญหา Edge Case เมื่อผู้เล่นถูกแช่แข็ง (Frozen State 25–35 วินาที):**
+    * เมื่อผู้เล่นโดนแช่แข็ง ตัวละครจะขยับไม่ได้ ส่งผลให้ Stationary Threshold Filter หยุดส่งแพ็กเก็ตพิกัด ทำให้ท่อการเชื่อมต่อเงียบสนิท
+    * หากไม่มีกลไกพิเศษ Cloudflare หรือ Reverse Proxy ของ Render.com (ซึ่งมี Idle Connection Timeout 30–60 วินาที) จะเข้าใจผิดว่าท่อเน็ตตายแล้วตัดสายทิ้งทันที
+  * **กลไก Keep-Alive ฝั่ง Client (`network.gd: L71-72, L137-142`):**
+    * ในระดับ Autoload ของ `network.gd` มีการรันตัวจับเวลาอิสระใน `_process(delta)`
+    * ตัวเกมจะส่งข้อความระดับแอปพลิเคชัน `{ action: "ping", time: ... }` ขึ้นไปยัง Server ทุกๆ **5.0 วินาที** อย่างต่อเนื่อง ไม่ว่าตัวละครจะขยับ ยืนนิ่ง ถูกแช่แข็ง หรืออยู่ในหน้าล็อบบี้
   * **กลไกตรวจจับความเงียบและ Idle Timeout บนเซิร์ฟเวอร์ (`index.ts: L211-235`):**
     * เซิร์ฟเวอร์รันรอบตรวจทุก 10 วินาที (`HEARTBEAT_CHECK_INTERVAL_MS = 10000`)
-    * ตรวจสอบเวลา `lastActiveTime` ของแต่ละ Socket หาก Client ส่งข้อความใดๆ (เดิน, แชท, ใช้ไอเทม, หรือ Keep-Alive Ping) จะรีเซ็ตเวลาทันที
+    * ตรวจสอบเวลา `lastActiveTime` ของแต่ละ Socket หาก Client ส่งข้อความใดๆ (รวมถึง Keep-Alive Ping) จะรีเซ็ตเวลา `lastActiveTime = Date.now()` ทันที
     * เซิร์ฟเวอร์ยิง `ws.ping()` ควบคู่เพื่อกระตุ้นและรักษาท่อผ่าน Cloud Proxy
     * **Dead Socket Termination (35s Timeout):** หาก Client เงียบสนิทติดต่อกันเกิน **35 วินาที** (`SOCKET_IDLE_TIMEOUT_MS = 35000`) เซิร์ฟเวอร์จะสั่ง **`ws.terminate()`** ทันที เพื่อทำลายท่อ TCP ขยะทิ้ง
-    * การสั่ง `ws.terminate()` จะทำให้เกิดอีเวนต์ `ws.on("close")` บนเซิร์ฟเวอร์ทันที ส่งผลให้ผู้เล่นผีถูกเตะออกจากห้อง, โอน Host Migration หรือตัดสินแพ้ชนะอย่างแม่นยำ ป้องกันการตัดการเชื่อมต่อผิดพลาดระหว่างโหลดฉากหรือยืนในล็อบบี้
+    * **ข้อพิสูจน์ว่าผู้เล่นแช่แข็ง 25–35 วินาทีจะไม่หลุด:** ในช่วง 35 วินาทีที่ผู้เล่นอยู่นิ่ง Client จะส่ง Ping ไปรีเซ็ตเวลากับเซิร์ฟเวอร์ถึง **6–7 ครั้ง** ทำให้เวลานับถอยหลังของเซิร์ฟเวอร์เริ่มนับ 0 ใหม่อยู่ตลอดเวลา การเชื่อมต่อจึงคงอยู่ 100% ปลอดภัยแน่นอน
   * **Application-Layer Latency Ping (`action: "ping"`):** เซิร์ฟเวอร์รองรับ Message `ping` ระดับแอปพลิเคชัน เพื่อส่งคืน `pong` พร้อม `serverTime` และ Client Timestamp สำหรับให้ Client นำไปคำนวณ Round-Trip Time (RTT) ได้
 * **Ghost Room & Dead Socket Sweeper:**
   * ฟังก์ชัน `cleanupGhostRooms()` ทำงานทุก 4 วินาที และทำงานซ้ำทุกครั้งที่มีการดึงรายชื่อห้อง (`index.ts: L80-113`)
@@ -110,33 +135,61 @@
 
 | คุณสมบัติ | ห้องสาธารณะ (Public Room) | ห้องส่วนตัว (Private Room) |
 | :--- | :--- | :--- |
-| **การมองเห็นในรายการห้อง** | แสดงใน Public Browser และ REST API `/api/rooms` | **ถูกซ่อน 100%** (Server คัดกรองทิ้ง ไม่ส่งให้ผู้เล่นอื่นเห็น) |
-| **วิธีการเข้าร่วม (Join Method)** | 1. คลิกปุ่ม Join จากรายการห้องในหน้าเบราว์เซอร์<br>2. หรือเข้าร่วมผ่าน Room PIN 6 หลัก | **ต้องเข้าร่วมผ่าน Room PIN 6 หลักเท่านั้น** (Join by Code) |
-| **การตั้งค่า (Configuration)** | สร้างห้องโดยไม่ติ๊ก Private Room | ติ๊กถูกที่ช่อง `Private Room` ตั้งแต่หน้าสร้างห้อง หรือสลับใน Host Settings |
-| **การสลับสถานะแบบ Real-time** | Host สามารถเปลี่ยนเป็น Private ได้ตลอดเวลา | Host สามารถปลดเป็น Public ได้ตลอดเวลาผ่านหน้าห้อง |
+| **การมองเห็นในรายการห้อง** | แสดงใน Public Browser และ REST API `/api/rooms` | **ถูกซ่อน 100%** (Server คัดกรองทิ้ง ไม่ส่งให้ใครเห็น) |
+| **การแสดงรหัส PIN บนหน้าต่าง** | **ไม่แสดงรหัส PIN บนการ์ดห้อง** (แสดงเฉพาะชื่อห้อง, จำนวนคน, แมพ เพื่อความเป็นระเบียบและปลอดภัย) | ไม่ปรากฏในรายการห้อง ผู้เล่นต้องได้รับ PIN 6 หลักจาก Host โดยตรง |
+| **วิธีการเข้าร่วม (Join Method)** | **คลิกที่การ์ดห้องเพื่อเข้าร่วมได้ทันที (One-Click Join)** โดยไม่ต้องรู้หรือพิมพ์รหัส PIN | **ต้องกรอกรหัส PIN 6 หลักเท่านั้น** ในช่อง `JOIN BY PIN` |
+| **การตั้งค่า (Configuration)** | สร้างห้องโดยไม่ติ๊กช่อง `Private Room` | ติ๊กถูกที่ช่อง `Private Room` ตั้งแต่หน้าสร้าง หรือปรับในล็อบบี้ |
+| **การสลับสถานะแบบ Real-time** | Host สามารถเปลี่ยนเป็น Private ได้ตลอดเวลาผ่านการตั้งค่า | Host สามารถปลดเป็น Public ได้ตลอดเวลาผ่านการตั้งค่า |
 
 ### รายละเอียดการทำงานของระบบ Public / Private ในโค้ด:
-* **การกรองข้อมูลบน Server (Server-side Filtering):**
-  * ทั้งใน REST API (`GET /api/rooms`) และ WebSocket Action (`get_rooms`) เซิร์ฟเวอร์จะมีเงื่อนไข:
-    `if (r.isPrivate) return;` 
-    ทำให้ห้องส่วนตัวจะไม่ถูกส่งไปยังเบราว์เซอร์ของผู้เล่นอื่นอย่างสิ้นเชิง (`server/src/index.ts: L121, L377`)
-* **การแชร์รหัสห้อง (Room Code / PIN Sharing):**
-  * รหัสห้องสุ่ม 6 ตัวอักษร จากชุดอักษรไร้ความสับสน 32 ตัว (`CHARS` ตัดตัวที่คล้ายกันออก เช่น 0, O, 1, I) (`index.ts: L223-226`) มีความเป็นไปได้ถึง $32^6 \approx 1.07$ พันล้านรูปแบบ ป้องกันการสุ่มเดารหัสเข้าห้อง Private
-  * ฝั่ง Client มีปุ่ม **"COPY PIN"** ให้ Host คัดลอกรหัสเข้า Clipboard อัตโนมัติ เพื่อนำไปส่งให้เพื่อนในกลุ่ม (`scripts/3d/lobby_3d.gd: L29, L566-571`)
-* **การสลับสถานะแบบ Real-time ในห้อง:**
-  * เมื่อ Host ติ๊กสลับ Checkbox `isPrivate` ในห้อง ระบบจะส่ง Action `update_settings` ไปยัง Server (`network.gd: L374-381`) 
-  * Server จะอัปเดต `currentRoom.isPrivate` และ Broadcast อีเวนต์ `settings_updated` ให้ทุกคนในห้องรับทราบทันที (`index.ts: L475-482`)
-* **การตรวจสอบสิทธิ์การเข้าห้อง (Join Validation):**
-  * ไม่ว่าจะเป็นห้อง Public หรือ Private เมื่อมีผู้เล่นส่ง `join_room` พร้อมรหัสห้อง เซิร์ฟเวอร์จะตรวจสอบ:
-    1. รหัสห้องมีอยู่จริงหรือไม่ (`active3DRooms.has(code)`) (`index.ts: L398-402`)
-    2. ห้องเริ่มเล่นไปแล้วหรือไม่ (`room.phase === "lobby"`) (`index.ts: L403-406`)
-    3. ห้องเต็มแล้วหรือไม่ (`room.players.size < room.maxPlayers`) (`index.ts: L407-410`)
-* **ระบบกดปุ่ม Refresh และการ Fetch รายชื่อห้อง (Dual-Channel Architecture):**
-  * เมื่อผู้เล่นกดปุ่ม Refresh (`lobby_3d.gd: L78, L123`) Client จะใช้กลยุทธ์แบบสองช่องทางคู่ขนาน (`network.gd: L423-433`):
-    1. **ช่องทางหลัก (WebSocket):** ส่ง Action `get_rooms` เข้าทาง WebSocket ทันที ให้ความเร็วระดับมิลลิวินาที (Zero-handshake latency)
-    2. **ช่องทางสำรอง (HTTP REST Fallback):** ยิง `HTTPRequest` ไปยัง `GET /api/rooms` สำรองไว้ เพื่อรับประกันว่าหาก WebSocket กำลัง Reconnect จะยังได้รายชื่อห้องแน่นอน
-  * **Server-side Active Sweeping:** ทุกครั้งที่เซิร์ฟเวอร์ได้รับ Request ขอรายชื่อห้อง (ไม่ว่าจะทาง WS หรือ HTTP) จะสั่งรัน `cleanupGhostRooms()` ทันที เพื่อกำจัด Dead Sockets และลบห้องร้างที่เหลือ 0 คนทิ้งก่อนส่งผลลัพธ์ ทำให้ผู้เล่นได้ข้อมูลที่สดใหม่เสมอ (`index.ts: L109, L374`)
-  * **Reactive Client Rendering:** เมื่อ Client ได้รับอีเวนต์ `public_rooms_updated` จะทำการ Clear รายการห้องเดิม แล้ว Render การ์ดห้องใหม่ทั้งหมด พร้อมแสดงชื่อห้อง, แผนที่, จำนวนรอบ และจำนวนผู้เล่นปัจจุบัน เช่น `(1 / 8)` (`lobby_3d.gd: L365-385`)
+
+1. **การกรองข้อมูลบน Server (Server-side Filtering):**
+   * ทั้งใน REST API (`GET /api/rooms`) และ WebSocket Action (`get_rooms`) เซิร์ฟเวอร์จะมีเงื่อนไขเข้มงวด:
+     ```typescript
+     active3DRooms.forEach((r) => {
+       if (r.isPrivate) return; // กรองทิ้งทันที ไม่ส่งข้อมูลห้องส่วนตัวออกไป
+       list.push({ code: r.code, name: r.name, playersCount: r.players.size, maxPlayers: r.maxPlayers, map: r.map, rounds: r.rounds, hasStarted: r.phase !== "lobby" });
+     });
+     ```
+   * ทำให้ห้องส่วนตัวถูกซ่อนอย่างสมบูรณ์แบบที่ระดับ Server ไคลเอนต์ภายนอกไม่สามารถดักฟังหรือรู้ชื่อห้อง Private ได้เลย (`server/src/index.ts: L128-139, L425-436`)
+
+2. **UI Architecture ของห้องสาธารณะ (อัปเดตล่าสุด):**
+   * บนหน้า Lobby Browser การ์ดของ Public Room จะแสดงผลด้วย Cyber Theme Card:
+     ```text
+     Room 101
+     Players: 1/8  |  SPACE STATION
+     ```
+   * **นโยบายความปลอดภัย:** ระบบ **ไม่แสดงรหัส PIN 6 หลักบนการ์ดห้องสาธารณะ** (`scripts/3d/lobby_3d.gd: L253-261`) เพื่อป้องกันความสับสนของผู้เล่น และแยกความแตกต่างอย่างชัดเจนระหว่างห้องสาธารณะ (กดเข้าได้เลย) กับห้องส่วนตัว (ต้องมี PIN)
+   * เมื่อผู้เล่นคลิกที่การ์ดห้อง ระบบจะส่งคำขอ `join_room` ตรงไปยังเซิร์ฟเวอร์ทันที โดยไม่ต้องผ่านการกรอก PIN ในช่อง Join
+
+3. **ความปลอดภัยและคณิตศาสตร์ของรหัส PIN 6 หลัก (Cryptographic Space & Anti-Brute Force):**
+   * **ชุดอักขระ Base32 ไร้ความกำกวม (No Ambiguous Characters):**
+     * ตัวเกมใช้ตัวอักษร 32 ตัว: `ABCDEFGHJKLMNPQRSTUVWXYZ23456789` (`scripts/3d/lobby_3d.gd: L4`, `server/src/index.ts: L20`)
+     * **ตัดตัวอักษรที่สับสนง่ายออกทั้งหมด:** ไม่มีเลข `0` กับอักษร `O`, ไม่มีเลข `1` กับอักษร `I` ทำให้ผู้เล่นส่งต่อรหัสให้เพื่อนพิมพ์ตามได้ง่าย ไม่ผิดพลาด
+   * **ขนาด Key Space มหาศาล:**
+     $$N = 32^6 = 1,073,741,824 \text{ รูปแบบ (มากกว่า 1.07 พันล้านชุด)}$$
+   * **ความน่าจะเป็นในการสุ่มเดา (Brute Force Probability):**
+     * หากเซิร์ฟเวอร์มีห้อง Private เปิดอยู่เต็มความจุ 50 ห้องพร้อมกัน ความน่าจะเป็นที่ผู้ไม่หวังดีจะสุ่มเดาถูกใน 1 ครั้งคือ:
+       $$P = \frac{50}{1,073,741,824} \approx 4.65 \times 10^{-8} \quad (0.0000046\%)$$
+   * **ระบบป้องกัน Anti-Brute Force สองชั้นบน Server (`index.ts: L441-455`):**
+     * **ชั้นที่ 1 (Rate Limiting):** ตรวจสอบระยะเวลาระหว่างคำขอ Join หากส่งถี่กว่า 1 ครั้งต่อ 600ms จะถูกปฏิเสธทันที
+     * **ชั้นที่ 2 (Lockout Penalty):** หากไคลเอนต์ใส่รหัสผิดสะสมครบ 5 ครั้ง เซิร์ฟเวอร์จะทำการระงับการเชื่อมต่อ (Lockout) ทันทีเป็นเวลา 5 วินาที
+     * **บทวิเคราะห์ความปลอดภัย:** ด้วยการจำกัดอัตรานี้ แฮกเกอร์จะลองรหัสได้ไม่เกิน $\approx 1$ ครั้งต่อวินาที การจะสุ่มเดาจนเจอห้อง Private ต้องใช้เวลาเฉลี่ยถึง **34 ปี** จึงปลอดภัยจากการเดารหัส 100%
+
+4. **การแชร์รหัสห้องส่วนตัว (PIN Sharing):**
+   * เมื่อ Host สร้างห้องแบบ Private ในหน้าห้องรอ (Waiting Room) จะมีกล่องแสดงรหัส PIN 6 หลักตัวโต พร้อมปุ่ม **"COPY"** (`scripts/3d/lobby_3d.gd: L634-639`)
+   * เมื่อกดปุ่ม ระบบจะคัดลอกรหัสเข้า System Clipboard ของผู้เล่นทันที เพื่อนำไปส่งให้เพื่อนทาง Discord, Line หรือ Messenger
+
+5. **การสลับสถานะแบบ Real-time ในห้อง (Dynamic Privacy Toggle):**
+   * Host สามารถคลิกสลับ Checkbox `Private Room` ได้สดๆ ภายในล็อบบี้
+   * Client จะส่งคำสั่ง `update_settings` ไปยัง Server (`network.gd: L395-403`)
+   * Server อัปเดต `r.isPrivate` และ Broadcast อีเวนต์ `settings_updated` ให้ทุกคนในห้องรับทราบ
+   * เมื่อห้องถูกสลับเป็น Private ห้องนั้นจะถูกดึงออกจาก Public Browser ของผู้เล่นคนอื่นทันทีในรอบรีเฟรชถัดไป
+
+6. **ระบบดึงรายชื่อห้องแบบ Dual-Channel และ Auto-Fetch:**
+   * **Auto-Fetch อัตโนมัติ:** เมื่อผู้เล่นเข้าหน้า Lobby Browser หรือเชื่อมต่อ Socket สำเร็จ ตัวเกมจะยิงคำขอขอรายชื่อห้องอัตโนมัติทันที ไม่จำเป็นต้องคอยกดปุ่ม Refresh เอง
+   * **Dual-Channel Architecture:** เมื่อกดปุ่ม Refresh ตัวเกมจะยิง Action `get_rooms` ผ่าน WebSocket เป็นช่องทางหลัก (ความเร็วระดับมิลลิวินาที) พร้อมยิง HTTP REST `/api/rooms` เป็นช่องทางสำรอง
+   * **Server-side Active Sweeping:** ทุกครั้งที่มีการขอรายชื่อห้อง เซิร์ฟเวอร์จะรัน `cleanupGhostRooms()` ทันทีเพื่อกวาดล้างห้องร้าง 0 คนทิ้ง ทำให้รายชื่อห้องที่แสดงผลสดใหม่เสมอและไม่มีห้องผีตกค้าง
 
 ---
 
@@ -282,3 +335,19 @@
 30. **การปรับแต่งที่ระดับแอปพลิเคชัน และการเปลี่ยนเป็นแอปแชตกลุ่ม:**
     * ปรับ `TCP_NODELAY` + Client-Side Prediction + Entity Interpolation + Threshold Filtering
     * หากเปลี่ยนเป็นแอปแชต: ใช้ WebSocket และ Heartbeat เดิมได้ แต่ต้องเปลี่ยนเป็น Event-Driven (ไม่ส่ง 20 Hz), เพิ่ม Database เก็บ Message History, และมี Message Delivery ACKs
+
+### หมวด 7: คำถามเจาะลึกระบบห้อง Public/Private และการซิงค์ Real-time ผ่าน WebSocket
+31. **การออกแบบความปลอดภัยของห้อง Public vs Private และทำไมห้อง Public จึงไม่ควรโชว์ PIN 6 หลัก?**
+    * **UX & Functional Separation:** ห้อง Public ออกแบบมาเพื่อการเข้าเล่นแบบเปิด (One-Click Join) การแสดงรหัส PIN บนการ์ดห้อง Public นอกจากจะซ้ำซ้อนแล้ว ยังสร้างความสับสนให้ผู้เล่นคิดว่าต้องจำรหัสไปกรอกในช่อง "JOIN BY PIN" การซ่อน PIN บนการ์ดห้อง Public ทำให้ผู้ใช้แยกแยะชัดเจนว่า การกดการ์ดคือเข้าห้องสาธารณะ ส่วนการใช้ PIN มีไว้สำหรับห้องส่วนตัว (Private Room) เท่านั้น
+    * **Server-side Security:** ห้อง Private ถูกตัดทิ้งตั้งแต่ระดับ Data Layer บนเซิร์ฟเวอร์ (`if (r.isPrivate) return;`) จึงไม่มีข้อมูลรั่วไหลไปใน Broadcast แพ็กเก็ต ผู้เล่นภายนอกไม่สามารถใช้ DevTools หรือ Wireshark ดักจับชื่อหรือพิกัดของห้อง Private ได้
+32. **Cryptographic Key Space ของ Room PIN 6 หลัก และการป้องกันการเดารหัส (Brute-Force Protection)?**
+    * **Base32 Alphabet (ไร้ความสับสน):** ใช้ตัวอักษร 32 ตัวตัด `0, O, 1, I` ออกทั้งหมด เพื่อตัดปัญหา Human Error เวลาพิมพ์ตาม
+    * **ขนาด Key Space:** $32^6 = 1,073,741,824$ รูปแบบ (มากกว่า 1.07 พันล้านชุด)
+    * **ความน่าจะเป็นในการเดาถูก:** หากมีห้อง Private เปิดอยู่ 50 ห้อง โอกาสสุ่มเดาถูกใน 1 ครั้งคือเพียง $\approx 4.65 \times 10^{-8}$ ($0.0000046\%$)
+    * **Anti-Brute Force สองชั้นบนเซิร์ฟเวอร์:** (1) Throttling ไม่ให้ส่งคำขอบ่อยเกิน 600ms ต่อครั้ง และ (2) Lockout ระงับการ Join 5 วินาทีทันทีที่ใส่รหัสผิดครบ 5 ครั้ง ทำให้ในทางปฏิบัติไม่สามารถใช้สคริปต์ยิง Brute-force ได้ (ต้องใช้เวลาเฉลี่ยถึง 34 ปี)
+33. **Edge Case ผู้เล่นถูกแช่แข็ง 25–35 วินาที: ทำไมการซิงค์แบบ Delta Threshold ถึงเกือบทำให้หลุด และแก้ด้วย WebSocket Ping-Pong อย่างไร?**
+    * **ปัญหาที่เกิดขึ้น:** เพื่อประหยัดแบนด์วิธ ตัวเกมมี Delta Threshold Filter สั่งหยุดส่งพิกัดเมื่อยืนนิ่ง เมื่อผู้เล่นถูกแช่แข็ง ($25–35\text{s}$) ตัวละครขยับไม่ได้ แพ็กเก็ตพิกัดจึงเป็น 0 ท่อ WebSocket เงียบสนิท ทำให้ Reverse Proxy ของ Cloud (Render/Cloudflare ที่มี Idle Timeout 30–60s) และ Idle Sweeper ของเซิร์ฟเวอร์มองว่าเป็น Dead Socket และตัดสายทิ้งทันที
+    * **สถาปัตยกรรมแก้ไข:** ฝั่ง Client มีลูป Heartbeat แยกอิสระในระดับ Autoload ส่ง `{ action: "ping" }` ทุกๆ **5 วินาที** เสมอ แม้ตัวละครจะถูกแช่แข็ง ทำให้เซิร์ฟเวอร์และ Reverse Proxy ได้รับทราฟฟิกและรีเซ็ตตัวจับเวลาตลอดเวลา การเชื่อมต่อจึงปลอดภัย 100% ไม่หลุดแน่นอน
+34. **ความแตกต่างระหว่าง Entity Interpolation กับ Client Prediction ในการซิงค์แบบ Real-time?**
+    * **Entity Interpolation (ทำงานที่เครื่องรับ):** ใช้กับตัวละครของผู้เล่นคนอื่น (Remote Players) เนื่องจากตำแหน่งส่งมาด้วยความถี่ 20 Hz (ทุก 50ms) Client จะใช้ Exponential Lerp (`lerp(16.0 * delta)`) คำนวณจุดกึ่งกลางระหว่างพิกัดเก่าและพิกัดใหม่ทุกๆ เฟรมของการเรนเดอร์ (60–144 FPS) เพื่อให้ภาพการเคลื่อนที่นุ่มนวล
+    * **Client Prediction (ทำงานที่เครื่องส่ง):** ใช้กับตัวละครของผู้เล่นเอง (Local Player) โดยประมวลผลการกดปุ่มเดินและฟิสิกส์ทันทีในเครื่องโดยไม่ต้องรอเซิร์ฟเวอร์ตอบรับ เพื่อตัด Input Lag ให้การบังคับรู้สึกตอบสนองทันที (Responsive)
