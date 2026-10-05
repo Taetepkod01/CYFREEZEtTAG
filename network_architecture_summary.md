@@ -226,6 +226,29 @@
   2. **ไม่มี Speed Hack Detection แบบ Real-time:** ยังไม่ได้นำ $\Delta s / \Delta t$ มาคำนวณความเร็วเฉลี่ยทุกเฟรม
   3. **State เก็บใน In-Memory RAM:** หากเซิร์ฟเวอร์รีสตาร์ตข้อมูลห้องจะถูกรีเซ็ต (ไม่มี Persistent Database)
 
+### 8.1 การจัดเก็บและปกป้อง API ไม่ให้ถูกดักจับหรือดึงข้อมูล (API Security, Anti-Scraping & Secrets Management)
+
+| ประเด็นความปลอดภัย | กลไกที่นำมาใช้ในโปรเจกต์ | ผลลัพธ์และการป้องกัน |
+| :--- | :--- | :--- |
+| **1. การเก็บรักษาความลับ (Secrets Storage)** | **สถาปัตยกรรม Zero Client Secrets** | ไม่มี Database Connection String, Master Key หรือ Private Token ฝังใน Godot/Client แม้จะ Decompile `.wasm` หรือ `.pck` ก็ไม่มีข้อมูลลับให้แกะ |
+| **2. การดักจับกลางทาง (Eavesdropping / MitM)** | **TLS 1.3 Encryption (`https://` & `wss://`)** | เข้ารหัสทราฟฟิกพอร์ต 443 ทุกแพ็กเก็ต การดักฟังผ่าน Wireshark หรือ Wi-Fi สาธารณะจะเห็นเป็นเพียง Ciphertext |
+| **3. การกวาดดูดข้อมูลห้อง (API Scraping)** | **Server-Side Data Minimization & Stripping** | API `/api/rooms` ส่งเฉพาะข้อมูลที่จำเป็น (`name`, `playersCount`, `map`) ตัดห้อง Private ทิ้ง 100% และไม่มี PII เช่น IP หรือ Device ID |
+| **4. การสแปมและยิงเดารหัส (Spam & Brute-Force)** | **Rate Limiting & Dynamic Lockout** | จำกัดการขอ Join ไม่เกิน 1 ครั้งต่อ 600ms, ผิด 5 ครั้ง Lockout 5 วินาที, คูลดาวน์สร้างห้อง 3s และจำกัดความจุห้อง 50 ห้อง |
+| **5. การดึงข้อมูลข้ามเว็บ (Cross-Site Abuse)** | **CORS & Origin Verification** | ป้องกันไม่ให้เว็บไซต์อันตรายเขียนสคริปต์ JS ข้ามโดเมนมายิงดูดข้อมูลห้อง หรือ Hijack การเชื่อมต่อ WebSocket |
+| **6. ข้อมูลผู้ใช้รั่วไหล (Data Leakage)** | **Ephemeral In-Memory Lifecycle** | Player ID (`p_xxxxxxx`) และ Room Code เป็นข้อมูลสุ่มชั่วคราวใน RAM ทำลายทิ้งทันทีเมื่อตัดการเชื่อมต่อ ไม่มี DB ให้ถูก SQL Injection |
+
+#### รายละเอียดเชิงสถาปัตยกรรม:
+1. **หลักการ "Zero Secrets on Client" (ทำไมจึงไม่ควรเก็บ API Secret ไว้ที่ Client?):**
+   * เกม WebGL รันบนเบราว์เซอร์ของผู้ใช้ ซึ่งสามารถเปิด DevTools (F12), ดักดู Memory, หรือ Reverse-Engineer ไบนารี WebAssembly ได้เสมอ
+   * ทางออกที่ถูกต้องตามหลักวิศวกรรมความปลอดภัย คือ **"ไม่เก็บความลับใดๆ ไว้ที่ฝั่ง Client"** 
+   * Client สื่อสารผ่าน Server Gateway ของเราเองเท่านั้น การระบุ URL ปลายทางใช้วิธี **Dynamic Relative Host Deduction** (`window.location.host` ใน `network.gd: L81-93`) เพื่อไม่ให้มี Absolute IP หรือเส้นทางหลังบ้านรั่วไหล
+2. **การป้องกันการกวาดดูดข้อมูลห้องส่วนตัว (Private Room Anti-Scraping):**
+   * หากระบบส่งข้อมูลห้องทั้งหมดมาให้ Client แล้วให้ Client เลือกว่าจะซ่อนหรือไม่ (Client-side Filtering) ผู้ไม่หวังดีจะสามารถแกะดูรหัสห้องจาก Network Tab ได้ทันที
+   * เราจึงใช้ **Server-Authoritative Filtering 100%:** ฝั่งเซิร์ฟเวอร์จะคัดกรอง `if (r.isPrivate) return;` ก่อนแปลงเป็น JSON ส่งออกไป ทำให้รหัสและชื่อของห้อง Private ไม่มีทางหลุดออกไปในระดับแพ็กเก็ตเครือข่ายเลย
+3. **การป้องกัน Botnet และ API Flooding:**
+   * เซิร์ฟเวอร์มีเกราะป้องกัน Resource Exhaustion ด้วยการจำกัดจำนวนห้องสูงสุด 50 ห้อง (`MAX_TOTAL_ROOMS = 50`) 
+   * มีระบบตรวจจับ Dead Sockets กวาดล้างท่อที่ตัดสายทิ้งทุก 4 วินาที ป้องกันการยิงเปิดการเชื่อมต่อค้างไว้เพื่อดูด RAM ของเซิร์ฟเวอร์ (Slowloris Attack Prevention)
+
 ---
 
 ## 9. Deployment Configuration
@@ -351,3 +374,9 @@
 34. **ความแตกต่างระหว่าง Entity Interpolation กับ Client Prediction ในการซิงค์แบบ Real-time?**
     * **Entity Interpolation (ทำงานที่เครื่องรับ):** ใช้กับตัวละครของผู้เล่นคนอื่น (Remote Players) เนื่องจากตำแหน่งส่งมาด้วยความถี่ 20 Hz (ทุก 50ms) Client จะใช้ Exponential Lerp (`lerp(16.0 * delta)`) คำนวณจุดกึ่งกลางระหว่างพิกัดเก่าและพิกัดใหม่ทุกๆ เฟรมของการเรนเดอร์ (60–144 FPS) เพื่อให้ภาพการเคลื่อนที่นุ่มนวล
     * **Client Prediction (ทำงานที่เครื่องส่ง):** ใช้กับตัวละครของผู้เล่นเอง (Local Player) โดยประมวลผลการกดปุ่มเดินและฟิสิกส์ทันทีในเครื่องโดยไม่ต้องรอเซิร์ฟเวอร์ตอบรับ เพื่อตัด Input Lag ให้การบังคับรู้สึกตอบสนองทันที (Responsive)
+35. **API ของเราเก็บรักษาอย่างไรไม่ให้โดนดึงข้อมูล หรือถูกแกะรอย (API Security, Anti-Scraping & Secrets Management)?**
+    * **หลักการ Zero Secrets on Client:** ในเกมประเภท Web Browser ผู้ใช้สามารถเปิด DevTools (F12) และ Decompile ไฟล์ไบนารี (`.wasm`, `.pck`) ได้ตลอดเวลา สถาปัตยกรรมของเราจึง **ไม่มีการเก็บ Database Passwords หรือ Admin Master Keys ไว้ที่ฝั่ง Client เลยแม้แต่ค่าเดียว** (Client มีหน้าที่แค่ส่ง Input และรับ State มาวาดภาพ)
+    * **การป้องกัน Man-in-the-Middle (MitM Sniffing):** ทุกคำขอ REST (`https://`) และ WebSocket (`wss://`) เข้ารหัสผ่าน TLS 1.3 บนพอร์ตมาตรฐาน 443 ทำให้ผู้ดักจับแพ็กเก็ตผ่าน Wi-Fi หรือเราเตอร์ไม่สามารถอ่านข้อมูล JSON ที่วิ่งผ่านสายได้
+    * **Server-Authoritative Data Stripping:** การดึงรายชื่อห้อง (`GET /api/rooms` หรือ `get_rooms`) เซิร์ฟเวอร์จะตัดห้อง Private ทิ้งตั้งแต่ระดับ Memory ก่อนส่งออก ไม่ได้ส่งข้อมูลทั้งหมดมาให้ไคลเอนต์ซ่อนเอง ทำให้สคริปต์ภายนอกไม่สามารถยิงดูดรหัสหรือชื่อห้องลับได้
+    * **Rate Limiting & Anti-Brute Force:** มีระบบจำกัดความถี่ในการสร้างห้อง (คูลดาวน์ 3s) และการ Join ห้อง (ไม่เกิน 1 ครั้งต่อ 600ms พร้อมแบน 5s หากกรอกผิด 5 ครั้ง) ป้องกัน Scraping Bot สแปมเรียก API ถี่จนเซิร์ฟเวอร์ล่ม
+    * **CORS & Origin Validation:** มีการติดตั้ง Header CORS บน Express เพื่อควบคุมไม่ให้เว็บไซต์อื่นแอบเขียนสคริปต์ข้ามโดเมน (Cross-Origin) มายิงเรียก API ของเรา
