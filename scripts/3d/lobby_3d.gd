@@ -211,7 +211,7 @@ func _update_room_list_browser() -> void:
 	for code in active_rooms:
 		var r = active_rooms[code]
 		var pin_code: String = str(r.get("code", code)).to_upper()
-		var r_name: String = str(r.get("name", "Room " + pin_code))
+		var r_name: String = str(r.get("name", "Room"))
 		var p_count: int = r.get("players", []).size()
 		var max_p: int = int(r.get("max_players", 8))
 		var map_name: String = str(r.get("map", "CASTLE"))
@@ -254,9 +254,9 @@ func _update_room_list_browser() -> void:
 		elif in_progress:
 			status_str = " [IN PROGRESS]"
 		
-		# Prominently display the 6-character room PIN
-		item_btn.text = "%s  [PIN: %s]\nPlayers: %d/%d  |  %s%s" % [
-			r_name, pin_code, p_count, max_p, map_name, status_str
+		# Public rooms only show room name and info (no PIN)
+		item_btn.text = "%s%s\nPlayers: %d/%d  |  %s" % [
+			r_name, status_str, p_count, max_p, map_name
 		]
 		item_btn.add_theme_font_size_override("font_size", 12)
 		
@@ -264,7 +264,6 @@ func _update_room_list_browser() -> void:
 			item_btn.disabled = true
 		else:
 			item_btn.pressed.connect(func():
-				join_code_input.text = pin_code
 				_join_room_by_code(pin_code)
 			)
 		
@@ -424,7 +423,7 @@ func _on_network_public_rooms_updated(rooms: Array) -> void:
 			continue
 		var code = str(r.get("code", "")).to_upper()
 		new_dict[code] = {
-			"name": str(r.get("name", "Room " + code)),
+			"name": str(r.get("name", "Room")),
 			"code": code,
 			"host": "Host",
 			"max_players": int(r.get("maxPlayers", 8)),
