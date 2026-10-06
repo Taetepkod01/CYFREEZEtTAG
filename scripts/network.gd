@@ -50,6 +50,9 @@ var last_ws_state: int = WebSocketPeer.STATE_CLOSED
 # ── State Variables ───────────────────────────────────────────────────────────
 var is_connected_to_server: bool = false
 var my_peer_id: String = ""
+var player_id: String:
+	get:
+		return my_peer_id
 var my_player_name: String = "Player 1"
 var current_room_code: String = ""
 var is_host: bool = false
@@ -171,6 +174,7 @@ func send_action(action: String, data: Dictionary = {}) -> void:
 	payload["action"] = action
 	var json_str = JSON.stringify(payload)
 	ws_peer.send_text(json_str)
+	ws_peer.poll()
 
 # ── Message Dispatcher ────────────────────────────────────────────────────────
 func _handle_server_message(raw_text: String) -> void:
@@ -227,7 +231,21 @@ func _handle_server_message(raw_text: String) -> void:
 		"host_changed":
 			var new_host = str(data.get("newHostId", ""))
 			is_host = (my_peer_id == new_host)
+			if room_data.has("players") and typeof(room_data["players"]) == TYPE_ARRAY:
+				if data.has("players") and typeof(data["players"]) == TYPE_ARRAY:
+					room_data["players"] = data["players"]
+				else:
+					for p in room_data["players"]:
+						if typeof(p) == TYPE_DICTIONARY:
+							var is_p_new_host = (str(p.get("id")) == new_host)
+							p["isHost"] = is_p_new_host
+							if is_p_new_host:
+								p["isReady"] = true
+			room_data["hostId"] = new_host
+			if data.has("hostName"):
+				room_data["hostName"] = str(data.get("hostName"))
 			host_changed.emit(new_host)
+			player_list_updated.emit()
 			
 		"player_name_updated":
 			var updated_id = str(data.get("id", ""))

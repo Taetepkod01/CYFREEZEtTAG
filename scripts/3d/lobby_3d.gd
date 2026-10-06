@@ -138,6 +138,8 @@ func _connect_network_signals() -> void:
 		Network.player_joined.connect(_on_network_player_joined)
 	if not Network.player_left.is_connected(_on_network_player_left):
 		Network.player_left.connect(_on_network_player_left)
+	if not Network.host_changed.is_connected(_on_network_host_changed):
+		Network.host_changed.connect(_on_network_host_changed)
 	if not Network.settings_updated.is_connected(_on_network_settings_updated):
 		Network.settings_updated.connect(_on_network_settings_updated)
 	if not Network.player_name_updated.is_connected(_on_network_player_name_updated):
@@ -378,7 +380,35 @@ func _on_network_player_left(data: Dictionary) -> void:
 			if match_found:
 				r["players"].remove_at(i)
 				break
+		if Network and Network.is_host:
+			is_host = true
+			is_ready = true
 		_update_room_lobby_ui()
+
+func _on_network_host_changed(new_host_id: String) -> void:
+	print("[Lobby3D] Host changed to: ", new_host_id, " (my ID: ", Network.my_peer_id, ")")
+	is_host = (Network.my_peer_id == new_host_id)
+	if is_host:
+		is_ready = true
+		if code_error_lbl:
+			code_error_lbl.text = "You are now the HOST!"
+			code_error_lbl.modulate = Color(1.0, 0.85, 0.2)
+	
+	if active_rooms.has(current_room_code):
+		var r = active_rooms[current_room_code]
+		r["host_id"] = new_host_id
+		if Network and Network.room_data.has("players") and typeof(Network.room_data["players"]) == TYPE_ARRAY:
+			r["players"] = Network.room_data["players"].duplicate()
+		else:
+			for p in r["players"]:
+				if typeof(p) == TYPE_DICTIONARY:
+					var is_p_host = (str(p.get("id")) == new_host_id)
+					p["isHost"] = is_p_host
+					if is_p_host:
+						p["isReady"] = true
+						r["host"] = str(p.get("name", "Host"))
+	
+	_update_room_lobby_ui()
 
 func _on_network_settings_updated(data: Dictionary) -> void:
 	if active_rooms.has(current_room_code):
@@ -488,6 +518,9 @@ func _update_room_lobby_ui() -> void:
 	host_settings_title.text = "HOST SETTINGS" if is_host else "ROOM SETTINGS (Host only)"
 	
 	# Action Button
+	if Network and Network.is_host:
+		is_host = true
+
 	if is_host:
 		action_btn.texture_normal = TEX_START_GAME
 		action_btn.disabled = false
@@ -496,7 +529,8 @@ func _update_room_lobby_ui() -> void:
 			var p_is_host = false
 			var p_is_ready = false
 			if typeof(p) == TYPE_DICTIONARY:
-				p_is_host = bool(p.get("isHost", false))
+				var pid = str(p.get("id", ""))
+				p_is_host = bool(p.get("isHost", false)) or (Network and pid == Network.my_peer_id)
 				p_is_ready = bool(p.get("isReady", false))
 			if not p_is_host and not p_is_ready:
 				all_ready = false
@@ -686,6 +720,9 @@ func _on_copy_code_pressed() -> void:
 		get_tree().create_timer(1.5).timeout.connect(func(): copy_code_btn.text = "COPY")
 
 func _on_action_pressed() -> void:
+	if Network and Network.is_host:
+		is_host = true
+
 	if is_host:
 		if active_rooms.has(current_room_code):
 			var r = active_rooms[current_room_code]
@@ -695,7 +732,8 @@ func _on_action_pressed() -> void:
 				var p_is_ready = false
 				var p_name = "Player"
 				if typeof(p) == TYPE_DICTIONARY:
-					p_is_host = bool(p.get("isHost", false))
+					var pid = str(p.get("id", ""))
+					p_is_host = bool(p.get("isHost", false)) or (Network and pid == Network.my_peer_id)
 					p_is_ready = bool(p.get("isReady", false))
 					p_name = str(p.get("name", "Player"))
 				if not p_is_host and not p_is_ready:
@@ -716,6 +754,7 @@ func _on_action_pressed() -> void:
 		if Network:
 			Network.selected_map = selected_map
 		if Network and Network.is_connected_to_server:
+			print("[Lobby3D] Host starting game...")
 			Network.start_game()
 		else:
 			get_tree().change_scene_to_file("res://scenes/3d/arena_3d.tscn")
@@ -740,5 +779,4 @@ func _on_leave_room_pressed() -> void:
 func _on_back_to_menu_pressed() -> void:
 	if Network and Network.is_connected_to_server:
 		Network.leave_room()
-		Network.disconnect_from_server()
 	get_tree().change_scene_to_file("res://scenes/3d/main_menu_3d.tscn")

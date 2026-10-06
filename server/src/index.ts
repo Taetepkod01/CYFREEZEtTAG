@@ -84,8 +84,14 @@ function cleanupGhostRooms() {
     // Remove any player whose WebSocket is no longer OPEN
     for (const [pId, p] of r.players.entries()) {
       if (!p.ws || p.ws.readyState !== WebSocket.OPEN) {
+        const leftName = p.name || "Player";
         r.players.delete(pId);
         deletedCount++;
+        broadcastToRoom(r, "player_left", {
+          id: pId,
+          name: leftName,
+          playersCount: r.players.size
+        });
       }
     }
     // If room has 0 players, purge it immediately from RAM
@@ -101,7 +107,20 @@ function cleanupGhostRooms() {
           r.hostId = newHost;
           const hostPlayer = r.players.get(newHost);
           if (hostPlayer) hostPlayer.isReady = true;
-          broadcastToRoom(r, "host_changed", { newHostId: newHost });
+          const pList: any[] = [];
+          r.players.forEach((pl) => {
+            pList.push({
+              id: pl.id,
+              name: pl.name,
+              isHost: pl.id === r.hostId,
+              isReady: pl.id === r.hostId ? true : Boolean(pl.isReady)
+            });
+          });
+          broadcastToRoom(r, "host_changed", {
+            newHostId: newHost,
+            hostName: hostPlayer?.name || "Host",
+            players: pList
+          });
         }
       }
       if (deletedCount > 0) {
@@ -110,7 +129,7 @@ function cleanupGhostRooms() {
     }
   }
 }
-setInterval(cleanupGhostRooms, 4000);
+setInterval(cleanupGhostRooms, 1000);
 
 // Public rooms API for Godot Lobby Browser (private rooms excluded)
 app.get("/api/rooms", async (_req, res) => {
@@ -575,8 +594,15 @@ wss.on("connection", (ws: WebSocket) => {
 
         // 4. Start Game (Host - Validates that all non-host players are READY)
         case "start_game": {
-          if (!currentRoom || currentRoom.hostId !== myPlayerId) return;
+          if (!currentRoom) return;
+          if (currentRoom.hostId !== myPlayerId) {
+            console.warn(`[start_game] Rejected: player ${myPlayerId} is not host (${currentRoom.hostId})`);
+            sendTo(ws, "error", { message: "Only the room host can start the game!" });
+            return;
+          }
           const room = currentRoom;
+          const hostPlayer = room.players.get(room.hostId);
+          if (hostPlayer) hostPlayer.isReady = true;
 
           // Check if all other players are ready!
           let unreadyCount = 0;
@@ -658,7 +684,20 @@ wss.on("connection", (ws: WebSocket) => {
                   roomToLeave.hostId = newHostKey;
                   const newHost = roomToLeave.players.get(newHostKey);
                   if (newHost) newHost.isReady = true;
-                  broadcastToRoom(roomToLeave, "host_changed", { newHostId: newHostKey });
+                  const pList: any[] = [];
+                  roomToLeave.players.forEach((pl) => {
+                    pList.push({
+                      id: pl.id,
+                      name: pl.name,
+                      isHost: pl.id === roomToLeave.hostId,
+                      isReady: pl.id === roomToLeave.hostId ? true : Boolean(pl.isReady)
+                    });
+                  });
+                  broadcastToRoom(roomToLeave, "host_changed", {
+                    newHostId: newHostKey,
+                    hostName: newHost?.name || "Host",
+                    players: pList
+                  });
                 }
               }
               broadcastToRoom(roomToLeave, "player_left", {
@@ -934,22 +973,35 @@ wss.on("connection", (ws: WebSocket) => {
         active3DRooms.delete(currentRoom.code);
         console.log(`[WS Server] Room ${currentRoom.code} deleted (empty).`);
       } else {
-        broadcastToRoom(currentRoom, "player_left", {
-          id: myPlayerId,
-          name: p ? p.name : "Player",
-          playersCount: currentRoom.players.size
-        });
-
-        if (currentRoom.hostId === myPlayerId) {
-          const newHostKey = currentRoom.players.keys().next().value;
+        const room = currentRoom;
+        if (room.hostId === myPlayerId) {
+          const newHostKey = room.players.keys().next().value;
           if (newHostKey) {
-            currentRoom.hostId = newHostKey;
-            const newHost = currentRoom.players.get(newHostKey);
+            room.hostId = newHostKey;
+            const newHost = room.players.get(newHostKey);
             if (newHost) newHost.isReady = true;
-            broadcastToRoom(currentRoom, "host_changed", { newHostId: newHostKey });
+            const pList: any[] = [];
+            room.players.forEach((pl) => {
+              pList.push({
+                id: pl.id,
+                name: pl.name,
+                isHost: pl.id === room.hostId,
+                isReady: pl.id === room.hostId ? true : Boolean(pl.isReady)
+              });
+            });
+            broadcastToRoom(room, "host_changed", {
+              newHostId: newHostKey,
+              hostName: newHost?.name || "Host",
+              players: pList
+            });
           }
         }
-        check3DEndCondition(currentRoom);
+        broadcastToRoom(room, "player_left", {
+          id: myPlayerId,
+          name: p ? p.name : "Player",
+          playersCount: room.players.size
+        });
+        check3DEndCondition(room);
       }
     }
     cleanupGhostRooms();
