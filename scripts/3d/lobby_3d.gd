@@ -264,8 +264,11 @@ func _update_room_list_browser() -> void:
 		]
 		item_btn.add_theme_font_size_override("font_size", 12)
 		
-		if is_full or in_progress:
+		var is_kicked = Network and Network.kicked_rooms.has(pin_code)
+		if is_full or in_progress or is_kicked:
 			item_btn.disabled = true
+			if is_kicked:
+				item_btn.text += "  [KICKED]"
 		else:
 			item_btn.pressed.connect(func():
 				_join_room_by_code(pin_code)
@@ -301,9 +304,14 @@ func _on_join_by_code_pressed() -> void:
 	_join_room_by_code(code)
 
 func _join_room_by_code(code: String) -> void:
+	var clean = code.to_upper().strip_edges()
+	if Network and Network.kicked_rooms.has(clean):
+		code_error_lbl.text = "You have been kicked from room \"%s\" and cannot rejoin." % clean
+		code_error_lbl.modulate = Color(1.0, 0.35, 0.35)
+		return
 	if Network and Network.is_connected_to_server:
-		code_error_lbl.text = "Connecting to room " + code + "..."
-		Network.join_room(code)
+		code_error_lbl.text = "Connecting to room " + clean + "..."
+		Network.join_room(clean)
 	else:
 		code_error_lbl.text = "Connecting to server... Please wait a moment."
 		if Network:
@@ -473,6 +481,7 @@ func _on_network_round_started(_data: Dictionary) -> void:
 
 func _on_network_error(msg: String) -> void:
 	code_error_lbl.text = msg
+	code_error_lbl.modulate = Color(1.0, 0.35, 0.35)
 	if room_view.visible:
 		player_count_header.text = msg.to_upper()
 		player_count_header.modulate = Color(1.0, 0.35, 0.35)

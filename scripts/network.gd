@@ -60,6 +60,7 @@ var is_host: bool = false
 var is_solo_mode: bool = false
 var selected_practice_role: String = "random" # "random", "tagger", "runner"
 var selected_map: String = "SPACE STATION" # Default to SPACE STATION
+var kicked_rooms: Array[String] = []
 
 var room_data: Dictionary = {}
 var current_match_players: Array = []
@@ -374,6 +375,8 @@ func _handle_server_message(raw_text: String) -> void:
 			connection_error.emit(str(data.get("message", "Unknown server error")))
 			
 		"kicked_from_room":
+			if not current_room_code.is_empty() and not kicked_rooms.has(current_room_code):
+				kicked_rooms.append(current_room_code)
 			current_room_code = ""
 			is_host = false
 			room_data.clear()
@@ -408,8 +411,12 @@ func create_room(r_name: String, max_p: int = 8, rounds: int = 3, map_name: Stri
 	})
 
 func join_room(code: String) -> void:
+	var clean = code.to_upper().strip_edges()
+	if kicked_rooms.has(clean):
+		connection_error.emit("You were kicked from room \"%s\" and cannot rejoin." % clean)
+		return
 	send_action("join_room", {
-		"roomCode": code,
+		"roomCode": clean,
 		"playerName": my_player_name
 	})
 

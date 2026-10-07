@@ -34,6 +34,7 @@ app.get("/health", (_req, res) => {
 export interface ActivePlayer {
   id: string;
   name: string;
+  ip?: string;
   ws: WebSocket;
   x: number;
   y: number;
@@ -72,6 +73,8 @@ export interface Active3DRoom {
   itemSpawnInterval: NodeJS.Timeout | null;
   itemCounter: number;
   kickedPlayerIds?: Set<string>;
+  kickedIps?: Set<string>;
+  kickedNames?: Set<string>;
 }
 
 const active3DRooms: Map<string, Active3DRoom> = new Map();
@@ -310,9 +313,15 @@ function sendTo(ws: WebSocket, event: string, data: unknown) {
   }
 }
 
-wss.on("connection", (ws: WebSocket) => {
+wss.on("connection", (ws: WebSocket, req: any) => {
   const extWs = ws as WebSocket & { lastActiveTime?: number };
   extWs.lastActiveTime = Date.now();
+
+  const clientIp = String(
+    req?.headers?.["x-forwarded-for"] ||
+    req?.socket?.remoteAddress ||
+    ""
+  ).split(",")[0].trim();
 
   ws.on("pong", () => {
     extWs.lastActiveTime = Date.now();
@@ -396,12 +405,15 @@ wss.on("connection", (ws: WebSocket) => {
             timerInterval: null,
             itemSpawnInterval: null,
             itemCounter: 0,
-            kickedPlayerIds: new Set<string>()
+            kickedPlayerIds: new Set<string>(),
+            kickedIps: new Set<string>(),
+            kickedNames: new Set<string>()
           };
 
           const p: ActivePlayer = {
             id: myPlayerId,
             name: pName,
+            ip: clientIp,
             ws,
             x: 0,
             y: 0.5,
@@ -492,7 +504,12 @@ wss.on("connection", (ws: WebSocket) => {
             sendTo(ws, "error", { message: `Match already in progress for room "${code}"` });
             return;
           }
-          if (room.kickedPlayerIds && room.kickedPlayerIds.has(myPlayerId)) {
+          const isKicked =
+            (room.kickedPlayerIds && room.kickedPlayerIds.has(myPlayerId)) ||
+            (clientIp && room.kickedIps && room.kickedIps.has(clientIp)) ||
+            (room.kickedNames && room.kickedNames.has(pName.trim().toLowerCase()));
+
+          if (isKicked) {
             sendTo(ws, "error", { message: `You have been kicked from room "${code}" and cannot rejoin.` });
             return;
           }
@@ -505,6 +522,7 @@ wss.on("connection", (ws: WebSocket) => {
           const newPlayer: ActivePlayer = {
             id: myPlayerId,
             name: pName,
+            ip: clientIp,
             ws,
             x: sp.x,
             y: sp.y,
@@ -690,10 +708,13 @@ wss.on("connection", (ws: WebSocket) => {
             return;
           }
 
-          if (!room.kickedPlayerIds) {
-            room.kickedPlayerIds = new Set<string>();
-          }
+          if (!room.kickedPlayerIds) room.kickedPlayerIds = new Set<string>();
+          if (!room.kickedIps) room.kickedIps = new Set<string>();
+          if (!room.kickedNames) room.kickedNames = new Set<string>();
+
           room.kickedPlayerIds.add(targetId);
+          if (targetPlayer.ip) room.kickedIps.add(targetPlayer.ip);
+          room.kickedNames.add(targetPlayer.name.trim().toLowerCase());
           room.players.delete(targetId);
 
           // Notify the kicked player directly
