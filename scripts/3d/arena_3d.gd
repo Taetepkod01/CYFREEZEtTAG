@@ -31,8 +31,6 @@ var current_map_node: Node3D = null
 @onready var status_title_lbl: Label = $HUD/PlayerStatusPanel/Title
 @onready var game_log_lbl: RichTextLabel = $HUD/GameLogPanel/LogContent
 @onready var minimap: Control = $HUD/MinimapPanel/Minimap
-@onready var hp_bar: ProgressBar = $HUD/BottomHPPanel/ProgressBar
-@onready var hp_lbl: Label = $HUD/BottomHPPanel/HPHeader/HPLabel
 @onready var item_btn: Button = $HUD/BottomInventoryPanel/ItemButton
 @onready var item_name_lbl: Label = $HUD/BottomInventoryPanel/ItemButton/ItemName
 @onready var role_btn: Button = $HUD/PracticeRoleBtn
@@ -227,6 +225,8 @@ func _connect_network_signals() -> void:
 		Network.round_started.connect(_on_net_round_started)
 	if not Network.returned_to_lobby.is_connected(_on_net_returned_to_lobby):
 		Network.returned_to_lobby.connect(_on_net_returned_to_lobby)
+	if not Network.player_kicked.is_connected(_on_net_player_kicked):
+		Network.player_kicked.connect(_on_net_player_kicked)
 	if not Network.chat_received.is_connected(func(msg): add_game_log(msg)):
 		Network.chat_received.connect(func(msg): add_game_log(msg))
 
@@ -780,8 +780,6 @@ func _update_hud() -> void:
 	status_title_lbl.text = "PLAYER STATUS   %d/%d" % [total_players, total_players]
 	
 	if local_player:
-		hp_bar.value = local_player.hp
-		hp_lbl.text = "%d / 100" % local_player.hp
 		player_tag_name.text = local_player.player_name
 		if local_player.is_frozen:
 			player_tag_dot.visible = false
@@ -852,6 +850,10 @@ func _on_net_round_started(data: Dictionary) -> void:
 	add_game_log("[color=#ffe066]Round %d started![/color]" % current_round)
 
 func _on_net_returned_to_lobby(_data: Dictionary) -> void:
+	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+	get_tree().change_scene_to_file("res://scenes/3d/lobby_3d.tscn")
+
+func _on_net_player_kicked(_reason: String) -> void:
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 	get_tree().change_scene_to_file("res://scenes/3d/lobby_3d.tscn")
 

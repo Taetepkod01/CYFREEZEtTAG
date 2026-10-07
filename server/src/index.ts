@@ -71,6 +71,7 @@ export interface Active3DRoom {
   timerInterval: NodeJS.Timeout | null;
   itemSpawnInterval: NodeJS.Timeout | null;
   itemCounter: number;
+  kickedPlayerIds?: Set<string>;
 }
 
 const active3DRooms: Map<string, Active3DRoom> = new Map();
@@ -394,7 +395,8 @@ wss.on("connection", (ws: WebSocket) => {
             items: new Map(),
             timerInterval: null,
             itemSpawnInterval: null,
-            itemCounter: 0
+            itemCounter: 0,
+            kickedPlayerIds: new Set<string>()
           };
 
           const p: ActivePlayer = {
@@ -488,6 +490,10 @@ wss.on("connection", (ws: WebSocket) => {
           failedJoinAttempts = 0; // Reset on valid room code
           if (room.phase !== "lobby") {
             sendTo(ws, "error", { message: `Match already in progress for room "${code}"` });
+            return;
+          }
+          if (room.kickedPlayerIds && room.kickedPlayerIds.has(myPlayerId)) {
+            sendTo(ws, "error", { message: `You have been kicked from room "${code}" and cannot rejoin.` });
             return;
           }
           if (room.players.size >= room.maxPlayers) {
@@ -662,6 +668,62 @@ wss.on("connection", (ws: WebSocket) => {
             isPrivate: room.isPrivate,
             players: pList
           });
+          break;
+        }
+
+        // Kick Player (Host only)
+        case "kick_player": {
+          if (!currentRoom) return;
+          const room = currentRoom;
+          if (room.hostId !== myPlayerId) {
+            sendTo(ws, "error", { message: "Only the room host can kick players." });
+            return;
+          }
+          const targetId = String(msg.targetId || "");
+          if (!targetId || targetId === myPlayerId) {
+            sendTo(ws, "error", { message: "Cannot kick yourself or invalid target." });
+            return;
+          }
+          const targetPlayer = room.players.get(targetId);
+          if (!targetPlayer) {
+            sendTo(ws, "error", { message: "Player not found in this room." });
+            return;
+          }
+
+          if (!room.kickedPlayerIds) {
+            room.kickedPlayerIds = new Set<string>();
+          }
+          room.kickedPlayerIds.add(targetId);
+          room.players.delete(targetId);
+
+          // Notify the kicked player directly
+          if (targetPlayer.ws && targetPlayer.ws.readyState === WebSocket.OPEN) {
+            sendTo(targetPlayer.ws, "kicked_from_room", {
+              reason: "You were kicked by the room host."
+            });
+          }
+
+          // Broadcast updated player list to remaining players in room
+          const pList = Array.from(room.players.values()).map(pl => ({
+            id: pl.id,
+            name: pl.name,
+            isHost: pl.id === room.hostId,
+            isReady: pl.id === room.hostId ? true : Boolean(pl.isReady)
+          }));
+
+          broadcastToRoom(room, "player_left", {
+            id: targetId,
+            name: targetPlayer.name,
+            reason: "kicked",
+            playersCount: room.players.size,
+            players: pList
+          });
+
+          if (room.phase === "playing") {
+            check3DEndCondition(room);
+          }
+
+          console.log(`[WS Server] Player "${targetPlayer.name}" (${targetId}) was kicked from room ${room.code} by host ${myPlayerId}`);
           break;
         }
 

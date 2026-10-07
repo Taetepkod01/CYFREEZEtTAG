@@ -15,6 +15,7 @@ signal player_name_updated(data: Dictionary)
 signal player_ready_updated(data: Dictionary)
 signal settings_updated(data: Dictionary)
 signal public_rooms_updated(rooms: Array)
+signal player_kicked(reason: String)
 
 # 3D Match In-Game Signals
 signal round_started(data: Dictionary)
@@ -372,10 +373,19 @@ func _handle_server_message(raw_text: String) -> void:
 		"error":
 			connection_error.emit(str(data.get("message", "Unknown server error")))
 			
+		"kicked_from_room":
+			current_room_code = ""
+			is_host = false
+			room_data.clear()
+			player_kicked.emit(str(data.get("reason", "You were kicked from the room.")))
+			
 		"pong":
 			pass
 
 # ── Outbound Action Helpers ───────────────────────────────────────────────────
+func kick_player(target_id: String) -> void:
+	send_action("kick_player", { "targetId": target_id })
+
 func set_ready(ready: bool) -> void:
 	send_action("set_ready", { "isReady": ready })
 

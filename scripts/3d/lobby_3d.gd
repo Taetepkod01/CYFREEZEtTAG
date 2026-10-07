@@ -150,6 +150,8 @@ func _connect_network_signals() -> void:
 		Network.public_rooms_updated.connect(_on_network_public_rooms_updated)
 	if not Network.round_started.is_connected(_on_network_round_started):
 		Network.round_started.connect(_on_network_round_started)
+	if not Network.player_kicked.is_connected(_on_network_player_kicked):
+		Network.player_kicked.connect(_on_network_player_kicked)
 	if not Network.connection_error.is_connected(_on_network_error):
 		Network.connection_error.connect(_on_network_error)
 	if not Network.connected_to_server.is_connected(_on_network_connected):
@@ -482,6 +484,23 @@ func _on_network_error(msg: String) -> void:
 				player_count_header.modulate = Color(0.4, 0.85, 1.0)
 		)
 
+func _on_network_player_kicked(reason: String) -> void:
+	print("[Lobby3D] Kicked from room: ", reason)
+	current_room_code = ""
+	is_host = false
+	is_ready = false
+	active_rooms.clear()
+	_show_browser_view()
+	code_error_lbl.text = reason if not reason.is_empty() else "You were kicked by the room host."
+	code_error_lbl.modulate = Color(1.0, 0.4, 0.4)
+
+func _on_kick_player_pressed(target_id: String, target_name: String) -> void:
+	if not is_host:
+		return
+	print("[Lobby3D] Host kicking player: ", target_name, " (", target_id, ")")
+	if Network:
+		Network.kick_player(target_id)
+
 # -- In-Room UI & Customization ----------------------------------------------
 func _update_room_lobby_ui() -> void:
 	if not active_rooms.has(current_room_code):
@@ -574,13 +593,17 @@ func _update_player_slots(r: Dictionary) -> void:
 		var status_badge = Label.new()
 		status_badge.add_theme_font_size_override("font_size", 11)
 		
-		if i < r["players"].size():
+		var is_occupied = (i < r["players"].size())
+		var p_id = ""
+		var p_name = ""
+		var p_is_host = false
+		var p_is_ready = false
+		
+		if is_occupied:
 			var item = r["players"][i]
-			var p_name = ""
-			var p_is_host = false
-			var p_is_ready = false
 			
 			if typeof(item) == TYPE_DICTIONARY:
+				p_id = str(item.get("id", ""))
 				p_name = str(item.get("name", "Player %d" % (i + 1)))
 				p_is_host = bool(item.get("isHost", i == 0))
 				p_is_ready = bool(item.get("isReady", false))
@@ -635,6 +658,34 @@ func _update_player_slots(r: Dictionary) -> void:
 		hbox.add_child(name_lbl)
 		if status_badge.text != "":
 			hbox.add_child(status_badge)
+		
+		# Host Kick button on other players
+		if is_host and is_occupied and not p_is_host and not p_id.is_empty() and (not Network or p_id != Network.my_peer_id):
+			var kick_btn = Button.new()
+			kick_btn.text = "KICK"
+			kick_btn.tooltip_text = "Kick %s from room" % p_name
+			kick_btn.focus_mode = Control.FOCUS_NONE
+			kick_btn.custom_minimum_size = Vector2(48, 22)
+			kick_btn.add_theme_font_size_override("font_size", 10)
+			
+			var kick_sb = StyleBoxFlat.new()
+			kick_sb.bg_color = Color(0.7, 0.15, 0.2, 0.85)
+			kick_sb.border_color = Color(1.0, 0.3, 0.35, 0.9)
+			kick_sb.set_border_width_all(1)
+			kick_sb.set_corner_radius_all(4)
+			kick_btn.add_theme_stylebox_override("normal", kick_sb)
+			
+			var kick_hover = StyleBoxFlat.new()
+			kick_hover.bg_color = Color(0.9, 0.22, 0.28, 1.0)
+			kick_hover.border_color = Color(1.0, 0.5, 0.55, 1.0)
+			kick_hover.set_border_width_all(1)
+			kick_hover.set_corner_radius_all(4)
+			kick_btn.add_theme_stylebox_override("hover", kick_hover)
+			
+			var target_kick_id = p_id
+			var target_kick_name = p_name
+			kick_btn.pressed.connect(func(): _on_kick_player_pressed(target_kick_id, target_kick_name))
+			hbox.add_child(kick_btn)
 		margin.add_child(hbox)
 		slot_panel.add_child(margin)
 		slot_panel.custom_minimum_size = Vector2(0, 36)

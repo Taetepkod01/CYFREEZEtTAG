@@ -100,27 +100,6 @@ corner_radius_bottom_left = 12
 shadow_color = Color(0, 0.45, 0.95, 0.3)
 shadow_size = 6
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hp_bg"]
-bg_color = Color(0.02, 0.05, 0.12, 0.95)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.1, 0.35, 0.6, 0.7)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hp_fill"]
-bg_color = Color(0, 0.85, 1, 1)
-corner_radius_top_left = 7
-corner_radius_top_right = 7
-corner_radius_bottom_right = 7
-corner_radius_bottom_left = 7
-shadow_color = Color(0, 0.85, 1, 0.5)
-shadow_size = 4
-
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_modal_ice"]
 bg_color = Color(0.03, 0.07, 0.18, 0.97)
 border_width_left = 3
@@ -557,57 +536,6 @@ theme_override_colors/font_color = Color(0.7, 0.85, 1, 0.65)
 theme_override_font_sizes/font_size = 11
 text = "[WASD] Move | [SPACE] Jump | [E] Use Item | [CLICK] Lock Camera | [ALT / ESC] Free Mouse"
 horizontal_alignment = 1
-
-[node name="BottomHPPanel" type="Panel" parent="HUD" unique_id=1099036785]
-anchors_preset = 2
-anchor_top = 1.0
-anchor_bottom = 1.0
-offset_left = 20.0
-offset_top = -74.0
-offset_right = 230.0
-offset_bottom = -20.0
-grow_vertical = 0
-theme_override_styles/panel = SubResource("StyleBoxFlat_pill")
-
-[node name="HPHeader" type="HBoxContainer" parent="HUD/BottomHPPanel" unique_id=695284608]
-layout_mode = 1
-anchors_preset = 10
-anchor_right = 1.0
-offset_left = 14.0
-offset_top = 6.0
-offset_right = -14.0
-offset_bottom = 24.0
-grow_horizontal = 2
-
-[node name="Label" type="Label" parent="HUD/BottomHPPanel/HPHeader" unique_id=1906654353]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_colors/font_color = Color(1, 0.45, 0.65, 1)
-theme_override_font_sizes/font_size = 11
-text = "PLAYER HP"
-
-[node name="HPLabel" type="Label" parent="HUD/BottomHPPanel/HPHeader" unique_id=1395469719]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.4, 0.9, 1, 1)
-theme_override_font_sizes/font_size = 11
-text = "100 / 100"
-
-[node name="ProgressBar" type="ProgressBar" parent="HUD/BottomHPPanel" unique_id=2104774008]
-layout_mode = 1
-anchors_preset = 12
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = 14.0
-offset_top = -24.0
-offset_right = -14.0
-offset_bottom = -10.0
-grow_horizontal = 2
-grow_vertical = 0
-theme_override_styles/background = SubResource("StyleBoxFlat_hp_bg")
-theme_override_styles/fill = SubResource("StyleBoxFlat_hp_fill")
-value = 100.0
-show_percentage = false
 
 [node name="BottomInventoryPanel" type="Panel" parent="HUD" unique_id=396244817]
 anchors_preset = 7
