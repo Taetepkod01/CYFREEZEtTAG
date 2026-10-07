@@ -150,6 +150,10 @@ func _connect_network_signals() -> void:
 		Network.public_rooms_updated.connect(_on_network_public_rooms_updated)
 	if not Network.round_started.is_connected(_on_network_round_started):
 		Network.round_started.connect(_on_network_round_started)
+	if not Network.returned_to_lobby.is_connected(_on_network_returned_to_lobby):
+		Network.returned_to_lobby.connect(_on_network_returned_to_lobby)
+	if not Network.player_state_updated.is_connected(_on_network_player_state_updated):
+		Network.player_state_updated.connect(_on_network_player_state_updated)
 	if not Network.player_kicked.is_connected(_on_network_player_kicked):
 		Network.player_kicked.connect(_on_network_player_kicked)
 	if not Network.connection_error.is_connected(_on_network_error):
@@ -256,7 +260,7 @@ func _update_room_list_browser() -> void:
 		if is_full:
 			status_str = " [FULL]"
 		elif in_progress:
-			status_str = " [IN PROGRESS]"
+			status_str = " [PLAYING - JOIN TO WAIT]"
 		
 		# Public rooms only show room name and info (no PIN)
 		item_btn.text = "%s%s\nPlayers: %d/%d  |  %s" % [
@@ -265,7 +269,7 @@ func _update_room_list_browser() -> void:
 		item_btn.add_theme_font_size_override("font_size", 12)
 		
 		var is_kicked = Network and Network.kicked_rooms.has(pin_code)
-		if is_full or in_progress or is_kicked:
+		if is_full or is_kicked:
 			item_btn.disabled = true
 			if is_kicked:
 				item_btn.text += "  [KICKED]"
@@ -336,6 +340,7 @@ func _on_network_room_created(data: Dictionary) -> void:
 		"rounds": int(data.get("rounds", 3)),
 		"map": str(data.get("map", "CASTLE")),
 		"is_private": bool(data.get("isPrivate", false)),
+		"phase": "lobby",
 		"players": r_players
 	}
 	_show_room_view()
@@ -358,6 +363,7 @@ func _on_network_room_joined(data: Dictionary) -> void:
 		"rounds": int(data.get("rounds", 3)),
 		"map": str(data.get("map", "CASTLE")),
 		"is_private": bool(data.get("isPrivate", false)),
+		"phase": str(data.get("phase", "lobby")),
 		"players": r_players
 	}
 	_show_room_view()
@@ -369,8 +375,47 @@ func _on_network_player_joined(data: Dictionary) -> void:
 			"id": str(data.get("id", "")),
 			"name": str(data.get("name", "New Player")),
 			"isHost": bool(data.get("isHost", false)),
-			"isReady": bool(data.get("isReady", false))
+			"isReady": bool(data.get("isReady", false)),
+			"isInGame": bool(data.get("isInGame", false))
 		})
+		_update_room_lobby_ui()
+
+func _on_network_returned_to_lobby(data: Dictionary) -> void:
+	print("[Lobby3D] Room returned to lobby: ", data.get("code", ""))
+	current_room_code = str(data.get("code", current_room_code))
+	is_host = (Network and Network.my_peer_id == str(data.get("hostId", ""))) or (Network and Network.is_host)
+	is_ready = is_host
+	
+	var r_players = []
+	for p in data.get("players", []):
+		r_players.append(p)
+	
+	active_rooms[current_room_code] = {
+		"name": str(data.get("name", "Room")),
+		"code": current_room_code,
+		"host": str(data.get("hostName", "Host")),
+		"host_id": str(data.get("hostId", "")),
+		"max_players": int(data.get("maxPlayers", 8)),
+		"rounds": int(data.get("rounds", 3)),
+		"map": str(data.get("map", "CASTLE")),
+		"is_private": bool(data.get("isPrivate", false)),
+		"phase": "lobby",
+		"players": r_players
+	}
+	_update_room_lobby_ui()
+
+func _on_network_player_state_updated(data: Dictionary) -> void:
+	if active_rooms.has(current_room_code):
+		var r = active_rooms[current_room_code]
+		if data.has("players") and typeof(data["players"]) == TYPE_ARRAY:
+			r["players"] = data["players"].duplicate()
+		else:
+			var p_id = str(data.get("id", ""))
+			for p in r["players"]:
+				if typeof(p) == TYPE_DICTIONARY and str(p.get("id")) == p_id:
+					if data.has("isInGame"): p["isInGame"] = bool(data["isInGame"])
+					if data.has("isReady"): p["isReady"] = bool(data["isReady"])
+					break
 		_update_room_lobby_ui()
 
 func _on_network_player_left(data: Dictionary) -> void:
@@ -516,13 +561,17 @@ func _update_room_lobby_ui() -> void:
 		_show_browser_view()
 		return
 	
-	var r = active_rooms[current_room_code]
+	var room_phase = str(r.get("phase", "lobby"))
 	
 	# Header
 	room_header_lbl.text = r["name"].to_upper()
 	room_code_lbl.text = r["code"]
-	player_count_header.text = "PLAYERS (%d / %d)" % [r["players"].size(), r["max_players"]]
-	player_count_header.modulate = Color(0.4, 0.85, 1.0)
+	if room_phase == "playing":
+		player_count_header.text = "PLAYERS (%d / %d)  [⚔ IN PROGRESS]" % [r["players"].size(), r["max_players"]]
+		player_count_header.modulate = Color(1.0, 0.85, 0.3)
+	else:
+		player_count_header.text = "PLAYERS (%d / %d)" % [r["players"].size(), r["max_players"]]
+		player_count_header.modulate = Color(0.4, 0.85, 1.0)
 	
 	# Player List
 	_update_player_slots(r)
@@ -607,6 +656,7 @@ func _update_player_slots(r: Dictionary) -> void:
 		var p_name = ""
 		var p_is_host = false
 		var p_is_ready = false
+		var p_in_game = false
 		
 		if is_occupied:
 			var item = r["players"][i]
@@ -616,16 +666,37 @@ func _update_player_slots(r: Dictionary) -> void:
 				p_name = str(item.get("name", "Player %d" % (i + 1)))
 				p_is_host = bool(item.get("isHost", i == 0))
 				p_is_ready = bool(item.get("isReady", false))
+				p_in_game = bool(item.get("isInGame", false))
 			else:
 				p_name = str(item)
 				p_is_host = (i == 0)
 				p_is_ready = false
+				p_in_game = false
 			
 			# Clean up any leftover duplicate "(Host)"
 			while p_name.ends_with("(Host)"):
 				p_name = p_name.trim_suffix("(Host)").strip_edges()
 			
-			if p_is_host:
+			var is_room_playing = (str(r.get("phase", "lobby")) == "playing")
+			
+			if p_in_game:
+				sb.bg_color = Color(0.06, 0.20, 0.35, 0.9)
+				sb.border_color = Color(0.3, 0.85, 1.0, 0.95)
+				if p_is_host:
+					icon_lbl.text = "★"
+					icon_lbl.modulate = Color(1.0, 0.85, 0.2)
+					name_lbl.text = p_name
+					name_lbl.modulate = Color(1.0, 0.9, 0.35)
+					status_badge.text = "[HOST - IN GAME]"
+					status_badge.modulate = Color(0.3, 0.85, 1.0)
+				else:
+					icon_lbl.text = "⚔"
+					icon_lbl.modulate = Color(0.3, 0.85, 1.0)
+					name_lbl.text = p_name
+					name_lbl.modulate = Color(0.85, 0.95, 1.0)
+					status_badge.text = "[IN GAME]"
+					status_badge.modulate = Color(0.3, 0.85, 1.0)
+			elif p_is_host:
 				sb.bg_color = Color(0.12, 0.22, 0.45, 0.9)
 				sb.border_color = Color(1.0, 0.85, 0.3, 0.85)
 				icon_lbl.text = "★"
@@ -635,7 +706,16 @@ func _update_player_slots(r: Dictionary) -> void:
 				status_badge.text = "[HOST]"
 				status_badge.modulate = Color(1.0, 0.85, 0.2)
 			else:
-				if p_is_ready:
+				if is_room_playing:
+					sb.bg_color = Color(0.07, 0.16, 0.26, 0.85)
+					sb.border_color = Color(0.9, 0.75, 0.2, 0.7)
+					icon_lbl.text = "⏳"
+					icon_lbl.modulate = Color(0.95, 0.85, 0.3)
+					name_lbl.text = p_name
+					name_lbl.modulate = Color(0.9, 0.92, 1.0)
+					status_badge.text = "[WAITING IN LOBBY]"
+					status_badge.modulate = Color(0.95, 0.85, 0.3)
+				elif p_is_ready:
 					sb.bg_color = Color(0.08, 0.22, 0.16, 0.85)
 					sb.border_color = Color(0.2, 0.85, 0.4, 0.8)
 					icon_lbl.text = "✓"
@@ -786,6 +866,10 @@ func _on_action_pressed() -> void:
 	if is_host:
 		if active_rooms.has(current_room_code):
 			var r = active_rooms[current_room_code]
+			if str(r.get("phase", "lobby")) == "playing":
+				player_count_header.text = "MATCH ALREADY IN PROGRESS"
+				player_count_header.modulate = Color(1.0, 0.4, 0.4)
+				return
 			var unready_names: Array = []
 			for p in r["players"]:
 				var p_is_host = false

@@ -51,6 +51,7 @@ export interface ActivePlayer {
   hp: number;
   invincibleUntil: number;
   isReady: boolean;
+  isInGame?: boolean;
   lastTackleTime?: number;
 }
 
@@ -117,7 +118,8 @@ function cleanupGhostRooms() {
               id: pl.id,
               name: pl.name,
               isHost: pl.id === r.hostId,
-              isReady: pl.id === r.hostId ? true : Boolean(pl.isReady)
+              isReady: pl.id === r.hostId ? true : Boolean(pl.isReady),
+              isInGame: Boolean(pl.isInGame)
             });
           });
           broadcastToRoom(r, "host_changed", {
@@ -429,7 +431,8 @@ wss.on("connection", (ws: WebSocket, req: any) => {
             rescueCount: 0,
             hp: 100,
             invincibleUntil: 0,
-            isReady: true // Host is ready by default
+            isReady: true, // Host is ready by default
+            isInGame: false
           };
 
           newRoom.players.set(myPlayerId, p);
@@ -445,7 +448,8 @@ wss.on("connection", (ws: WebSocket, req: any) => {
             rounds,
             map,
             isPrivate,
-            players: [{ id: p.id, name: p.name, isHost: true, isReady: true }]
+            phase: "lobby",
+            players: [{ id: p.id, name: p.name, isHost: true, isReady: true, isInGame: false }]
           });
           console.log(`[WS Server] Room created: ${code} (${isPrivate ? "PRIVATE" : "PUBLIC"}) by ${pName}`);
           break;
@@ -500,10 +504,6 @@ wss.on("connection", (ws: WebSocket, req: any) => {
             return;
           }
           failedJoinAttempts = 0; // Reset on valid room code
-          if (room.phase !== "lobby") {
-            sendTo(ws, "error", { message: `Match already in progress for room "${code}"` });
-            return;
-          }
           const isKicked =
             (room.kickedPlayerIds && room.kickedPlayerIds.has(myPlayerId)) ||
             (clientIp && room.kickedIps && room.kickedIps.has(clientIp)) ||
@@ -538,7 +538,8 @@ wss.on("connection", (ws: WebSocket, req: any) => {
             rescueCount: 0,
             hp: 100,
             invincibleUntil: 0,
-            isReady: false // Non-host joins as not ready
+            isReady: false, // Non-host joins as not ready
+            isInGame: false // Newcomer waits in lobby
           };
 
           room.players.set(myPlayerId, newPlayer);
@@ -548,7 +549,8 @@ wss.on("connection", (ws: WebSocket, req: any) => {
             id: pl.id,
             name: pl.name,
             isHost: pl.id === room.hostId,
-            isReady: pl.id === room.hostId ? true : Boolean(pl.isReady)
+            isReady: pl.id === room.hostId ? true : Boolean(pl.isReady),
+            isInGame: Boolean(pl.isInGame)
           }));
 
           sendTo(ws, "room_joined", {
@@ -560,6 +562,7 @@ wss.on("connection", (ws: WebSocket, req: any) => {
             rounds: room.rounds,
             map: room.map,
             isPrivate: room.isPrivate,
+            phase: room.phase,
             players: pList
           });
 
@@ -568,6 +571,7 @@ wss.on("connection", (ws: WebSocket, req: any) => {
             name: newPlayer.name,
             isHost: false,
             isReady: false,
+            isInGame: false,
             playersCount: room.players.size,
             maxPlayers: room.maxPlayers
           }, ws);
@@ -605,7 +609,8 @@ wss.on("connection", (ws: WebSocket, req: any) => {
             id: pl.id,
             name: pl.name,
             isHost: pl.id === room.hostId,
-            isReady: pl.id === room.hostId ? true : Boolean(pl.isReady)
+            isReady: pl.id === room.hostId ? true : Boolean(pl.isReady),
+            isInGame: Boolean(pl.isInGame)
           }));
 
           broadcastToRoom(room, "player_ready_updated", {
@@ -645,47 +650,92 @@ wss.on("connection", (ws: WebSocket, req: any) => {
           break;
         }
 
-        // Return to Lobby (Host)
+        // Return to Lobby (Host or Individual Player)
         case "return_to_lobby": {
-          if (!currentRoom || currentRoom.hostId !== myPlayerId) return;
+          if (!currentRoom) return;
           const room = currentRoom;
-          room.phase = "lobby";
-          if (room.timerInterval) clearInterval(room.timerInterval);
-          if (room.itemSpawnInterval) clearInterval(room.itemSpawnInterval);
-          room.items.clear();
-          room.currentRound = 1;
-          room.runnersScore = 0;
-          room.taggersScore = 0;
 
-          room.players.forEach(p => {
-            p.frozen = false;
-            p.isRescuing = false;
-            p.hasShield = false;
-            p.heldItem = "";
-            p.freezeCount = 0;
-            p.rescueCount = 0;
-            p.hp = 100;
-            p.invincibleUntil = 0;
-            p.isReady = (p.id === room.hostId); // Host is ready, non-hosts must ready up again
-          });
+          if (room.hostId === myPlayerId) {
+            // Host returns the entire room to lobby
+            room.phase = "lobby";
+            if (room.timerInterval) clearInterval(room.timerInterval);
+            if (room.itemSpawnInterval) clearInterval(room.itemSpawnInterval);
+            room.items.clear();
+            room.currentRound = 1;
+            room.runnersScore = 0;
+            room.taggersScore = 0;
 
-          const pList = Array.from(room.players.values()).map(pl => ({
-            id: pl.id,
-            name: pl.name,
-            isHost: pl.id === room.hostId,
-            isReady: pl.id === room.hostId ? true : Boolean(pl.isReady)
-          }));
+            room.players.forEach(p => {
+              p.isInGame = false;
+              p.frozen = false;
+              p.isRescuing = false;
+              p.hasShield = false;
+              p.heldItem = "";
+              p.freezeCount = 0;
+              p.rescueCount = 0;
+              p.hp = 100;
+              p.invincibleUntil = 0;
+              p.isReady = (p.id === room.hostId); // Host is ready, non-hosts must ready up again
+            });
 
-          broadcastToRoom(room, "returned_to_lobby", {
-            code: room.code,
-            name: room.name,
-            hostId: room.hostId,
-            maxPlayers: room.maxPlayers,
-            rounds: room.rounds,
-            map: room.map,
-            isPrivate: room.isPrivate,
-            players: pList
-          });
+            const pList = Array.from(room.players.values()).map(pl => ({
+              id: pl.id,
+              name: pl.name,
+              isHost: pl.id === room.hostId,
+              isReady: pl.id === room.hostId ? true : Boolean(pl.isReady),
+              isInGame: false
+            }));
+
+            broadcastToRoom(room, "returned_to_lobby", {
+              code: room.code,
+              name: room.name,
+              hostId: room.hostId,
+              maxPlayers: room.maxPlayers,
+              rounds: room.rounds,
+              map: room.map,
+              isPrivate: room.isPrivate,
+              phase: "lobby",
+              players: pList
+            });
+          } else {
+            // Non-host player returns to lobby individually
+            const p = room.players.get(myPlayerId);
+            if (p) {
+              p.isInGame = false;
+              p.isReady = false;
+            }
+
+            const pList = Array.from(room.players.values()).map(pl => ({
+              id: pl.id,
+              name: pl.name,
+              isHost: pl.id === room.hostId,
+              isReady: pl.id === room.hostId ? true : Boolean(pl.isReady),
+              isInGame: Boolean(pl.isInGame)
+            }));
+
+            sendTo(ws, "returned_to_lobby", {
+              code: room.code,
+              name: room.name,
+              hostId: room.hostId,
+              maxPlayers: room.maxPlayers,
+              rounds: room.rounds,
+              map: room.map,
+              isPrivate: room.isPrivate,
+              phase: room.phase,
+              players: pList
+            });
+
+            broadcastToRoom(room, "player_state_updated", {
+              id: myPlayerId,
+              isInGame: false,
+              isReady: false,
+              players: pList
+            }, ws);
+
+            if (room.phase === "playing") {
+              check3DEndCondition(room);
+            }
+          }
           break;
         }
 
@@ -729,7 +779,8 @@ wss.on("connection", (ws: WebSocket, req: any) => {
             id: pl.id,
             name: pl.name,
             isHost: pl.id === room.hostId,
-            isReady: pl.id === room.hostId ? true : Boolean(pl.isReady)
+            isReady: pl.id === room.hostId ? true : Boolean(pl.isReady),
+            isInGame: Boolean(pl.isInGame)
           }));
 
           broadcastToRoom(room, "player_left", {
@@ -773,7 +824,8 @@ wss.on("connection", (ws: WebSocket, req: any) => {
                       id: pl.id,
                       name: pl.name,
                       isHost: pl.id === roomToLeave.hostId,
-                      isReady: pl.id === roomToLeave.hostId ? true : Boolean(pl.isReady)
+                      isReady: pl.id === roomToLeave.hostId ? true : Boolean(pl.isReady),
+                      isInGame: Boolean(pl.isInGame)
                     });
                   });
                   broadcastToRoom(roomToLeave, "host_changed", {
@@ -1069,7 +1121,8 @@ wss.on("connection", (ws: WebSocket, req: any) => {
                 id: pl.id,
                 name: pl.name,
                 isHost: pl.id === room.hostId,
-                isReady: pl.id === room.hostId ? true : Boolean(pl.isReady)
+                isReady: pl.id === room.hostId ? true : Boolean(pl.isReady),
+                isInGame: Boolean(pl.isInGame)
               });
             });
             broadcastToRoom(room, "host_changed", {
@@ -1143,6 +1196,7 @@ function start3DRound(room: Active3DRoom) {
 
   pKeys.forEach((id, i) => {
     const p = room.players.get(id)!;
+    p.isInGame = true;
     p.role = i === taggerIdx ? "tagger" : "runner";
     p.frozen = false;
     p.isRescuing = false;
@@ -1318,6 +1372,7 @@ function check3DEndCondition(room: Active3DRoom) {
   let totalRunners = 0;
 
   room.players.forEach(p => {
+    if (!p.isInGame) return;
     if (p.role === "tagger") {
       taggersCount++;
     } else if (p.role === "runner") {

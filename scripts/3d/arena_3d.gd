@@ -885,6 +885,7 @@ func _on_lobby_pressed() -> void:
 		if Network.is_host:
 			Network.return_to_lobby()
 		else:
+			Network.return_to_lobby()
 			Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 			get_tree().change_scene_to_file("res://scenes/3d/lobby_3d.tscn")
 		return

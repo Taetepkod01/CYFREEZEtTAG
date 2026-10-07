@@ -13,6 +13,7 @@ signal player_left(data: Dictionary)
 signal host_changed(new_host_id: String)
 signal player_name_updated(data: Dictionary)
 signal player_ready_updated(data: Dictionary)
+signal player_state_updated(data: Dictionary)
 signal settings_updated(data: Dictionary)
 signal public_rooms_updated(rooms: Array)
 signal player_kicked(reason: String)
@@ -215,7 +216,9 @@ func _handle_server_message(raw_text: String) -> void:
 				room_data["players"].append({
 					"id": data.get("id"),
 					"name": data.get("name"),
-					"isHost": data.get("isHost", false)
+					"isHost": data.get("isHost", false),
+					"isReady": data.get("isReady", false),
+					"isInGame": data.get("isInGame", false)
 				})
 			player_joined.emit(data)
 			player_list_updated.emit()
@@ -349,6 +352,7 @@ func _handle_server_message(raw_text: String) -> void:
 		"returned_to_lobby":
 			room_data = data
 			returned_to_lobby.emit(data)
+			player_list_updated.emit()
 			game_ended.emit(str(data.get("winner", "")))
 			
 		"player_ready_updated":
@@ -362,6 +366,21 @@ func _handle_server_message(raw_text: String) -> void:
 						p["isReady"] = p_ready
 						break
 			player_ready_updated.emit(data)
+			player_list_updated.emit()
+			
+		"player_state_updated":
+			if data.has("players") and typeof(data["players"]) == TYPE_ARRAY:
+				room_data["players"] = data["players"]
+			elif room_data.has("players") and typeof(room_data["players"]) == TYPE_ARRAY:
+				var p_id = str(data.get("id", ""))
+				for p in room_data["players"]:
+					if typeof(p) == TYPE_DICTIONARY and str(p.get("id")) == p_id:
+						if data.has("isInGame"):
+							p["isInGame"] = bool(data["isInGame"])
+						if data.has("isReady"):
+							p["isReady"] = bool(data["isReady"])
+						break
+			player_state_updated.emit(data)
 			player_list_updated.emit()
 			
 		"public_rooms_updated":
