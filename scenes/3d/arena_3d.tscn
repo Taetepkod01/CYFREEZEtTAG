@@ -433,6 +433,7 @@ text = "1"
 horizontal_alignment = 1
 
 [node name="PlayerStatusPanel" type="Panel" parent="HUD" unique_id=1419113838]
+visible = false
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
@@ -475,51 +476,6 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 4
 
-[node name="GameLogPanel" type="Panel" parent="HUD" unique_id=1141953648]
-anchors_preset = 6
-anchor_left = 1.0
-anchor_top = 0.5
-anchor_right = 1.0
-anchor_bottom = 0.5
-offset_left = -220.0
-offset_top = -30.0
-offset_right = -20.0
-offset_bottom = 110.0
-grow_horizontal = 0
-grow_vertical = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_card")
-
-[node name="Title" type="Label" parent="HUD/GameLogPanel" unique_id=1423048791]
-layout_mode = 1
-anchors_preset = 5
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = -85.0
-offset_top = 5.0
-offset_right = 85.0
-offset_bottom = 22.0
-grow_horizontal = 2
-theme_override_colors/font_color = Color(1, 0.88, 0.4, 1)
-theme_override_font_sizes/font_size = 11
-text = "GAME LOG"
-horizontal_alignment = 1
-
-[node name="LogContent" type="RichTextLabel" parent="HUD/GameLogPanel" unique_id=1397149071]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = 6.0
-offset_top = 24.0
-offset_right = -6.0
-offset_bottom = -4.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_font_sizes/normal_font_size = 9
-theme_override_font_sizes/bold_font_size = 9
-bbcode_enabled = true
-scroll_following = true
-
 [node name="ControlHint" type="Label" parent="HUD" unique_id=2036088009]
 anchors_preset = 7
 anchor_left = 0.5
@@ -534,7 +490,7 @@ grow_horizontal = 2
 grow_vertical = 0
 theme_override_colors/font_color = Color(0.7, 0.85, 1, 0.65)
 theme_override_font_sizes/font_size = 11
-text = "[WASD] Move | [SPACE] Jump | [E] Use Item | [CLICK] Lock Camera | [ALT / ESC] Free Mouse"
+text = "[WASD] Move | [SPACE] Jump | [E] Use Item | [TAB] Players | [CLICK] Lock Camera | [ALT / ESC] Free Mouse"
 horizontal_alignment = 1
 
 [node name="BottomInventoryPanel" type="Panel" parent="HUD" unique_id=396244817]

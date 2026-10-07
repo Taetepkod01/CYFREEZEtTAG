@@ -27,9 +27,9 @@ var current_map_node: Node3D = null
 @onready var taggers_count_lbl: Label = $HUD/TopBar/TaggersBox/Count
 @onready var timer_lbl: Label = $HUD/TopBar/TimerBox/TimerLabel
 @onready var round_lbl: Label = $HUD/TopBar/TimerBox/RoundLabel
+@onready var status_panel: Panel = $HUD/PlayerStatusPanel
 @onready var status_container: VBoxContainer = $HUD/PlayerStatusPanel/Scroll/VBox
 @onready var status_title_lbl: Label = $HUD/PlayerStatusPanel/Title
-@onready var game_log_lbl: RichTextLabel = $HUD/GameLogPanel/LogContent
 @onready var minimap: Control = $HUD/MinimapPanel/Minimap
 @onready var item_btn: Button = $HUD/BottomInventoryPanel/ItemButton
 @onready var item_name_lbl: Label = $HUD/BottomInventoryPanel/ItemButton/ItemName
@@ -78,7 +78,13 @@ var item_spawn_timer: float = 4.0
 # Practice Mode Role ("random", "tagger", or "runner")
 var practice_role: String = "random"
 
+# TAB Scoreboard overlay state
+var tab_pressed_time: float = 0.0
+var scoreboard_toggled: bool = false
+
 func _ready() -> void:
+	if status_panel:
+		status_panel.visible = false
 	game_over_panel.visible = false
 	menu_modal.visible = false
 	practice_role_modal.visible = false
@@ -231,9 +237,23 @@ func _connect_network_signals() -> void:
 		Network.chat_received.connect(func(msg): add_game_log(msg))
 
 func _unhandled_input(event: InputEvent) -> void:
-	if event is InputEventKey and event.pressed and not event.echo:
-		if event.keycode == KEY_ESCAPE:
+	if event is InputEventKey and not event.echo:
+		if event.keycode == KEY_ESCAPE and event.pressed:
 			_toggle_menu_modal()
+		elif event.keycode == KEY_TAB:
+			if is_instance_valid(status_panel):
+				if event.pressed:
+					tab_pressed_time = Time.get_ticks_msec() / 1000.0
+					status_panel.visible = true
+					_update_hud()
+				else:
+					var held_duration = (Time.get_ticks_msec() / 1000.0) - tab_pressed_time
+					if held_duration < 0.25:
+						scoreboard_toggled = not scoreboard_toggled
+						status_panel.visible = scoreboard_toggled
+					else:
+						scoreboard_toggled = false
+						status_panel.visible = false
 
 func _process(delta: float) -> void:
 	if not is_game_active:
@@ -682,7 +702,7 @@ func _on_item_button_pressed() -> void:
 		local_player.use_held_item()
 
 func add_game_log(msg: String) -> void:
-	game_log_lbl.append_text(msg + "\n")
+	print("[GameLog] ", msg.replace("[color=#", "").replace("[/color]", "").replace(">> ", ""))
 
 # -- Single Item Slot UI Update ----------------------------------------------
 func _update_item_slot(item_name: String) -> void:
@@ -718,66 +738,69 @@ func _update_hud() -> void:
 	var taggers_count = 0
 	var total_players = player_nodes.size()
 	
-	for child in status_container.get_children():
-		child.queue_free()
-	
 	for p in player_nodes:
 		if p.role == "tagger":
 			taggers_count += 1
 		else:
 			if not p.is_frozen:
 				runners_count += 1
-		
-		var row = HBoxContainer.new()
-		row.custom_minimum_size = Vector2(0, 20)
-		row.alignment = BoxContainer.ALIGNMENT_BEGIN
-		
-		# Vector dot indicator (immune to font/emoji missing glyph issues)
-		var dot = Panel.new()
-		dot.custom_minimum_size = Vector2(8, 8)
-		dot.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		var dot_style = StyleBoxFlat.new()
-		dot_style.corner_radius_top_left = 4
-		dot_style.corner_radius_top_right = 4
-		dot_style.corner_radius_bottom_right = 4
-		dot_style.corner_radius_bottom_left = 4
-		
-		var name_lbl = Label.new()
-		name_lbl.text = " " + p.player_name
-		name_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		name_lbl.add_theme_font_size_override("font_size", 11)
-		name_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-		
-		var status_badge = Label.new()
-		status_badge.add_theme_font_size_override("font_size", 10)
-		
-		if p.is_frozen:
-			dot_style.bg_color = Color(0.3, 0.9, 1.0)
-			status_badge.text = "[FROZEN]"
-			status_badge.modulate = Color(0.3, 0.9, 1.0)
-		elif p.is_rescuing:
-			dot_style.bg_color = Color(1.0, 0.9, 0.2)
-			status_badge.text = "[RESCUING]"
-			status_badge.modulate = Color(1.0, 0.9, 0.2)
-		elif p.role == "tagger":
-			dot_style.bg_color = Color(1.0, 0.35, 0.35)
-			status_badge.text = "[TAGGER]"
-			status_badge.modulate = Color(1.0, 0.35, 0.35)
-		else:
-			dot_style.bg_color = Color(0.4, 0.95, 0.4)
-			status_badge.text = "[RUNNER]"
-			status_badge.modulate = Color(0.4, 0.95, 0.4)
-		
-		dot.add_theme_stylebox_override("panel", dot_style)
-		row.add_child(dot)
-		row.add_child(name_lbl)
-		row.add_child(status_badge)
-		status_container.add_child(row)
 	
 	runners_count_lbl.text = str(runners_count)
 	taggers_count_lbl.text = str(taggers_count)
 	round_lbl.text = "ROUND %d / %d" % [current_round, max_rounds]
 	status_title_lbl.text = "PLAYER STATUS   %d/%d" % [total_players, total_players]
+	
+	# Only populate player list when scoreboard is opened with [TAB]
+	if status_panel and status_panel.visible:
+		for child in status_container.get_children():
+			child.queue_free()
+		
+		for p in player_nodes:
+			var row = HBoxContainer.new()
+			row.custom_minimum_size = Vector2(0, 20)
+			row.alignment = BoxContainer.ALIGNMENT_BEGIN
+			
+			# Vector dot indicator (immune to font/emoji missing glyph issues)
+			var dot = Panel.new()
+			dot.custom_minimum_size = Vector2(8, 8)
+			dot.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+			var dot_style = StyleBoxFlat.new()
+			dot_style.corner_radius_top_left = 4
+			dot_style.corner_radius_top_right = 4
+			dot_style.corner_radius_bottom_right = 4
+			dot_style.corner_radius_bottom_left = 4
+			
+			var name_lbl = Label.new()
+			name_lbl.text = " " + p.player_name
+			name_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			name_lbl.add_theme_font_size_override("font_size", 11)
+			name_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+			
+			var status_badge = Label.new()
+			status_badge.add_theme_font_size_override("font_size", 10)
+			
+			if p.is_frozen:
+				dot_style.bg_color = Color(0.3, 0.9, 1.0)
+				status_badge.text = "[FROZEN]"
+				status_badge.modulate = Color(0.3, 0.9, 1.0)
+			elif p.is_rescuing:
+				dot_style.bg_color = Color(1.0, 0.9, 0.2)
+				status_badge.text = "[RESCUING]"
+				status_badge.modulate = Color(1.0, 0.9, 0.2)
+			elif p.role == "tagger":
+				dot_style.bg_color = Color(1.0, 0.35, 0.35)
+				status_badge.text = "[TAGGER]"
+				status_badge.modulate = Color(1.0, 0.35, 0.35)
+			else:
+				dot_style.bg_color = Color(0.4, 0.95, 0.4)
+				status_badge.text = "[RUNNER]"
+				status_badge.modulate = Color(0.4, 0.95, 0.4)
+			
+			dot.add_theme_stylebox_override("panel", dot_style)
+			row.add_child(dot)
+			row.add_child(name_lbl)
+			row.add_child(status_badge)
+			status_container.add_child(row)
 	
 	if local_player:
 		player_tag_name.text = local_player.player_name

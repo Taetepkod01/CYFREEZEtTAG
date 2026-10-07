@@ -28,6 +28,7 @@ const TAG_COOLDOWN: float = 0.35
 @export var run_speed: float = 11.0
 @export var jump_velocity: float = 5.8
 @export var mouse_sensitivity: float = 0.0025
+const ANIM_SPEED_SCALE_FACTOR: float = 0.33 # Calibrated for 1.1s cycle stride: 7.5 m/s -> ~2.5x speed scale
 
 var gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity", 9.8)
 
@@ -175,9 +176,11 @@ func _physics_process(delta: float) -> void:
 			if is_frozen:
 				if r_anim.is_playing():
 					r_anim.pause()
-			elif dist > 0.05:
+			elif dist > 0.04:
 				if not r_anim.is_playing() or r_anim.current_animation != "ArmatureAction":
 					r_anim.play("ArmatureAction")
+				var remote_speed = dist / max(delta, 0.001)
+				r_anim.speed_scale = clamp(remote_speed * ANIM_SPEED_SCALE_FACTOR, 0.2, 5.5)
 			else:
 				if r_anim.is_playing():
 					r_anim.stop()
@@ -258,10 +261,11 @@ func _physics_process(delta: float) -> void:
 	var active_anim: AnimationPlayer = snowman_anim if role == "tagger" else penguin_anim
 	if active_anim:
 		var horiz_vel = Vector2(velocity.x, velocity.z)
-		if is_on_floor() and horiz_vel.length() > 0.4:
+		var current_ground_speed = horiz_vel.length()
+		if is_on_floor() and current_ground_speed > 0.3:
 			if not active_anim.is_playing() or active_anim.current_animation != "ArmatureAction":
 				active_anim.play("ArmatureAction")
-			active_anim.speed_scale = clamp(horiz_vel.length() / walk_speed, 0.7, 1.8)
+			active_anim.speed_scale = clamp(current_ground_speed * ANIM_SPEED_SCALE_FACTOR, 0.2, 5.5)
 		else:
 			if active_anim.is_playing():
 				active_anim.stop()
