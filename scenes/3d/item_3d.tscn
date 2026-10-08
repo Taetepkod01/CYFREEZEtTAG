@@ -1,0 +1,58 @@
+[gd_scene load_steps=10 format=3 uid="uid://b3ditem00001"]
+
+[ext_resource type="Script" path="res://scripts/3d/item_3d.gd" id="1_item3d"]
+[ext_resource type="PackedScene" uid="uid://btod2ume4536" path="res://assets/items/item_speed.glb" id="2_speed"]
+[ext_resource type="PackedScene" uid="uid://bilgkftj2id6p" path="res://assets/items/item_shield.glb" id="3_shield"]
+[ext_resource type="PackedScene" uid="uid://bcwjdkbicvmp0" path="res://assets/items/item_heater.glb" id="4_heater"]
+[ext_resource type="PackedScene" uid="uid://dn6kcjujj6dyg" path="res://assets/items/item_vortex.glb" id="5_vortex"]
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_pickup"]
+radius = 1.0
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_default"]
+albedo_color = Color(1, 0.85, 0.1, 1)
+metallic = 0.5
+roughness = 0.2
+emission_enabled = true
+emission = Color(1, 0.8, 0.1, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_crystal"]
+material = SubResource("StandardMaterial3D_default")
+size = Vector3(0.6, 0.6, 0.6)
+
+[node name="Item3D" type="Area3D"]
+collision_layer = 8
+collision_mask = 2
+script = ExtResource("1_item3d")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("SphereShape3D_pickup")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+transform = Transform3D(0.707107, -0.5, 0.5, 0, 0.707107, 0.707107, -0.707107, -0.5, 0.5, 0, 0, 0)
+visible = false
+mesh = SubResource("BoxMesh_crystal")
+
+[node name="SpeedModel" parent="." instance=ExtResource("2_speed")]
+transform = Transform3D(1.6, 0, 0, 0, 1.6, 0, 0, 0, 1.6, 0, -0.4, 0)
+visible = false
+
+[node name="ShieldModel" parent="." instance=ExtResource("3_shield")]
+transform = Transform3D(1.2, 0, 0, 0, 1.2, 0, 0, 0, 1.2, 0, -0.42, 0)
+visible = false
+
+[node name="HeaterModel" parent="." instance=ExtResource("4_heater")]
+transform = Transform3D(3.8, 0, 0, 0, 3.8, 0, 0, 0, 3.8, 0, -0.38, 0)
+visible = false
+
+[node name="VortexModel" parent="." instance=ExtResource("5_vortex")]
+transform = Transform3D(1.6, 0, 0, 0, 1.6, 0, 0, 0, 1.6, 0, -0.24, 0)
+visible = false
+
+[node name="Label3D" type="Label3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0)
+billboard = 1
+double_sided = false
+text = "SPEED"
+font_size = 18
+outline_size = 3

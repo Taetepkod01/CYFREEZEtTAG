@@ -1,0 +1,8 @@
+# Godot 4+ specific ignores
+.godot/
+/android/
+
+# Node server ignores
+server/node_modules/
+server/build/
+*.log

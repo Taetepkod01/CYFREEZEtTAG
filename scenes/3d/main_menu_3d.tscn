@@ -1,0 +1,483 @@
+[gd_scene format=3 uid="uid://b3dmenu00001"]
+
+[ext_resource type="Script" uid="uid://dtrl5k858xhrd" path="res://scripts/3d/main_menu_3d.gd" id="1_menu3d"]
+[ext_resource type="Texture2D" uid="uid://dt81ypwyhbkk8" path="res://assets/ui/ice_frame_border.png" id="2_ice_frame"]
+[ext_resource type="FontFile" uid="uid://dnk82lv14wm8o" path="res://assets/fonts/Audiowide.ttf" id="3_font_audio"]
+[ext_resource type="Texture2D" uid="uid://cjfg7klsmanox" path="res://assets/ui/buttons/title_logo.png" id="4_title_logo"]
+[ext_resource type="Texture2D" uid="uid://tm1uihde7vtu" path="res://assets/ui/buttons/btn_play.png" id="5_btn_play"]
+[ext_resource type="Texture2D" uid="uid://dai41lyvrrbqn" path="res://assets/ui/buttons/btn_practice.png" id="6_btn_practice"]
+[ext_resource type="Texture2D" uid="uid://be6yq0noxmwma" path="res://assets/ui/buttons/btn_how_to_play.png" id="7_btn_settings"]
+[ext_resource type="Texture2D" uid="uid://27oqy4xcpv6w" path="res://assets/ui/buttons/btn_quit.png" id="8_btn_quit"]
+[ext_resource type="Texture2D" uid="uid://b174lmscwy0yd" path="res://assets/ui/buttons/btn_role_random_off.png" id="9_role_random_off"]
+[ext_resource type="Texture2D" uid="uid://ud2yuicnxke7" path="res://assets/ui/buttons/btn_role_tagger_off.png" id="10_role_tagger_off"]
+[ext_resource type="Texture2D" uid="uid://cf8qyh3h5a3c1" path="res://assets/ui/buttons/btn_role_runner_on.png" id="11_role_runner_on"]
+[ext_resource type="Texture2D" uid="uid://cg4g1mia7rv1t" path="res://assets/ui/buttons/btn_start_practice.png" id="12_btn_start_practice"]
+[ext_resource type="Texture2D" uid="uid://0dn25e7bteoo" path="res://assets/ui/buttons/btn_cancel.png" id="13_btn_cancel"]
+[ext_resource type="Texture2D" uid="uid://yipdldjg6ll5" path="res://assets/ui/buttons/btn_close.png" id="14_btn_close"]
+[ext_resource type="Texture2D" uid="uid://cntabkqg4t2dk" path="res://assets/ui/panels/panel_practice_modal.png" id="15_panel_practice"]
+
+[sub_resource type="Curve" id="Curve_particles"]
+_data = [Vector2(0, 0.4), 0.0, 0.0, 0, 0, Vector2(0.5, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
+point_count = 3
+
+[sub_resource type="Gradient" id="Gradient_particles"]
+colors = PackedColorArray(0.8, 0.95, 1, 0.7, 0.3, 0.7, 1, 0)
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_practice"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_modal_ice"]
+bg_color = Color(0.03, 0.08, 0.18, 0.95)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.2, 0.8, 1, 0.95)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
+shadow_color = Color(0, 0.5, 0.95, 0.35)
+shadow_size = 20
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_auth"]
+bg_color = Color(0.03, 0.08, 0.18, 0.97)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.2, 0.8, 1, 0.95)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
+shadow_color = Color(0, 0.5, 0.95, 0.35)
+shadow_size = 20
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_auth_input"]
+content_margin_left = 12.0
+content_margin_top = 8.0
+content_margin_right = 12.0
+content_margin_bottom = 8.0
+bg_color = Color(0.06, 0.13, 0.24, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.2, 0.65, 0.85, 0.85)
+corner_radius_top_left = 7
+corner_radius_top_right = 7
+corner_radius_bottom_right = 7
+corner_radius_bottom_left = 7
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_auth_button"]
+bg_color = Color(0.05, 0.42, 0.62, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_auth_button_hover"]
+bg_color = Color(0.08, 0.58, 0.78, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[node name="MainMenu3D" type="Control" unique_id=646906610]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_menu3d")
+
+[node name="Background" type="ColorRect" parent="." unique_id=153217506]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.03, 0.07, 0.18, 1)
+
+[node name="Snowflakes" type="CPUParticles2D" parent="." unique_id=233906031]
+position = Vector2(576, -20)
+amount = 45
+lifetime = 8.0
+preprocess = 4.0
+emission_shape = 3
+emission_rect_extents = Vector2(600, 10)
+direction = Vector2(0.2, 1)
+spread = 20.0
+gravity = Vector2(0, 15)
+initial_velocity_min = 20.0
+initial_velocity_max = 50.0
+scale_amount_min = 2.0
+scale_amount_max = 4.0
+scale_amount_curve = SubResource("Curve_particles")
+color_ramp = SubResource("Gradient_particles")
+
+[node name="IceBorderOverlay" type="TextureRect" parent="." unique_id=949853337]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("2_ice_frame")
+expand_mode = 1
+
+[node name="TitleLogo" type="TextureRect" parent="." unique_id=1434559025]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -307.0
+offset_top = 40.0
+offset_right = 308.0
+offset_bottom = 165.0
+grow_horizontal = 2
+pivot_offset = Vector2(307, 62)
+texture = ExtResource("4_title_logo")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="MenuButtons" type="VBoxContainer" parent="." unique_id=203857946]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -115.0
+offset_top = -15.0
+offset_right = 115.0
+offset_bottom = 225.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 10
+alignment = 1
+
+[node name="PlayOnlineBtn" type="TextureButton" parent="MenuButtons" unique_id=1077905476]
+custom_minimum_size = Vector2(225, 49)
+layout_mode = 2
+texture_normal = ExtResource("5_btn_play")
+stretch_mode = 5
+
+[node name="PracticeBtn" type="TextureButton" parent="MenuButtons" unique_id=57100972]
+custom_minimum_size = Vector2(225, 49)
+layout_mode = 2
+texture_normal = ExtResource("6_btn_practice")
+stretch_mode = 5
+
+[node name="HowToPlayBtn" type="TextureButton" parent="MenuButtons" unique_id=367308847]
+custom_minimum_size = Vector2(225, 49)
+layout_mode = 2
+texture_normal = ExtResource("7_btn_settings")
+stretch_mode = 5
+
+[node name="QuitBtn" type="TextureButton" parent="MenuButtons" unique_id=1997862845]
+custom_minimum_size = Vector2(225, 49)
+layout_mode = 2
+ignore_texture_size = true
+texture_normal = ExtResource("8_btn_quit")
+texture_hover = ExtResource("8_btn_quit")
+texture_pressed = ExtResource("8_btn_quit")
+stretch_mode = 5
+
+[node name="PracticeModal" type="Panel" parent="." unique_id=998048265]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -212.0
+offset_top = -190.0
+offset_right = 212.0
+offset_bottom = 190.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxEmpty_practice")
+
+[node name="Bg" type="TextureRect" parent="PracticeModal" unique_id=1238075011]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("15_panel_practice")
+expand_mode = 1
+
+[node name="RoleButtons" type="VBoxContainer" parent="PracticeModal" unique_id=1449802368]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -159.5
+offset_top = 87.0
+offset_right = 159.5
+offset_bottom = 251.0
+grow_horizontal = 2
+theme_override_constants/separation = 7
+
+[node name="RandomRoleBtn" type="TextureButton" parent="PracticeModal/RoleButtons" unique_id=615439443]
+custom_minimum_size = Vector2(319, 50)
+layout_mode = 2
+texture_normal = ExtResource("9_role_random_off")
+stretch_mode = 5
+
+[node name="TaggerRoleBtn" type="TextureButton" parent="PracticeModal/RoleButtons" unique_id=1162911907]
+custom_minimum_size = Vector2(319, 50)
+layout_mode = 2
+texture_normal = ExtResource("10_role_tagger_off")
+stretch_mode = 5
+
+[node name="RunnerRoleBtn" type="TextureButton" parent="PracticeModal/RoleButtons" unique_id=22914756]
+custom_minimum_size = Vector2(319, 50)
+layout_mode = 2
+texture_normal = ExtResource("11_role_runner_on")
+stretch_mode = 5
+
+[node name="StartPracticeBtn" type="TextureButton" parent="PracticeModal" unique_id=484649291]
+custom_minimum_size = Vector2(258, 47)
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -129.0
+offset_top = 271.0
+offset_right = 129.0
+offset_bottom = 318.0
+grow_horizontal = 2
+texture_normal = ExtResource("12_btn_start_practice")
+stretch_mode = 5
+
+[node name="ClosePracticeBtn" type="TextureButton" parent="PracticeModal" unique_id=811304944]
+custom_minimum_size = Vector2(132, 29)
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -66.0
+offset_top = 329.0
+offset_right = 66.0
+offset_bottom = 358.0
+grow_horizontal = 2
+texture_normal = ExtResource("13_btn_cancel")
+stretch_mode = 5
+
+[node name="RulesPanel" type="Panel" parent="." unique_id=1506270404]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -260.0
+offset_top = -210.0
+offset_right = 260.0
+offset_bottom = 210.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_modal_ice")
+
+[node name="Title" type="Label" parent="RulesPanel" unique_id=2070808066]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -180.0
+offset_top = 16.0
+offset_right = 180.0
+offset_bottom = 44.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(0.65, 0.92, 1, 1)
+theme_override_colors/font_shadow_color = Color(0, 0.5, 0.95, 0.9)
+theme_override_constants/shadow_outline_size = 6
+theme_override_fonts/font = ExtResource("3_font_audio")
+theme_override_font_sizes/font_size = 20
+text = "* HOW TO PLAY *"
+horizontal_alignment = 1
+
+[node name="Subtitle" type="Label" parent="RulesPanel" unique_id=792818319]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -150.0
+offset_top = 46.0
+offset_right = 150.0
+offset_bottom = 66.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(0.3, 0.8, 1, 1)
+theme_override_fonts/font = ExtResource("3_font_audio")
+theme_override_font_sizes/font_size = 11
+text = "GAME INSTRUCTIONS"
+horizontal_alignment = 1
+
+[node name="Content" type="RichTextLabel" parent="RulesPanel" unique_id=295505921]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 24.0
+offset_top = 74.0
+offset_right = -24.0
+offset_bottom = -55.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_fonts/normal_font = ExtResource("3_font_audio")
+theme_override_font_sizes/normal_font_size = 11
+bbcode_enabled = true
+text = "[color=#00e5ff][b]OBJECTIVE & RULES:[/b][/color]
+- [color=#ff5252]TAGGERS[/color] must tag all runners to freeze them in ice cubes!
+- [color=#69f0ae]RUNNERS[/color] must survive until time runs out, or touch frozen teammates to thaw them!
+
+[color=#ffe066][b]ITEMS & POWER-UPS ([E] to use):[/b][/color]
+- [b]Speed Boost:[/b] Move 1.3x faster for 6s
+- [b]Ice Shield:[/b] Blocks 1 freeze attempt
+- [b]Heater:[/b] Unfreezes yourself immediately
+- [b]Banana Trap:[/b] Drops behind you; slips enemies for 2.5s
+- [b]Dash Tackle:[/b] 2s immunity, deals 20 HP to tagger
+- [b]Vortex:[/b] Gravitational pull field
+
+[color=#a78bfa][b]3D CONTROLS:[/b][/color]
+- Mouse: Orbit Camera | WASD: Move | Space: Jump | E: Use Item"
+
+[node name="CloseBtn" type="TextureButton" parent="RulesPanel" unique_id=1377338712]
+custom_minimum_size = Vector2(140, 42)
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -70.0
+offset_top = -50.0
+offset_right = 70.0
+offset_bottom = -8.0
+grow_horizontal = 2
+grow_vertical = 0
+texture_normal = ExtResource("14_btn_close")
+stretch_mode = 5
+
+[node name="AuthPanel" type="Panel" parent="." unique_id=1982234001]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -230.0
+offset_top = -220.0
+offset_right = 230.0
+offset_bottom = 220.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_auth")
+
+[node name="AuthBox" type="VBoxContainer" parent="AuthPanel" unique_id=1982234002]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 38.0
+offset_top = 32.0
+offset_right = -38.0
+offset_bottom = -32.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 16
+alignment = 1
+
+[node name="AuthTitle" type="Label" parent="AuthPanel/AuthBox" unique_id=1982234003]
+custom_minimum_size = Vector2(0, 38)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.65, 0.92, 1, 1)
+theme_override_fonts/font = ExtResource("3_font_audio")
+theme_override_font_sizes/font_size = 23
+text = "PLAYER LOGIN"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="AuthSubtitle" type="Label" parent="AuthPanel/AuthBox" unique_id=1982234004]
+custom_minimum_size = Vector2(0, 34)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.72, 0.85, 0.94, 1)
+theme_override_fonts/font = ExtResource("3_font_audio")
+theme_override_font_sizes/font_size = 11
+text = "Sign in to continue to the game"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="EmailInput" type="LineEdit" parent="AuthPanel/AuthBox" unique_id=1982234005]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.97, 1, 1)
+theme_override_colors/font_placeholder_color = Color(0.55, 0.68, 0.78, 1)
+theme_override_fonts/font = ExtResource("3_font_audio")
+theme_override_font_sizes/font_size = 14
+theme_override_styles/normal = SubResource("StyleBoxFlat_auth_input")
+theme_override_styles/focus = SubResource("StyleBoxFlat_auth_input")
+placeholder_text = "Email address"
+virtual_keyboard_type = 5
+
+[node name="PasswordInput" type="LineEdit" parent="AuthPanel/AuthBox" unique_id=1982234006]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.97, 1, 1)
+theme_override_colors/font_placeholder_color = Color(0.55, 0.68, 0.78, 1)
+theme_override_fonts/font = ExtResource("3_font_audio")
+theme_override_font_sizes/font_size = 14
+theme_override_styles/normal = SubResource("StyleBoxFlat_auth_input")
+theme_override_styles/focus = SubResource("StyleBoxFlat_auth_input")
+placeholder_text = "Password (at least 6 characters)"
+secret = true
+secret_character = "*"
+
+[node name="AuthSubmitBtn" type="Button" parent="AuthPanel/AuthBox" unique_id=1982234007]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.94, 0.99, 1, 1)
+theme_override_fonts/font = ExtResource("3_font_audio")
+theme_override_font_sizes/font_size = 14
+theme_override_styles/normal = SubResource("StyleBoxFlat_auth_button")
+theme_override_styles/hover = SubResource("StyleBoxFlat_auth_button_hover")
+text = "SIGN IN"
+
+[node name="AuthToggleBtn" type="Button" parent="AuthPanel/AuthBox" unique_id=1982234008]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 0.85, 1, 1)
+theme_override_fonts/font = ExtResource("3_font_audio")
+theme_override_font_sizes/font_size = 11
+text = "New player? Create account"
+flat = true
+
+[node name="ServiceStatus" type="Label" parent="." unique_id=1982234009]
+visible = false
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -420.0
+offset_top = -58.0
+offset_right = 420.0
+offset_bottom = -20.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_fonts/font = ExtResource("3_font_audio")
+theme_override_font_sizes/font_size = 11
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 3

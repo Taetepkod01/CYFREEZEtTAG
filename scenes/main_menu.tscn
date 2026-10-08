@@ -1,0 +1,212 @@
+[gd_scene format=3 uid="uid://bmain0000001"]
+
+[ext_resource type="Script" uid="uid://dx1ouqjgb5q6m" path="res://scripts/main_menu.gd" id="1_menu"]
+
+[sub_resource type="Curve" id="Curve_particles"]
+_data = [Vector2(0, 0.5), 0.0, 0.0, 0, 0, Vector2(0.5, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
+point_count = 3
+
+[sub_resource type="Gradient" id="Gradient_particles"]
+colors = PackedColorArray(0.8, 0.95, 1, 0.8, 0.4, 0.8, 1, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
+bg_color = Color(0.04, 0.1, 0.22, 0.95)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.31, 0.76, 0.97, 0.8)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[node name="MainMenu" type="Control" unique_id=15703881]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_menu")
+
+[node name="Background" type="ColorRect" parent="." unique_id=945557097]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.05, 0.11, 0.29, 1)
+
+[node name="Snowflakes" type="CPUParticles2D" parent="." unique_id=475112859]
+position = Vector2(640, -20)
+amount = 45
+lifetime = 6.0
+preprocess = 3.0
+emission_shape = 3
+emission_rect_extents = Vector2(640, 10)
+direction = Vector2(0.2, 1)
+spread = 25.0
+gravity = Vector2(0, 20)
+initial_velocity_min = 25.0
+initial_velocity_max = 60.0
+scale_amount_min = 2.0
+scale_amount_max = 5.0
+scale_amount_curve = SubResource("Curve_particles")
+color_ramp = SubResource("Gradient_particles")
+
+[node name="Title" type="Label" parent="." unique_id=1993673701]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -300.0
+offset_top = 100.0
+offset_right = 300.0
+offset_bottom = 180.0
+grow_horizontal = 2
+pivot_offset = Vector2(300, 40)
+theme_override_colors/font_color = Color(1, 0.88, 0.4, 1)
+theme_override_colors/font_shadow_color = Color(0.02, 0.05, 0.15, 0.8)
+theme_override_constants/shadow_offset_x = 3
+theme_override_constants/shadow_offset_y = 4
+theme_override_font_sizes/font_size = 56
+text = "CP FREEZETAG"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Subtitle" type="Label" parent="." unique_id=1754225281]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -250.0
+offset_top = 180.0
+offset_right = 250.0
+offset_bottom = 220.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(0.7, 0.9, 1, 1)
+theme_override_font_sizes/font_size = 20
+text = " Real-Time Multiplayer Freeze Tag "
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="VBoxContainer" type="VBoxContainer" parent="." unique_id=832313037]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -160.0
+offset_top = -20.0
+offset_right = 160.0
+offset_bottom = 210.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 16
+
+[node name="PlayOnlineButton" type="Button" parent="VBoxContainer" unique_id=1723842578]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 1, 0.4, 1)
+theme_override_font_sizes/font_size = 18
+text = " PLAY ONLINE / LAN"
+
+[node name="PracticeButton" type="Button" parent="VBoxContainer" unique_id=1510934974]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.88, 0.4, 1)
+theme_override_font_sizes/font_size = 18
+text = " PRACTICE SOLO (BOTS)"
+
+[node name="HowToPlayButton" type="Button" parent="VBoxContainer" unique_id=716999469]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = " HOW TO PLAY"
+
+[node name="QuitButton" type="Button" parent="VBoxContainer" unique_id=2003488910]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.5, 0.5, 1)
+theme_override_font_sizes/font_size = 18
+text = " QUIT"
+
+[node name="HowToPlayPanel" type="Panel" parent="." unique_id=1483884256]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -320.0
+offset_top = -220.0
+offset_right = 320.0
+offset_bottom = 220.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="Title" type="Label" parent="HowToPlayPanel" unique_id=938331790]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -200.0
+offset_top = 20.0
+offset_right = 200.0
+offset_bottom = 60.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(1, 0.88, 0.4, 1)
+theme_override_font_sizes/font_size = 24
+text = " HOW TO PLAY"
+horizontal_alignment = 1
+
+[node name="RichTextLabel" type="RichTextLabel" parent="HowToPlayPanel" unique_id=844767516]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -280.0
+offset_top = -140.0
+offset_right = 280.0
+offset_bottom = 140.0
+grow_horizontal = 2
+grow_vertical = 2
+bbcode_enabled = true
+text = "[color=#ffe066] OBJECTIVE:[/color]
+• 1 [color=#ff4c4c]CHASER[/color] vs up to 3 [color=#4fc3f7]RUNNERS[/color].
+• [color=#ff4c4c]Chaser[/color] must tag all runners to freeze them into ice blocks!
+• [color=#4fc3f7]Runners[/color] survive 180 seconds or unfreeze frozen teammates by touching them!
+
+[color=#ffe066] ITEMS (Collect & press [E] to use):[/color]
+•  [b]Speed Boost[/b]: Move 1.6x faster for 6s.
+•  [b]Ghost Mode[/b]: Pass through walls for 4.5s!
+• ️ [b]Shield[/b]: Blocks 1 tag attempt.
+•  [b]Heater[/b]: Unfreeze instantly + temporary immunity.
+•  [b]Banana[/b]: Trap that slips & stuns players for 2.5s!
+•  [b]Black Hole[/b]: Vortex that pulls nearby players!
+
+[color=#ffe066] CONTROLS:[/color]
+• WASD / Arrow Keys: Move
+• E Key: Use Held Item"
+
+[node name="CloseButton" type="Button" parent="HowToPlayPanel" unique_id=1856325346]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -70.0
+offset_top = -55.0
+offset_right = 70.0
+offset_bottom = -20.0
+grow_horizontal = 2
+grow_vertical = 0
+text = "Got It!"

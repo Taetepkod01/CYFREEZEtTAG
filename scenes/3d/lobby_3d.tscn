@@ -1,0 +1,863 @@
+[gd_scene format=3 uid="uid://b3dlobby00001"]
+
+[ext_resource type="Script" uid="uid://dxml4lar2ro4y" path="res://scripts/3d/lobby_3d.gd" id="1_lobby3d"]
+[ext_resource type="Texture2D" uid="uid://dt81ypwyhbkk8" path="res://assets/ui/ice_frame_border.png" id="2_ice_frame"]
+[ext_resource type="Texture2D" uid="uid://ympniwrf21n4" path="res://assets/maps/map_preview_snow_town.png" id="3_preview_snow"]
+[ext_resource type="Texture2D" uid="uid://bkjnumjqx1xom" path="res://assets/maps/map_snow_town.png" id="4_map_snow"]
+[ext_resource type="Texture2D" uid="uid://dygk4v6i84g82" path="res://assets/maps/map_space_station.png" id="5_map_space"]
+[ext_resource type="Texture2D" uid="uid://dc101awid0xum" path="res://assets/maps/map_labyrinth.png" id="6_map_laby"]
+[ext_resource type="Texture2D" uid="uid://blw6gixqrbh7a" path="res://assets/ui/buttons/btn_refresh.png" id="7_btn_refresh"]
+[ext_resource type="Texture2D" uid="uid://ch7ijpt3lpwbq" path="res://assets/ui/buttons/btn_create_room.png" id="8_btn_create"]
+[ext_resource type="Texture2D" uid="uid://c4fhvna7tefum" path="res://assets/ui/buttons/btn_join_room.png" id="9_btn_join"]
+[ext_resource type="Texture2D" uid="uid://daui8fbyncekg" path="res://assets/ui/buttons/btn_copy_pin.png" id="10_btn_copy"]
+[ext_resource type="Texture2D" uid="uid://cknvudwe3covp" path="res://assets/ui/buttons/btn_start_game.png" id="11_btn_start"]
+[ext_resource type="Texture2D" uid="uid://dubwh3orgcdo" path="res://assets/ui/buttons/btn_leave_room.png" id="12_btn_leave"]
+[ext_resource type="Texture2D" uid="uid://08ldbinr7c3x" path="res://assets/ui/buttons/btn_back_menu.png" id="13_btn_back"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_card"]
+bg_color = Color(0.03, 0.08, 0.18, 0.92)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.18, 0.75, 0.98, 0.85)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+shadow_color = Color(0, 0.5, 0.9, 0.25)
+shadow_size = 12
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_code"]
+bg_color = Color(0.02, 0.07, 0.16, 0.95)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.2, 0.8, 1, 0.9)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(0, 0.6, 1, 0.3)
+shadow_size = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_slot"]
+bg_color = Color(0.02, 0.06, 0.14, 0.8)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.18, 0.65, 0.95, 0.5)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_map_btn"]
+bg_color = Color(0.04, 0.1, 0.22, 0.9)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.2, 0.8, 1, 0.7)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+shadow_color = Color(0, 0.5, 0.9, 0.3)
+shadow_size = 6
+
+[node name="Lobby3D" type="Control" unique_id=410989074]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_lobby3d")
+
+[node name="Background" type="ColorRect" parent="." unique_id=2039005685]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.03, 0.07, 0.18, 1)
+
+[node name="IceBorderOverlay" type="TextureRect" parent="." unique_id=2026192685]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("2_ice_frame")
+expand_mode = 1
+
+[node name="BrowserView" type="Control" parent="." unique_id=62750203]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Title" type="Label" parent="BrowserView" unique_id=1392289638]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -300.0
+offset_top = 16.0
+offset_right = 300.0
+offset_bottom = 60.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(0.65, 0.92, 1, 1)
+theme_override_colors/font_shadow_color = Color(0, 0.45, 0.85, 0.9)
+theme_override_constants/shadow_outline_size = 10
+theme_override_font_sizes/font_size = 32
+text = "* LOBBY *"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="PlayerNameContainer" type="HBoxContainer" parent="BrowserView" unique_id=1465495896]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -220.0
+offset_top = 64.0
+offset_right = 220.0
+offset_bottom = 98.0
+grow_horizontal = 2
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="NameLabel" type="Label" parent="BrowserView/PlayerNameContainer" unique_id=1896869594]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 0.85, 1, 1)
+theme_override_font_sizes/font_size = 13
+text = "YOUR NAME:"
+
+[node name="PlayerNameInput" type="LineEdit" parent="BrowserView/PlayerNameContainer" unique_id=307932068]
+custom_minimum_size = Vector2(200, 32)
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+placeholder_text = "Enter nickname..."
+max_length = 16
+
+[node name="HBox" type="HBoxContainer" parent="BrowserView" unique_id=1053173501]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -540.0
+offset_top = -230.0
+offset_right = 540.0
+offset_bottom = 230.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 20
+alignment = 1
+
+[node name="RoomListCard" type="Panel" parent="BrowserView/HBox" unique_id=534811322]
+custom_minimum_size = Vector2(340, 460)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="HeaderBox" type="HBoxContainer" parent="BrowserView/HBox/RoomListCard" unique_id=499092616]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 20.0
+offset_top = 16.0
+offset_right = -20.0
+offset_bottom = 44.0
+grow_horizontal = 2
+
+[node name="Header" type="Label" parent="BrowserView/HBox/RoomListCard/HeaderBox" unique_id=201385855]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.4, 0.85, 1, 1)
+theme_override_font_sizes/font_size = 15
+text = "PUBLIC ROOMS"
+
+[node name="RefreshBtn" type="TextureButton" parent="BrowserView/HBox/RoomListCard/HeaderBox" unique_id=1605614186]
+custom_minimum_size = Vector2(76, 27)
+layout_mode = 2
+size_flags_vertical = 4
+texture_normal = ExtResource("7_btn_refresh")
+stretch_mode = 5
+
+[node name="Sub" type="Label" parent="BrowserView/HBox/RoomListCard" unique_id=1497362477]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 20.0
+offset_top = 46.0
+offset_right = -20.0
+offset_bottom = 66.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(0.6, 0.75, 0.9, 0.8)
+theme_override_font_sizes/font_size = 11
+text = "(Refresh to see available rooms)"
+
+[node name="Scroll" type="ScrollContainer" parent="BrowserView/HBox/RoomListCard" unique_id=1838205940]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = 74.0
+offset_right = -20.0
+offset_bottom = -20.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="RoomList" type="VBoxContainer" parent="BrowserView/HBox/RoomListCard/Scroll" unique_id=166144822]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+
+[node name="CreateRoomCard" type="Panel" parent="BrowserView/HBox" unique_id=1111438097]
+custom_minimum_size = Vector2(340, 460)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="Badge" type="Label" parent="BrowserView/HBox/CreateRoomCard" unique_id=471024266]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -60.0
+offset_top = 10.0
+offset_right = 60.0
+offset_bottom = 26.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(0.3, 0.8, 1, 1)
+theme_override_font_sizes/font_size = 10
+text = "HOST MATCH"
+horizontal_alignment = 1
+
+[node name="Header" type="Label" parent="BrowserView/HBox/CreateRoomCard" unique_id=576219042]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -140.0
+offset_top = 28.0
+offset_right = 140.0
+offset_bottom = 54.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(1, 0.88, 0.4, 1)
+theme_override_font_sizes/font_size = 16
+text = "* CREATE NEW ROOM"
+horizontal_alignment = 1
+
+[node name="Desc" type="Label" parent="BrowserView/HBox/CreateRoomCard" unique_id=5885197]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 24.0
+offset_top = 56.0
+offset_right = -24.0
+offset_bottom = 80.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(0.7, 0.85, 0.95, 0.8)
+theme_override_font_sizes/font_size = 11
+text = "Create your own room and wait for friends"
+horizontal_alignment = 1
+
+[node name="NameLabel" type="Label" parent="BrowserView/HBox/CreateRoomCard" unique_id=218894415]
+layout_mode = 0
+offset_left = 24.0
+offset_top = 96.0
+offset_right = 130.0
+offset_bottom = 116.0
+theme_override_colors/font_color = Color(0.7, 0.85, 1, 1)
+theme_override_font_sizes/font_size = 12
+text = "Room Name:"
+
+[node name="RoomNameInput" type="LineEdit" parent="BrowserView/HBox/CreateRoomCard" unique_id=1459235118]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 24.0
+offset_top = 120.0
+offset_right = -24.0
+offset_bottom = 158.0
+grow_horizontal = 2
+text = "Room 101"
+placeholder_text = "e.g. Room 101"
+
+[node name="MaxPlayersLabel" type="Label" parent="BrowserView/HBox/CreateRoomCard" unique_id=2036647217]
+layout_mode = 0
+offset_left = 24.0
+offset_top = 175.0
+offset_right = 130.0
+offset_bottom = 195.0
+theme_override_colors/font_color = Color(0.7, 0.85, 1, 1)
+theme_override_font_sizes/font_size = 12
+text = "Max Players:"
+
+[node name="MaxPlayersInput" type="LineEdit" parent="BrowserView/HBox/CreateRoomCard" unique_id=1093122576]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 24.0
+offset_top = 200.0
+offset_right = -24.0
+offset_bottom = 238.0
+grow_horizontal = 2
+text = "4"
+
+[node name="PrivateCheck" type="CheckBox" parent="BrowserView/HBox/CreateRoomCard" unique_id=64954891]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 24.0
+offset_top = 255.0
+offset_right = -24.0
+offset_bottom = 290.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(1, 0.88, 0.4, 1)
+theme_override_font_sizes/font_size = 13
+text = "Private Room (PIN Only)"
+
+[node name="CreateBtn" type="TextureButton" parent="BrowserView/HBox/CreateRoomCard" unique_id=1652262984]
+custom_minimum_size = Vector2(273, 52)
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -136.5
+offset_top = -70.0
+offset_right = 136.5
+offset_bottom = -18.0
+grow_horizontal = 2
+grow_vertical = 0
+texture_normal = ExtResource("8_btn_create")
+stretch_mode = 5
+
+[node name="JoinCodeCard" type="Panel" parent="BrowserView/HBox" unique_id=1078724510]
+custom_minimum_size = Vector2(340, 460)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="Header" type="Label" parent="BrowserView/HBox/JoinCodeCard" unique_id=840037043]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -140.0
+offset_top = 24.0
+offset_right = 140.0
+offset_bottom = 50.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(0.4, 0.85, 1, 1)
+theme_override_font_sizes/font_size = 16
+text = "JOIN ROOM (PIN)"
+horizontal_alignment = 1
+
+[node name="Desc" type="Label" parent="BrowserView/HBox/JoinCodeCard" unique_id=1145133297]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 24.0
+offset_top = 56.0
+offset_right = -24.0
+offset_bottom = 80.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(0.7, 0.85, 0.95, 0.8)
+theme_override_font_sizes/font_size = 11
+text = "Enter room PIN to join"
+horizontal_alignment = 1
+
+[node name="CodeLabel" type="Label" parent="BrowserView/HBox/JoinCodeCard" unique_id=1094253313]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 120.0
+offset_bottom = 140.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(0.7, 0.85, 1, 1)
+theme_override_font_sizes/font_size = 12
+text = "Enter 6 PIN"
+horizontal_alignment = 1
+
+[node name="CodeInput" type="LineEdit" parent="BrowserView/HBox/JoinCodeCard" unique_id=1660221716]
+custom_minimum_size = Vector2(0, 52)
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 30.0
+offset_top = 148.0
+offset_right = -30.0
+offset_bottom = 200.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(0.3, 0.9, 1, 1)
+theme_override_font_sizes/font_size = 24
+text = "ABC123"
+alignment = 1
+max_length = 6
+
+[node name="PinHint" type="Label" parent="BrowserView/HBox/JoinCodeCard" unique_id=218619648]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 20.0
+offset_top = 215.0
+offset_right = -20.0
+offset_bottom = 245.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(0.6, 0.75, 0.9, 0.7)
+theme_override_font_sizes/font_size = 11
+text = "Room PIN is 6 digits provided by host
+(Case-insensitive)"
+horizontal_alignment = 1
+
+[node name="ErrorLabel" type="Label" parent="BrowserView/HBox/JoinCodeCard" unique_id=655528798]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 20.0
+offset_top = 260.0
+offset_right = -20.0
+offset_bottom = 290.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(1, 0.4, 0.4, 1)
+theme_override_font_sizes/font_size = 12
+horizontal_alignment = 1
+
+[node name="JoinCodeBtn" type="TextureButton" parent="BrowserView/HBox/JoinCodeCard" unique_id=1959450209]
+custom_minimum_size = Vector2(268, 52)
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -134.0
+offset_top = -70.0
+offset_right = 134.0
+offset_bottom = -18.0
+grow_horizontal = 2
+grow_vertical = 0
+texture_normal = ExtResource("9_btn_join")
+stretch_mode = 5
+
+[node name="RoomView" type="Control" parent="." unique_id=755681395]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Header" type="HBoxContainer" parent="RoomView" unique_id=1246219713]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -540.0
+offset_top = 16.0
+offset_right = 540.0
+offset_bottom = 66.0
+grow_horizontal = 2
+theme_override_constants/separation = 20
+alignment = 1
+
+[node name="RoomTitle" type="Label" parent="RoomView/Header" unique_id=1232757844]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(1, 0.88, 0.4, 1)
+theme_override_colors/font_shadow_color = Color(0, 0.5, 0.9, 0.8)
+theme_override_constants/shadow_outline_size = 6
+theme_override_font_sizes/font_size = 26
+text = "* ROOM 101 *"
+vertical_alignment = 1
+
+[node name="CodeBox" type="Panel" parent="RoomView/Header" unique_id=1118607785]
+custom_minimum_size = Vector2(260, 44)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_code")
+
+[node name="CodeTitle" type="Label" parent="RoomView/Header/CodeBox" unique_id=1643638723]
+layout_mode = 1
+anchors_preset = 4
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_left = 12.0
+offset_top = -12.0
+offset_right = 85.0
+offset_bottom = 12.0
+grow_vertical = 2
+theme_override_colors/font_color = Color(0.7, 0.85, 1, 1)
+theme_override_font_sizes/font_size = 12
+text = "ROOM PIN:"
+vertical_alignment = 1
+
+[node name="CodeLabel" type="Label" parent="RoomView/Header/CodeBox" unique_id=1879622307]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -30.0
+offset_top = -14.0
+offset_right = 55.0
+offset_bottom = 14.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(1, 0.9, 0.3, 1)
+theme_override_font_sizes/font_size = 18
+text = "AWE6EZ"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="CopyBtn" type="TextureButton" parent="RoomView/Header/CodeBox" unique_id=575099193]
+custom_minimum_size = Vector2(63, 26)
+layout_mode = 1
+anchors_preset = 6
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = -72.0
+offset_top = -13.0
+offset_right = -9.0
+offset_bottom = 13.0
+grow_horizontal = 0
+grow_vertical = 2
+texture_normal = ExtResource("10_btn_copy")
+stretch_mode = 5
+
+[node name="HBox" type="HBoxContainer" parent="RoomView" unique_id=1689043293]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -540.0
+offset_top = -230.0
+offset_right = 540.0
+offset_bottom = 220.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 16
+alignment = 1
+
+[node name="PlayerListCard" type="Panel" parent="RoomView/HBox" unique_id=1664863703]
+custom_minimum_size = Vector2(320, 450)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="Header" type="Label" parent="RoomView/HBox/PlayerListCard" unique_id=492048075]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -140.0
+offset_top = 16.0
+offset_right = 140.0
+offset_bottom = 40.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(0.4, 0.85, 1, 1)
+theme_override_font_sizes/font_size = 15
+text = "PLAYERS (1 / 4)"
+horizontal_alignment = 1
+
+[node name="Scroll" type="ScrollContainer" parent="RoomView/HBox/PlayerListCard" unique_id=999052184]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 16.0
+offset_top = 50.0
+offset_right = -16.0
+offset_bottom = -16.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="PlayerList" type="VBoxContainer" parent="RoomView/HBox/PlayerListCard/Scroll" unique_id=1920323556]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+
+[node name="HostSettingsCard" type="Panel" parent="RoomView/HBox" unique_id=1244960994]
+custom_minimum_size = Vector2(380, 450)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="SettingsTitle" type="Label" parent="RoomView/HBox/HostSettingsCard" unique_id=1391759585]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -180.0
+offset_top = 16.0
+offset_right = 180.0
+offset_bottom = 40.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(1, 0.88, 0.4, 1)
+theme_override_font_sizes/font_size = 15
+text = "HOST SETTINGS"
+horizontal_alignment = 1
+
+[node name="MaxPlayersRow" type="HBoxContainer" parent="RoomView/HBox/HostSettingsCard" unique_id=135479975]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 20.0
+offset_top = 55.0
+offset_right = -20.0
+offset_bottom = 85.0
+grow_horizontal = 2
+theme_override_constants/separation = 10
+
+[node name="Label" type="Label" parent="RoomView/HBox/HostSettingsCard/MaxPlayersRow" unique_id=623352850]
+custom_minimum_size = Vector2(95, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.85, 1, 1)
+theme_override_font_sizes/font_size = 12
+text = "Max Players:"
+
+[node name="Slider" type="HSlider" parent="RoomView/HBox/HostSettingsCard/MaxPlayersRow" unique_id=2064609560]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+min_value = 4.0
+max_value = 8.0
+value = 4.0
+rounded = true
+tick_count = 5
+
+[node name="ValLabel" type="Label" parent="RoomView/HBox/HostSettingsCard/MaxPlayersRow" unique_id=733168336]
+custom_minimum_size = Vector2(70, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.9, 0.3, 1)
+theme_override_font_sizes/font_size = 12
+text = "4 Players"
+horizontal_alignment = 2
+
+[node name="RoundsRow" type="HBoxContainer" parent="RoomView/HBox/HostSettingsCard" unique_id=1531339290]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 20.0
+offset_top = 95.0
+offset_right = -20.0
+offset_bottom = 125.0
+grow_horizontal = 2
+theme_override_constants/separation = 10
+
+[node name="Label" type="Label" parent="RoomView/HBox/HostSettingsCard/RoundsRow" unique_id=1930660745]
+custom_minimum_size = Vector2(95, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.85, 1, 1)
+theme_override_font_sizes/font_size = 12
+text = "Match Rounds:"
+
+[node name="RoundsOpt" type="OptionButton" parent="RoomView/HBox/HostSettingsCard/RoundsRow" unique_id=1591114209]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="MapPreview" type="Panel" parent="RoomView/HBox/HostSettingsCard" unique_id=1641953132]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 20.0
+offset_top = 138.0
+offset_right = -20.0
+offset_bottom = 350.0
+grow_horizontal = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_slot")
+
+[node name="MapName" type="Label" parent="RoomView/HBox/HostSettingsCard/MapPreview" unique_id=67039288]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -140.0
+offset_top = 8.0
+offset_right = 140.0
+offset_bottom = 32.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(1, 0.9, 0.3, 1)
+theme_override_font_sizes/font_size = 14
+text = "MAP: SNOW TOWN"
+horizontal_alignment = 1
+
+[node name="MapImg" type="TextureRect" parent="RoomView/HBox/HostSettingsCard/MapPreview" unique_id=662629282]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -140.0
+offset_top = -60.0
+offset_right = 140.0
+offset_bottom = 35.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("3_preview_snow")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="GameMode" type="Label" parent="RoomView/HBox/HostSettingsCard/MapPreview" unique_id=1187413806]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -150.0
+offset_top = -48.0
+offset_right = 150.0
+offset_bottom = -8.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_colors/font_color = Color(0.7, 0.85, 1, 0.85)
+theme_override_font_sizes/font_size = 11
+text = "Team Freeze Tag - Real-Time 3D
+Friendly Fire: Off"
+horizontal_alignment = 1
+
+[node name="PrivateRow" type="HBoxContainer" parent="RoomView/HBox/HostSettingsCard" unique_id=879489075]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 20.0
+offset_top = 360.0
+offset_right = -20.0
+offset_bottom = 390.0
+grow_horizontal = 2
+
+[node name="PrivateCheck" type="CheckBox" parent="RoomView/HBox/HostSettingsCard/PrivateRow" unique_id=479178406]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.88, 0.4, 1)
+theme_override_font_sizes/font_size = 12
+text = "Private Room (Hidden from Browser)"
+
+[node name="MapSelectionCard" type="Panel" parent="RoomView/HBox" unique_id=1792894662]
+custom_minimum_size = Vector2(360, 450)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="Header" type="Label" parent="RoomView/HBox/MapSelectionCard" unique_id=1986797038]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -150.0
+offset_top = 16.0
+offset_right = 150.0
+offset_bottom = 40.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(0.4, 0.85, 1, 1)
+theme_override_font_sizes/font_size = 15
+text = "MAP SELECTION"
+horizontal_alignment = 1
+
+[node name="Grid" type="VBoxContainer" parent="RoomView/HBox/MapSelectionCard" unique_id=1687873957]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = 50.0
+offset_right = -20.0
+offset_bottom = -20.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 12
+
+[node name="SpaceStationBtn" type="Button" parent="RoomView/HBox/MapSelectionCard/Grid" unique_id=1019781662]
+custom_minimum_size = Vector2(0, 110)
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+theme_override_styles/normal = SubResource("StyleBoxFlat_map_btn")
+text = "SPACE STATION"
+icon = ExtResource("5_map_space")
+icon_alignment = 1
+vertical_icon_alignment = 0
+expand_icon = true
+
+[node name="SnowTownBtn" type="Button" parent="RoomView/HBox/MapSelectionCard/Grid" unique_id=1724146943]
+custom_minimum_size = Vector2(0, 110)
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+theme_override_styles/normal = SubResource("StyleBoxFlat_map_btn")
+text = "SNOW TOWN"
+icon = ExtResource("4_map_snow")
+icon_alignment = 1
+vertical_icon_alignment = 0
+expand_icon = true
+
+[node name="LabyrinthBtn" type="Button" parent="RoomView/HBox/MapSelectionCard/Grid" unique_id=1016726323]
+custom_minimum_size = Vector2(0, 110)
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+theme_override_styles/normal = SubResource("StyleBoxFlat_map_btn")
+text = "LABYRINTH"
+icon = ExtResource("6_map_laby")
+icon_alignment = 1
+vertical_icon_alignment = 0
+expand_icon = true
+
+[node name="BottomBar" type="HBoxContainer" parent="RoomView" unique_id=933071598]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -220.0
+offset_top = -62.0
+offset_right = 220.0
+offset_bottom = -18.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_constants/separation = 24
+alignment = 1
+
+[node name="ActionBtn" type="TextureButton" parent="RoomView/BottomBar" unique_id=683209196]
+custom_minimum_size = Vector2(195, 46)
+layout_mode = 2
+texture_normal = ExtResource("11_btn_start")
+stretch_mode = 5
+
+[node name="LeaveBtn" type="TextureButton" parent="RoomView/BottomBar" unique_id=216858325]
+custom_minimum_size = Vector2(184, 46)
+layout_mode = 2
+texture_normal = ExtResource("12_btn_leave")
+stretch_mode = 5
+
+[node name="BackButton" type="TextureButton" parent="." unique_id=149637321]
+z_index = 10
+custom_minimum_size = Vector2(120, 32)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -540.0
+offset_top = 242.0
+offset_right = -420.0
+offset_bottom = 274.0
+grow_horizontal = 2
+grow_vertical = 2
+texture_normal = ExtResource("13_btn_back")
+stretch_mode = 5
