@@ -62,6 +62,10 @@ const TEX_ROLE_RUNNER_SEL = preload("res://assets/ui/buttons/btn_role_runner_sel
 @onready var menu_modal: Panel = $HUD/MenuModal
 @onready var resume_btn: Button = $HUD/MenuModal/Buttons/ResumeBtn
 @onready var leave_btn: TextureButton = $HUD/MenuModal/Buttons/LeaveBtn
+@onready var exit_choice_panel: Panel = $HUD/ExitChoicePanel
+@onready var exit_to_lobby_btn: Button = $HUD/ExitChoicePanel/ExitChoiceBox/ReturnLobbyBtn
+@onready var exit_to_menu_btn: Button = $HUD/ExitChoicePanel/ExitChoiceBox/MainMenuBtn
+@onready var cancel_exit_btn: Button = $HUD/ExitChoicePanel/ExitChoiceBox/CancelExitBtn
 
 # Practice Role Modal (4.png)
 @onready var practice_role_modal: Panel = $HUD/PracticeRoleModal
@@ -81,21 +85,26 @@ var practice_role: String = "random"
 # TAB Scoreboard overlay state
 var tab_pressed_time: float = 0.0
 var scoreboard_toggled: bool = false
+var exit_choice_from_game_over: bool = false
 
 func _ready() -> void:
 	if status_panel:
 		status_panel.visible = false
 	game_over_panel.visible = false
 	menu_modal.visible = false
+	exit_choice_panel.visible = false
 	practice_role_modal.visible = false
 	
 	next_round_btn.pressed.connect(_on_next_round_pressed)
 	lobby_btn.pressed.connect(_on_lobby_pressed)
-	exit_menu_btn.pressed.connect(_on_exit_to_menu_pressed)
+	exit_menu_btn.pressed.connect(_show_exit_choices)
 	
 	menu_btn.pressed.connect(_toggle_menu_modal)
 	resume_btn.pressed.connect(func(): _set_menu_modal_visible(false))
-	leave_btn.pressed.connect(_on_exit_to_menu_pressed)
+	leave_btn.pressed.connect(_show_exit_choices)
+	exit_to_lobby_btn.pressed.connect(_on_exit_choice_lobby_pressed)
+	exit_to_menu_btn.pressed.connect(_on_exit_choice_menu_pressed)
+	cancel_exit_btn.pressed.connect(_cancel_exit_choices)
 	
 	item_btn.pressed.connect(_on_item_button_pressed)
 	
@@ -925,7 +934,32 @@ func _on_next_round_pressed() -> void:
 	add_game_log("[color=#ffe066]Next Round %d started![/color]" % current_round)
 
 func _on_exit_to_menu_pressed() -> void:
-	if Network and Network.is_online_game():
+	if Network and Network.is_connected_to_server:
 		Network.disconnect_from_server()
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 	get_tree().change_scene_to_file("res://scenes/3d/main_menu_3d.tscn")
+
+func _show_exit_choices() -> void:
+	exit_choice_from_game_over = game_over_panel.visible
+	menu_modal.visible = false
+	game_over_panel.visible = false
+	exit_choice_panel.visible = true
+	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+
+func _on_exit_choice_lobby_pressed() -> void:
+	exit_choice_panel.visible = false
+	_on_lobby_pressed()
+
+func _on_exit_choice_menu_pressed() -> void:
+	exit_choice_panel.visible = false
+	_on_exit_to_menu_pressed()
+
+func _cancel_exit_choices() -> void:
+	exit_choice_panel.visible = false
+	if exit_choice_from_game_over:
+		game_over_panel.visible = true
+	else:
+		menu_modal.visible = true
+	exit_choice_from_game_over = false
+	if is_game_active:
+		Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
