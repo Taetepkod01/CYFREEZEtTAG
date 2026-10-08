@@ -35,14 +35,21 @@ func sign_out() -> void:
 func save_player_profile(profile: Dictionary) -> bool:
 	if not _require_authentication():
 		return false
+	if profile.is_empty():
+		auth_error.emit("A player profile must contain at least one field.")
+		return false
 
 	var uid := str(current_user.get("uid", ""))
 	var url := "%s/%s/databases/(default)/documents/playerProfiles/%s" % [
 		FIRESTORE_BASE_URL, _project_id, uid
 	]
 	var fields: Dictionary = {}
+	var update_masks: PackedStringArray = []
 	for key in profile:
-		fields[str(key)] = _to_firestore_value(profile[key])
+		var field_name := str(key)
+		fields[field_name] = _to_firestore_value(profile[key])
+		update_masks.append("updateMask.fieldPaths=" + field_name.uri_encode())
+	url += "?" + "&".join(update_masks)
 
 	var result: Dictionary = await _send_json_request(
 		url,
@@ -149,6 +156,7 @@ func _send_json_request(
 	body: String = ""
 ) -> Dictionary:
 	var http := HTTPRequest.new()
+	http.timeout = 20.0
 	add_child(http)
 	var header_list: PackedStringArray = []
 	for key in headers:

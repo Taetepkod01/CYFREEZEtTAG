@@ -39,6 +39,50 @@ corner_radius_bottom_left = 18
 shadow_color = Color(0, 0.5, 0.95, 0.35)
 shadow_size = 20
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_auth"]
+bg_color = Color(0.03, 0.08, 0.18, 0.97)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.2, 0.8, 1, 0.95)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
+shadow_color = Color(0, 0.5, 0.95, 0.35)
+shadow_size = 20
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_auth_input"]
+bg_color = Color(0.06, 0.13, 0.24, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.2, 0.65, 0.85, 0.85)
+corner_radius_top_left = 7
+corner_radius_top_right = 7
+corner_radius_bottom_right = 7
+corner_radius_bottom_left = 7
+content_margin_left = 12.0
+content_margin_top = 8.0
+content_margin_right = 12.0
+content_margin_bottom = 8.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_auth_button"]
+bg_color = Color(0.05, 0.42, 0.62, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_auth_button_hover"]
+bg_color = Color(0.08, 0.58, 0.78, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
 [node name="MainMenu3D" type="Control" unique_id=646906610]
 layout_mode = 3
 anchors_preset = 15
@@ -320,3 +364,118 @@ grow_horizontal = 2
 grow_vertical = 0
 texture_normal = ExtResource("14_btn_close")
 stretch_mode = 5
+
+[node name="AuthPanel" type="Panel" parent="." unique_id=1982234001]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -230.0
+offset_top = -220.0
+offset_right = 230.0
+offset_bottom = 220.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_auth")
+
+[node name="AuthBox" type="VBoxContainer" parent="AuthPanel" unique_id=1982234002]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 38.0
+offset_top = 32.0
+offset_right = -38.0
+offset_bottom = -32.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 16
+alignment = 1
+
+[node name="AuthTitle" type="Label" parent="AuthPanel/AuthBox" unique_id=1982234003]
+custom_minimum_size = Vector2(0, 38)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.65, 0.92, 1, 1)
+theme_override_fonts/font = ExtResource("3_font_audio")
+theme_override_font_sizes/font_size = 23
+text = "PLAYER LOGIN"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="AuthSubtitle" type="Label" parent="AuthPanel/AuthBox" unique_id=1982234004]
+custom_minimum_size = Vector2(0, 34)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.72, 0.85, 0.94, 1)
+theme_override_fonts/font = ExtResource("3_font_audio")
+theme_override_font_sizes/font_size = 11
+text = "Sign in to continue to the game"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="EmailInput" type="LineEdit" parent="AuthPanel/AuthBox" unique_id=1982234005]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.97, 1, 1)
+theme_override_colors/font_placeholder_color = Color(0.55, 0.68, 0.78, 1)
+theme_override_fonts/font = ExtResource("3_font_audio")
+theme_override_font_sizes/font_size = 14
+theme_override_styles/normal = SubResource("StyleBoxFlat_auth_input")
+theme_override_styles/focus = SubResource("StyleBoxFlat_auth_input")
+placeholder_text = "Email address"
+virtual_keyboard_type = 5
+
+[node name="PasswordInput" type="LineEdit" parent="AuthPanel/AuthBox" unique_id=1982234006]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.97, 1, 1)
+theme_override_colors/font_placeholder_color = Color(0.55, 0.68, 0.78, 1)
+theme_override_fonts/font = ExtResource("3_font_audio")
+theme_override_font_sizes/font_size = 14
+theme_override_styles/normal = SubResource("StyleBoxFlat_auth_input")
+theme_override_styles/focus = SubResource("StyleBoxFlat_auth_input")
+placeholder_text = "Password (at least 6 characters)"
+secret = true
+secret_character = "*"
+
+[node name="AuthSubmitBtn" type="Button" parent="AuthPanel/AuthBox" unique_id=1982234007]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.94, 0.99, 1, 1)
+theme_override_fonts/font = ExtResource("3_font_audio")
+theme_override_font_sizes/font_size = 14
+theme_override_styles/normal = SubResource("StyleBoxFlat_auth_button")
+theme_override_styles/hover = SubResource("StyleBoxFlat_auth_button_hover")
+text = "SIGN IN"
+
+[node name="AuthToggleBtn" type="Button" parent="AuthPanel/AuthBox" unique_id=1982234008]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+flat = true
+theme_override_colors/font_color = Color(0.4, 0.85, 1, 1)
+theme_override_fonts/font = ExtResource("3_font_audio")
+theme_override_font_sizes/font_size = 11
+text = "New player? Create account"
+
+[node name="ServiceStatus" type="Label" parent="." unique_id=1982234009]
+visible = false
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -420.0
+offset_top = -58.0
+offset_right = 420.0
+offset_bottom = -20.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_fonts/font = ExtResource("3_font_audio")
+theme_override_font_sizes/font_size = 11
+text = ""
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 3

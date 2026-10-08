@@ -88,3 +88,7 @@ Call `await FirebaseService.sign_up_with_email(email, password)` or
 `playerProfiles/{uid}` Firestore document. Authentication tokens are currently
 kept in memory for the running game only; users must sign in again after
 restarting it.
+
+The main menu now requires players to sign in or create an account before
+continuing. On successful authentication, the game creates or updates the
+player's Firestore profile with their email, display name, and login timestamp.
