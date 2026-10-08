@@ -92,5 +92,6 @@ restarting it.
 The main menu now requires players to sign in or create an account before
 continuing. On successful authentication, the game creates or updates the
 player's Firestore profile with their email, display name, and login timestamp.
-Authenticated players can choose **LOG OUT** from the main menu to clear the
-current in-memory session and return to the sign-in screen.
+After signing in, the main menu's **QUIT** button changes to **LOG OUT**. It
+clears the current in-memory session and returns to the sign-in screen. Before
+signing in, **QUIT** closes the game.

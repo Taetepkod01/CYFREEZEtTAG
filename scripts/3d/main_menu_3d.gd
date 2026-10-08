@@ -12,8 +12,7 @@ const TEX_ROLE_RUNNER_OFF = preload("res://assets/ui/buttons/btn_role_runner_off
 @onready var play_online_btn: TextureButton = $MenuButtons/PlayOnlineBtn
 @onready var practice_btn: TextureButton = $MenuButtons/PracticeBtn
 @onready var how_to_play_btn: TextureButton = $MenuButtons/HowToPlayBtn
-@onready var quit_btn: TextureButton = $MenuButtons/QuitBtn
-@onready var logout_btn: Button = $MenuButtons/LogoutBtn
+@onready var quit_btn: Button = $MenuButtons/QuitBtn
 @onready var rules_panel: Panel = $RulesPanel
 @onready var close_rules_btn: TextureButton = $RulesPanel/CloseBtn
 
@@ -49,7 +48,6 @@ func _ready() -> void:
 	practice_btn.pressed.connect(_on_practice_pressed)
 	how_to_play_btn.pressed.connect(_on_how_to_play_pressed)
 	quit_btn.pressed.connect(_on_quit_pressed)
-	logout_btn.pressed.connect(_on_logout_pressed)
 	close_rules_btn.pressed.connect(func():
 		rules_panel.visible = false
 		menu_buttons.visible = true
@@ -107,23 +105,19 @@ func _show_main_menu() -> void:
 	auth_panel.visible = false
 	menu_buttons.visible = true
 	title_label.visible = true
-	logout_btn.visible = true
+	quit_btn.text = "LOG OUT"
 
 func _show_auth_panel() -> void:
 	auth_panel.visible = true
 	menu_buttons.visible = false
 	title_label.visible = false
-	logout_btn.visible = false
 	password_input.clear()
 	service_status.visible = false
 	is_register_mode = false
 	auth_title.text = "PLAYER LOGIN"
 	auth_submit_btn.text = "SIGN IN"
 	auth_toggle_btn.text = "New player? Create account"
-
-func _on_logout_pressed() -> void:
-	FirebaseService.sign_out()
-	_show_auth_panel()
+	quit_btn.text = "QUIT"
 
 func _on_auth_toggle_pressed() -> void:
 	is_register_mode = not is_register_mode
@@ -191,4 +185,8 @@ func _on_how_to_play_pressed() -> void:
 	title_label.visible = false
 
 func _on_quit_pressed() -> void:
+	if not FirebaseService.current_user.is_empty():
+		FirebaseService.sign_out()
+		_show_auth_panel()
+		return
 	get_tree().quit()
