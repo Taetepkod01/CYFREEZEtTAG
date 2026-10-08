@@ -54,6 +54,10 @@ shadow_color = Color(0, 0.5, 0.95, 0.35)
 shadow_size = 20
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_auth_input"]
+content_margin_left = 12.0
+content_margin_top = 8.0
+content_margin_right = 12.0
+content_margin_bottom = 8.0
 bg_color = Color(0.06, 0.13, 0.24, 1)
 border_width_left = 1
 border_width_top = 1
@@ -64,10 +68,6 @@ corner_radius_top_left = 7
 corner_radius_top_right = 7
 corner_radius_bottom_right = 7
 corner_radius_bottom_left = 7
-content_margin_left = 12.0
-content_margin_top = 8.0
-content_margin_right = 12.0
-content_margin_bottom = 8.0
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_auth_button"]
 bg_color = Color(0.05, 0.42, 0.62, 1)
@@ -78,6 +78,30 @@ corner_radius_bottom_left = 8
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_auth_button_hover"]
 bg_color = Color(0.08, 0.58, 0.78, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_logout"]
+bg_color = Color(0.22, 0.12, 0.2, 0.95)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.8, 0.34, 0.42, 0.8)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_logout_hover"]
+bg_color = Color(0.42, 0.15, 0.22, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 0.45, 0.5, 1)
 corner_radius_top_left = 8
 corner_radius_top_right = 8
 corner_radius_bottom_right = 8
@@ -152,9 +176,9 @@ anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
 offset_left = -115.0
-offset_top = -15.0
+offset_top = -30.0
 offset_right = 115.0
-offset_bottom = 225.0
+offset_bottom = 270.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/separation = 10
@@ -183,6 +207,17 @@ custom_minimum_size = Vector2(225, 49)
 layout_mode = 2
 texture_normal = ExtResource("8_btn_quit")
 stretch_mode = 5
+
+[node name="LogoutBtn" type="Button" parent="MenuButtons" unique_id=1982234017]
+custom_minimum_size = Vector2(225, 40)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.72, 0.75, 1)
+theme_override_fonts/font = ExtResource("3_font_audio")
+theme_override_font_sizes/font_size = 12
+theme_override_styles/normal = SubResource("StyleBoxFlat_logout")
+theme_override_styles/hover = SubResource("StyleBoxFlat_logout_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_logout_hover")
+text = "LOG OUT"
 
 [node name="PracticeModal" type="Panel" parent="." unique_id=998048265]
 visible = false
@@ -453,11 +488,11 @@ text = "SIGN IN"
 [node name="AuthToggleBtn" type="Button" parent="AuthPanel/AuthBox" unique_id=1982234008]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
-flat = true
 theme_override_colors/font_color = Color(0.4, 0.85, 1, 1)
 theme_override_fonts/font = ExtResource("3_font_audio")
 theme_override_font_sizes/font_size = 11
 text = "New player? Create account"
+flat = true
 
 [node name="ServiceStatus" type="Label" parent="." unique_id=1982234009]
 visible = false
@@ -475,7 +510,6 @@ grow_horizontal = 2
 grow_vertical = 0
 theme_override_fonts/font = ExtResource("3_font_audio")
 theme_override_font_sizes/font_size = 11
-text = ""
 horizontal_alignment = 1
 vertical_alignment = 1
 autowrap_mode = 3
