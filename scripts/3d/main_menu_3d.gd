@@ -68,6 +68,8 @@ func _ready() -> void:
 	FirebaseService.auth_error.connect(_on_firebase_auth_error)
 	
 	_select_role("runner")
+	if not FirebaseService.current_user.is_empty():
+		_show_main_menu()
 
 func _on_auth_submit_pressed() -> void:
 	_set_auth_controls_enabled(false)
@@ -93,13 +95,16 @@ func _complete_authentication() -> void:
 		profile["created_at"] = profile["last_login_at"]
 
 	var profile_saved: bool = await FirebaseService.save_player_profile(profile)
-	auth_panel.visible = false
-	menu_buttons.visible = true
-	title_label.visible = true
+	_show_main_menu()
 	if profile_saved:
 		_show_service_status("Signed in as %s" % user.get("email", ""), false)
 	else:
 		_show_service_status("Signed in, but the Firestore profile could not be saved.", true)
+
+func _show_main_menu() -> void:
+	auth_panel.visible = false
+	menu_buttons.visible = true
+	title_label.visible = true
 
 func _on_auth_toggle_pressed() -> void:
 	is_register_mode = not is_register_mode
