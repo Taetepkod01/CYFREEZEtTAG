@@ -52,3 +52,39 @@ A 3D Third-Person Freeze Tag multiplayer & AI practice game built with **Godot E
 - **Game Engine**: Godot 4.7
 - **Renderer**: `gl_compatibility` (WebGL 2 / Web export safe)
 - **Language**: GDScript 2.0
+
+## Firebase setup
+
+The `FirebaseService` autoload provides Firebase Authentication email/password
+sign-up and sign-in, plus Firestore player-profile read/write methods. It uses
+Firebase's HTTPS REST APIs and does not require a Godot Firebase plugin.
+
+1. In Firebase Console, create a project and enable **Authentication >
+   Sign-in method > Email/Password**.
+2. Create a **Cloud Firestore** database.
+3. In Godot, open **Project > Project Settings > Firebase** and set `api_key`
+   to the project's Web API key and `project_id` to the Firebase project ID.
+   These values are project identifiers, not service-account credentials.
+4. Apply rules that restrict each profile to its owner:
+
+   ```text
+   rules_version = '2';
+   service cloud.firestore {
+     match /databases/{database}/documents {
+       match /playerProfiles/{userId} {
+         allow read, write: if request.auth != null
+                            && request.auth.uid == userId;
+       }
+     }
+   }
+   ```
+
+Call `await FirebaseService.sign_up_with_email(email, password)` or
+`await FirebaseService.sign_in_with_email(email, password)`. On success,
+`FirebaseService.current_user` contains the authenticated UID and email;
+`auth_state_changed` and `auth_error` report state and failures. Use
+`await FirebaseService.save_player_profile(profile)` and
+`await FirebaseService.load_player_profile()` for the authenticated user's
+`playerProfiles/{uid}` Firestore document. Authentication tokens are currently
+kept in memory for the running game only; users must sign in again after
+restarting it.
