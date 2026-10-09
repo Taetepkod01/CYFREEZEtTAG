@@ -263,69 +263,115 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.22, -52.5)
 size = Vector3(2.6, 0.05, 2.6)
 material = SubResource("Mat_GreenCheck")
 
-[node name="Step9" type="CSGBox3D" parent="ParkourCourse"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3, 5.3, -64.5)
+[node name="BeamLeft1" type="CSGBox3D" parent="ParkourCourse"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.2, 5.3, -63.5)
 use_collision = true
-size = Vector3(2.5, 0.8, 2.5)
+size = Vector3(1.2, 0.6, 3.4)
 material = SubResource("Mat_VoidPlatform")
 
-[node name="Step9Trim" type="CSGBox3D" parent="ParkourCourse"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3, 5.72, -64.5)
-size = Vector3(2.1, 0.05, 2.1)
+[node name="BeamLeft1Trim" type="CSGBox3D" parent="ParkourCourse"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.2, 5.62, -63.5)
+size = Vector3(0.8, 0.05, 3)
 material = SubResource("Mat_CyanGlow")
 
-[node name="Step10" type="CSGBox3D" parent="ParkourCourse"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 6.1, -70)
+[node name="BeamRight1" type="CSGBox3D" parent="ParkourCourse"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.2, 5.3, -63.5)
 use_collision = true
-size = Vector3(2.5, 0.8, 2.5)
+size = Vector3(1.2, 0.6, 3.4)
 material = SubResource("Mat_VoidPlatform")
 
-[node name="Step10Trim" type="CSGBox3D" parent="ParkourCourse"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 6.52, -70)
-size = Vector3(2.1, 0.05, 2.1)
+[node name="BeamRight1Trim" type="CSGBox3D" parent="ParkourCourse"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.2, 5.62, -63.5)
+size = Vector3(0.8, 0.05, 3)
 material = SubResource("Mat_MagentaGlow")
 
-[node name="MovingPillar1" type="AnimatableBody3D" parent="ParkourCourse"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 7.5, -75)
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="ParkourCourse/MovingPillar1"]
-shape = SubResource("BoxShape3D_moving_1")
-
-[node name="MeshInstance3D" type="MeshInstance3D" parent="ParkourCourse/MovingPillar1"]
-mesh = SubResource("BoxMesh_moving_1")
-
-[node name="Step11" type="CSGBox3D" parent="ParkourCourse"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3, 8, -81)
+[node name="BeamLeft2" type="CSGBox3D" parent="ParkourCourse"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.2, 6.2, -70)
 use_collision = true
-size = Vector3(2.5, 0.8, 2.5)
+size = Vector3(1.2, 0.6, 3.4)
 material = SubResource("Mat_VoidPlatform")
 
-[node name="Step11Trim" type="CSGBox3D" parent="ParkourCourse"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3, 8.42, -81)
-size = Vector3(2.1, 0.05, 2.1)
+[node name="BeamLeft2Trim" type="CSGBox3D" parent="ParkourCourse"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.2, 6.52, -70)
+size = Vector3(0.8, 0.05, 3)
 material = SubResource("Mat_CyanGlow")
 
-[node name="Step12" type="CSGBox3D" parent="ParkourCourse"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 8.8, -87)
+[node name="BeamRight2" type="CSGBox3D" parent="ParkourCourse"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.2, 6.2, -70)
 use_collision = true
-size = Vector3(2.5, 0.8, 2.5)
+size = Vector3(1.2, 0.6, 3.4)
 material = SubResource("Mat_VoidPlatform")
 
-[node name="Step12Trim" type="CSGBox3D" parent="ParkourCourse"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 9.22, -87)
-size = Vector3(2.1, 0.05, 2.1)
+[node name="BeamRight2Trim" type="CSGBox3D" parent="ParkourCourse"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.2, 6.52, -70)
+size = Vector3(0.8, 0.05, 3)
 material = SubResource("Mat_MagentaGlow")
 
-[node name="Step13" type="CSGBox3D" parent="ParkourCourse"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 9.4, -92)
+[node name="BeamLeft3" type="CSGBox3D" parent="ParkourCourse"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.2, 7.1, -76.5)
 use_collision = true
-size = Vector3(2.8, 0.8, 2.8)
+size = Vector3(1.2, 0.6, 3.4)
 material = SubResource("Mat_VoidPlatform")
 
-[node name="Step13Trim" type="CSGBox3D" parent="ParkourCourse"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 9.82, -92)
-size = Vector3(2.4, 0.05, 2.4)
-material = SubResource("Mat_GreenCheck")
+[node name="BeamLeft3Trim" type="CSGBox3D" parent="ParkourCourse"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.2, 7.42, -76.5)
+size = Vector3(0.8, 0.05, 3)
+material = SubResource("Mat_CyanGlow")
+
+[node name="BeamRight3" type="CSGBox3D" parent="ParkourCourse"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.2, 7.1, -76.5)
+use_collision = true
+size = Vector3(1.2, 0.6, 3.4)
+material = SubResource("Mat_VoidPlatform")
+
+[node name="BeamRight3Trim" type="CSGBox3D" parent="ParkourCourse"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.2, 7.42, -76.5)
+size = Vector3(0.8, 0.05, 3)
+material = SubResource("Mat_MagentaGlow")
+
+[node name="BeamLeft4" type="CSGBox3D" parent="ParkourCourse"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.2, 8, -83)
+use_collision = true
+size = Vector3(1.2, 0.6, 3.4)
+material = SubResource("Mat_VoidPlatform")
+
+[node name="BeamLeft4Trim" type="CSGBox3D" parent="ParkourCourse"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.2, 8.32, -83)
+size = Vector3(0.8, 0.05, 3)
+material = SubResource("Mat_CyanGlow")
+
+[node name="BeamRight4" type="CSGBox3D" parent="ParkourCourse"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.2, 8, -83)
+use_collision = true
+size = Vector3(1.2, 0.6, 3.4)
+material = SubResource("Mat_VoidPlatform")
+
+[node name="BeamRight4Trim" type="CSGBox3D" parent="ParkourCourse"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.2, 8.32, -83)
+size = Vector3(0.8, 0.05, 3)
+material = SubResource("Mat_MagentaGlow")
+
+[node name="BeamLeft5" type="CSGBox3D" parent="ParkourCourse"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.2, 8.9, -89.5)
+use_collision = true
+size = Vector3(1.2, 0.6, 3.4)
+material = SubResource("Mat_VoidPlatform")
+
+[node name="BeamLeft5Trim" type="CSGBox3D" parent="ParkourCourse"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.2, 9.22, -89.5)
+size = Vector3(0.8, 0.05, 3)
+material = SubResource("Mat_CyanGlow")
+
+[node name="BeamRight5" type="CSGBox3D" parent="ParkourCourse"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.2, 8.9, -89.5)
+use_collision = true
+size = Vector3(1.2, 0.6, 3.4)
+material = SubResource("Mat_VoidPlatform")
+
+[node name="BeamRight5Trim" type="CSGBox3D" parent="ParkourCourse"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.2, 9.22, -89.5)
+size = Vector3(0.8, 0.05, 3)
+material = SubResource("Mat_MagentaGlow")
 
 [node name="MovingPillar2" type="AnimatableBody3D" parent="ParkourCourse"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 11, -104.5)

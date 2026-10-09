@@ -24,7 +24,8 @@ var item_spawns: Array[Vector3] = [
 	Vector3(0.0, 1.8, -20.0),      # Block 3
 	Vector3(0.0, 5.2, -47.5),      # Before Checkpoint 1
 	Vector3(0.0, 5.8, -56.0),      # Checkpoint 1
-	Vector3(0.0, 8.2, -75.0),      # Mid Floating Pillar
+	Vector3(-2.2, 7.6, -76.5),     # Beam Left 3
+	Vector3(2.2, 7.6, -76.5),      # Beam Right 3
 	Vector3(0.0, 10.8, -96.0),     # Checkpoint 2
 	Vector3(0.0, 12.8, -112.0),    # Section 6 High Jump
 	Vector3(0.0, 16.0, -140.0)     # Finish Platform

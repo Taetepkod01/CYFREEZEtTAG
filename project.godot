@@ -21,11 +21,6 @@ Network="*res://scripts/network.gd"
 FirebaseService="*res://scripts/firebase_service.gd"
 MCPRuntimeServer="*res://addons/godot_mcp_toolkit/runtime/mcp_runtime_server.gd"
 
-[firebase]
-
-api_key="AIzaSyA1dfz0Z82id36JnSzgaZyOsnNhn2ninHc"
-project_id="cyfreezetag-3d-game"
-
 [display]
 
 window/size/viewport_width=1280
@@ -36,6 +31,11 @@ window/stretch/aspect="expand"
 [editor_plugins]
 
 enabled=PackedStringArray("res://addons/godot_mcp_toolkit/plugin.cfg")
+
+[firebase]
+
+api_key="AIzaSyA1dfz0Z82id36JnSzgaZyOsnNhn2ninHc"
+project_id="cyfreezetag-3d-game"
 
 [gui]
 
