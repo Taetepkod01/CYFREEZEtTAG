@@ -42,14 +42,18 @@ var player_checkpoints: Dictionary = {}
 # ── Rolling Hazard Balls Controller ──────────────────────────────────────────
 const RAMP_TOP_POS := Vector3(0.0, 19.9, -139.0)
 const RAMP_BOTTOM_POS := Vector3(0.0, 10.9, -99.5)
+const SKY_SPAWN_HEIGHT := 34.0
+const FALL_DURATION := 0.7
+const ROLL_DURATION := 3.5
+const CYCLE_DURATION := 6.0 # 3 balls * 2.0s interval = 6.0s cycle
 
 @onready var hazard_ball_1: Area3D = get_node_or_null("ParkourCourse/HazardBall1")
 @onready var hazard_ball_2: Area3D = get_node_or_null("ParkourCourse/HazardBall2")
 @onready var hazard_ball_3: Area3D = get_node_or_null("ParkourCourse/HazardBall3")
 
 var hazard_balls: Array[Area3D] = []
-var ball_progress: Array[float] = [0.0, 0.35, 0.70]
-var ball_lanes: Array[float] = [-1.8, 1.8, 0.0]
+var ball_timers: Array[float] = [0.0, -2.0, -4.0] # 2-second interval between spawns
+var ball_lanes: Array[float] = [-2.0, 2.0, 0.0]
 var time_passed: float = 0.0
 
 func _ready() -> void:
@@ -119,25 +123,52 @@ func _flash_beacon(beacon: MeshInstance3D, _color: Color) -> void:
 func _process(delta: float) -> void:
 	time_passed += delta
 	
-	# Animate Rolling Hazard Balls down the ramp
+	# Animate Rolling Hazard Balls dropping from sky and rolling down ramp (2s interval)
 	for i in range(hazard_balls.size()):
 		var ball = hazard_balls[i]
-		if is_instance_valid(ball):
-			ball_progress[i] += delta * 0.28 # ~3.6s to roll down the 41m slope (~11.4 m/s)
-			if ball_progress[i] >= 1.0:
-				ball_progress[i] -= 1.0 # Disappears at bottom, respawns at top
-				var available_lanes: Array[float] = [-2.0, 0.0, 2.0]
-				ball_lanes[i] = available_lanes[(i + int(time_passed * 1.5)) % available_lanes.size()]
-			
-			var t = ball_progress[i]
-			var current_pos = RAMP_TOP_POS.lerp(RAMP_BOTTOM_POS, t)
+		if not is_instance_valid(ball):
+			continue
+		
+		ball_timers[i] += delta
+		var t = ball_timers[i]
+		
+		if t < 0.0:
+			# Waiting for initial spawn delay
+			ball.visible = false
+			ball.monitoring = false
+			ball.position = Vector3(0.0, -100.0, 0.0)
+		elif t < FALL_DURATION:
+			# Phase 1: Dropping rapidly from the sky onto the top of the ramp
+			ball.visible = true
+			ball.monitoring = true
+			var fall_progress = t / FALL_DURATION
+			var fall_y = lerp(SKY_SPAWN_HEIGHT, RAMP_TOP_POS.y, fall_progress * fall_progress)
+			ball.position = Vector3(ball_lanes[i], fall_y, RAMP_TOP_POS.z)
+			var sphere_mesh = ball.get_node_or_null("SphereMesh") as Node3D
+			if sphere_mesh:
+				sphere_mesh.rotate_y(3.0 * delta)
+		elif t < (FALL_DURATION + ROLL_DURATION):
+			# Phase 2: Rolling down the inclined ramp
+			ball.visible = true
+			ball.monitoring = true
+			var roll_progress = (t - FALL_DURATION) / ROLL_DURATION
+			var current_pos = RAMP_TOP_POS.lerp(RAMP_BOTTOM_POS, roll_progress)
 			current_pos.x = ball_lanes[i]
 			ball.position = current_pos
 			
-			# Visual rolling rotation on X axis
 			var sphere_mesh = ball.get_node_or_null("SphereMesh") as Node3D
 			if sphere_mesh:
 				sphere_mesh.rotate_x(12.0 * delta)
+		elif t < CYCLE_DURATION:
+			# Phase 3: Reached bottom near Checkpoint 2 -> disappears until next cycle
+			ball.visible = false
+			ball.monitoring = false
+			ball.position = Vector3(0.0, -100.0, 0.0)
+		else:
+			# Reset cycle (spawns from sky again 2s after previous ball)
+			ball_timers[i] -= CYCLE_DURATION
+			var lane_choices: Array[float] = [-2.2, 0.0, 2.2]
+			ball_lanes[i] = lane_choices[(i + int(time_passed * 1.7)) % lane_choices.size()]
 	
 	# Rotating Victory Trophy at Finish Line
 	if is_instance_valid(finish_trophy):
