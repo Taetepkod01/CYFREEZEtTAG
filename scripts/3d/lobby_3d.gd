@@ -52,6 +52,17 @@ var is_ready: bool = false
 var my_player_name: String = "Player 1"
 var selected_map: String = "SPACE STATION"
 var is_dragging_slider: bool = false
+var user_badge_lbl: Label = null
+
+func _update_user_badge() -> void:
+	if not user_badge_lbl:
+		return
+	if Network and not Network.current_user.is_empty():
+		var lv = int(Network.current_user.get("level", 1))
+		var coins = int(Network.current_user.get("coins", 0))
+		user_badge_lbl.text = "★ Lv. %d  |  🪙 %d Coins" % [lv, coins]
+	else:
+		user_badge_lbl.text = "★ Lv. 1  |  🪙 50 Coins"
 
 func _ready() -> void:
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
@@ -63,6 +74,15 @@ func _ready() -> void:
 			selected_map = Network.selected_map
 	player_name_input.text = my_player_name
 	player_name_input.text_changed.connect(_on_player_name_changed)
+	
+	user_badge_lbl = Label.new()
+	user_badge_lbl.add_theme_font_size_override("font_size", 12)
+	user_badge_lbl.modulate = Color(1.0, 0.88, 0.3)
+	if player_name_input and player_name_input.get_parent():
+		player_name_input.get_parent().add_child(user_badge_lbl)
+	_update_user_badge()
+	if Network:
+		Network.profile_updated.connect(func(_u): _update_user_badge())
 	
 	# Setup rounds options
 	rounds_opt.clear()
@@ -660,23 +680,26 @@ func _update_player_slots(r: Dictionary) -> void:
 		
 		if is_occupied:
 			var item = r["players"][i]
-			
+			var p_level: int = 1
 			if typeof(item) == TYPE_DICTIONARY:
 				p_id = str(item.get("id", ""))
 				p_name = str(item.get("name", "Player %d" % (i + 1)))
 				p_is_host = bool(item.get("isHost", i == 0))
 				p_is_ready = bool(item.get("isReady", false))
 				p_in_game = bool(item.get("isInGame", false))
+				p_level = int(item.get("level", 1))
 			else:
 				p_name = str(item)
 				p_is_host = (i == 0)
 				p_is_ready = false
 				p_in_game = false
+				p_level = 1
 			
 			# Clean up any leftover duplicate "(Host)"
 			while p_name.ends_with("(Host)"):
 				p_name = p_name.trim_suffix("(Host)").strip_edges()
 			
+			var full_name = "[Lv. %d] %s" % [p_level, p_name]
 			var is_room_playing = (str(r.get("phase", "lobby")) == "playing")
 			
 			if p_in_game:
@@ -685,14 +708,14 @@ func _update_player_slots(r: Dictionary) -> void:
 				if p_is_host:
 					icon_lbl.text = "★"
 					icon_lbl.modulate = Color(1.0, 0.85, 0.2)
-					name_lbl.text = p_name
+					name_lbl.text = full_name
 					name_lbl.modulate = Color(1.0, 0.9, 0.35)
 					status_badge.text = "[HOST - IN GAME]"
 					status_badge.modulate = Color(0.3, 0.85, 1.0)
 				else:
 					icon_lbl.text = "⚔"
 					icon_lbl.modulate = Color(0.3, 0.85, 1.0)
-					name_lbl.text = p_name
+					name_lbl.text = full_name
 					name_lbl.modulate = Color(0.85, 0.95, 1.0)
 					status_badge.text = "[IN GAME]"
 					status_badge.modulate = Color(0.3, 0.85, 1.0)
@@ -701,7 +724,7 @@ func _update_player_slots(r: Dictionary) -> void:
 				sb.border_color = Color(1.0, 0.85, 0.3, 0.85)
 				icon_lbl.text = "★"
 				icon_lbl.modulate = Color(1.0, 0.85, 0.2)
-				name_lbl.text = p_name
+				name_lbl.text = full_name
 				name_lbl.modulate = Color(1.0, 0.9, 0.35)
 				status_badge.text = "[HOST]"
 				status_badge.modulate = Color(1.0, 0.85, 0.2)
@@ -711,7 +734,7 @@ func _update_player_slots(r: Dictionary) -> void:
 					sb.border_color = Color(0.9, 0.75, 0.2, 0.7)
 					icon_lbl.text = "⏳"
 					icon_lbl.modulate = Color(0.95, 0.85, 0.3)
-					name_lbl.text = p_name
+					name_lbl.text = full_name
 					name_lbl.modulate = Color(0.9, 0.92, 1.0)
 					status_badge.text = "[WAITING IN LOBBY]"
 					status_badge.modulate = Color(0.95, 0.85, 0.3)
@@ -720,7 +743,7 @@ func _update_player_slots(r: Dictionary) -> void:
 					sb.border_color = Color(0.2, 0.85, 0.4, 0.8)
 					icon_lbl.text = "✓"
 					icon_lbl.modulate = Color(0.3, 1.0, 0.5)
-					name_lbl.text = p_name
+					name_lbl.text = full_name
 					name_lbl.modulate = Color(0.8, 1.0, 0.85)
 					status_badge.text = "[READY]"
 					status_badge.modulate = Color(0.3, 1.0, 0.5)
@@ -729,7 +752,7 @@ func _update_player_slots(r: Dictionary) -> void:
 					sb.border_color = Color(0.2, 0.7, 0.95, 0.6)
 					icon_lbl.text = "○"
 					icon_lbl.modulate = Color(0.3, 0.9, 1.0)
-					name_lbl.text = p_name
+					name_lbl.text = full_name
 					name_lbl.modulate = Color(0.85, 0.92, 1.0)
 					status_badge.text = "[WAITING]"
 					status_badge.modulate = Color(0.5, 0.75, 0.95)

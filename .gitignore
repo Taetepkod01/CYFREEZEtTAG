@@ -5,4 +5,5 @@
 # Node server ignores
 server/node_modules/
 server/build/
+server/data/
 *.log

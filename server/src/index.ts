@@ -6,6 +6,7 @@ import cors from "cors";
 import { WebSocketServer, WebSocket } from "ws";
 import { Server, matchMaker, WebSocketTransport } from "colyseus";
 import { GameRoom } from "./rooms/GameRoom";
+import { registerUser, loginUser, guestLogin, getUserProfile, addExpAndCoins, UserProfile } from "./auth";
 
 const PORT = Number(process.env.PORT) || 2567;
 const clientBuildPath = path.join(__dirname, "../public");
@@ -30,6 +31,51 @@ app.get("/health", (_req, res) => {
   });
 });
 
+// ── Authentication & Player Profile REST Endpoints ───────────────────────────
+app.post("/api/auth/register", async (req, res) => {
+  try {
+    const { email, password, displayName } = req.body || {};
+    const result = await registerUser(email, password, displayName);
+    if (!result.success) {
+      return res.status(400).json(result);
+    }
+    return res.json(result);
+  } catch (err: any) {
+    return res.status(500).json({ success: false, message: err?.message || "Internal server error" });
+  }
+});
+
+app.post("/api/auth/login", async (req, res) => {
+  try {
+    const { email, password } = req.body || {};
+    const result = await loginUser(email, password);
+    if (!result.success) {
+      return res.status(401).json(result);
+    }
+    return res.json(result);
+  } catch (err: any) {
+    return res.status(500).json({ success: false, message: err?.message || "Internal server error" });
+  }
+});
+
+app.post("/api/auth/guest", (req, res) => {
+  try {
+    const { displayName, uid } = req.body || {};
+    const user = guestLogin(displayName, uid);
+    return res.json({ success: true, user });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, message: err?.message || "Internal server error" });
+  }
+});
+
+app.get("/api/user/profile/:uid", (req, res) => {
+  const profile = getUserProfile(req.params.uid);
+  if (!profile) {
+    return res.status(404).json({ success: false, message: "User profile not found" });
+  }
+  return res.json({ success: true, user: profile });
+});
+
 // ── Shared 3D Room Management for Godot Client-Server ───────────────────────
 export interface ActivePlayer {
   id: string;
@@ -52,6 +98,10 @@ export interface ActivePlayer {
   invincibleUntil: number;
   isReady: boolean;
   isInGame?: boolean;
+  uid?: string;
+  level?: number;
+  exp?: number;
+  coins?: number;
   lastTackleTime?: number;
 }
 
@@ -119,7 +169,9 @@ function cleanupGhostRooms() {
               name: pl.name,
               isHost: pl.id === r.hostId,
               isReady: pl.id === r.hostId ? true : Boolean(pl.isReady),
-              isInGame: Boolean(pl.isInGame)
+              isInGame: Boolean(pl.isInGame),
+              level: pl.level || 1,
+              coins: pl.coins || 0
             });
           });
           broadcastToRoom(r, "host_changed", {
@@ -343,6 +395,31 @@ wss.on("connection", (ws: WebSocket, req: any) => {
       const action = msg.action || msg.type || "";
 
       switch (action) {
+        // Authenticate / Sync Profile with WebSocket Session
+        case "auth_sync": {
+          const syncUid = String(msg.uid || "");
+          const syncName = String(msg.name || "").trim().slice(0, 16);
+          let profile = syncUid ? getUserProfile(syncUid) : null;
+          if (!profile && syncName) {
+            profile = guestLogin(syncName, syncUid || myPlayerId);
+          }
+          if (profile) {
+            myPlayerId = profile.uid;
+            if (currentRoom) {
+              const p = currentRoom.players.get(myPlayerId);
+              if (p) {
+                p.uid = profile.uid;
+                p.name = profile.displayName;
+                p.level = profile.level;
+                p.exp = profile.exp;
+                p.coins = profile.coins;
+              }
+            }
+            sendTo(ws, "auth_sync_success", { user: profile });
+          }
+          break;
+        }
+
         // Set Player Name
         case "set_player_name": {
           const newName = String(msg.name || "Player").trim().slice(0, 16);
@@ -412,9 +489,19 @@ wss.on("connection", (ws: WebSocket, req: any) => {
             kickedNames: new Set<string>()
           };
 
+          const pUid = String(msg.uid || myPlayerId);
+          let hostProfile = getUserProfile(pUid);
+          if (!hostProfile) {
+            hostProfile = guestLogin(pName, pUid);
+          }
+
           const p: ActivePlayer = {
             id: myPlayerId,
-            name: pName,
+            name: hostProfile.displayName || pName,
+            uid: hostProfile.uid,
+            level: hostProfile.level,
+            exp: hostProfile.exp,
+            coins: hostProfile.coins,
             ip: clientIp,
             ws,
             x: 0,
@@ -449,7 +536,15 @@ wss.on("connection", (ws: WebSocket, req: any) => {
             map,
             isPrivate,
             phase: "lobby",
-            players: [{ id: p.id, name: p.name, isHost: true, isReady: true, isInGame: false }]
+            players: [{
+              id: p.id,
+              name: p.name,
+              isHost: true,
+              isReady: true,
+              isInGame: false,
+              level: p.level || 1,
+              coins: p.coins || 0
+            }]
           });
           console.log(`[WS Server] Room created: ${code} (${isPrivate ? "PRIVATE" : "PUBLIC"}) by ${pName}`);
           break;
@@ -518,10 +613,20 @@ wss.on("connection", (ws: WebSocket, req: any) => {
             return;
           }
 
+          const pUid = String(msg.uid || myPlayerId);
+          let joinProfile = getUserProfile(pUid);
+          if (!joinProfile) {
+            joinProfile = guestLogin(pName, pUid);
+          }
+
           const sp = SPAWN_3D_POSITIONS[room.players.size % SPAWN_3D_POSITIONS.length];
           const newPlayer: ActivePlayer = {
             id: myPlayerId,
-            name: pName,
+            name: joinProfile.displayName || pName,
+            uid: joinProfile.uid,
+            level: joinProfile.level,
+            exp: joinProfile.exp,
+            coins: joinProfile.coins,
             ip: clientIp,
             ws,
             x: sp.x,
@@ -550,7 +655,9 @@ wss.on("connection", (ws: WebSocket, req: any) => {
             name: pl.name,
             isHost: pl.id === room.hostId,
             isReady: pl.id === room.hostId ? true : Boolean(pl.isReady),
-            isInGame: Boolean(pl.isInGame)
+            isInGame: Boolean(pl.isInGame),
+            level: pl.level || 1,
+            coins: pl.coins || 0
           }));
 
           sendTo(ws, "room_joined", {
@@ -572,6 +679,8 @@ wss.on("connection", (ws: WebSocket, req: any) => {
             isHost: false,
             isReady: false,
             isInGame: false,
+            level: newPlayer.level || 1,
+            coins: newPlayer.coins || 0,
             playersCount: room.players.size,
             maxPlayers: room.maxPlayers
           }, ws);
@@ -610,7 +719,9 @@ wss.on("connection", (ws: WebSocket, req: any) => {
             name: pl.name,
             isHost: pl.id === room.hostId,
             isReady: pl.id === room.hostId ? true : Boolean(pl.isReady),
-            isInGame: Boolean(pl.isInGame)
+            isInGame: Boolean(pl.isInGame),
+            level: pl.level || 1,
+            coins: pl.coins || 0
           }));
 
           broadcastToRoom(room, "player_ready_updated", {
@@ -683,7 +794,9 @@ wss.on("connection", (ws: WebSocket, req: any) => {
               name: pl.name,
               isHost: pl.id === room.hostId,
               isReady: pl.id === room.hostId ? true : Boolean(pl.isReady),
-              isInGame: false
+              isInGame: false,
+              level: pl.level || 1,
+              coins: pl.coins || 0
             }));
 
             broadcastToRoom(room, "returned_to_lobby", {
@@ -710,7 +823,9 @@ wss.on("connection", (ws: WebSocket, req: any) => {
               name: pl.name,
               isHost: pl.id === room.hostId,
               isReady: pl.id === room.hostId ? true : Boolean(pl.isReady),
-              isInGame: Boolean(pl.isInGame)
+              isInGame: Boolean(pl.isInGame),
+              level: pl.level || 1,
+              coins: pl.coins || 0
             }));
 
             sendTo(ws, "returned_to_lobby", {
@@ -780,7 +895,9 @@ wss.on("connection", (ws: WebSocket, req: any) => {
             name: pl.name,
             isHost: pl.id === room.hostId,
             isReady: pl.id === room.hostId ? true : Boolean(pl.isReady),
-            isInGame: Boolean(pl.isInGame)
+            isInGame: Boolean(pl.isInGame),
+            level: pl.level || 1,
+            coins: pl.coins || 0
           }));
 
           broadcastToRoom(room, "player_left", {
@@ -825,7 +942,9 @@ wss.on("connection", (ws: WebSocket, req: any) => {
                       name: pl.name,
                       isHost: pl.id === roomToLeave.hostId,
                       isReady: pl.id === roomToLeave.hostId ? true : Boolean(pl.isReady),
-                      isInGame: Boolean(pl.isInGame)
+                      isInGame: Boolean(pl.isInGame),
+                      level: pl.level || 1,
+                      coins: pl.coins || 0
                     });
                   });
                   broadcastToRoom(roomToLeave, "host_changed", {
@@ -1122,7 +1241,9 @@ wss.on("connection", (ws: WebSocket, req: any) => {
                 name: pl.name,
                 isHost: pl.id === room.hostId,
                 isReady: pl.id === room.hostId ? true : Boolean(pl.isReady),
-                isInGame: Boolean(pl.isInGame)
+                isInGame: Boolean(pl.isInGame),
+                level: pl.level || 1,
+                coins: pl.coins || 0
               });
             });
             broadcastToRoom(room, "host_changed", {
@@ -1418,6 +1539,77 @@ function end3DRound(room: Active3DRoom, winner: "TAGGERS" | "RUNNERS", reason: s
 
   const isMatchOver = room.currentRound >= room.rounds;
 
+  // Authoritative EXP & Coins Progression Calculation
+  const playerRewards: Record<string, any> = {};
+
+  room.players.forEach(p => {
+    const isWinner = (p.role === "tagger" && winner === "TAGGERS") || (p.role === "runner" && winner === "RUNNERS");
+    const baseExp = isWinner ? 100 : 40;
+    const baseCoins = isWinner ? 60 : 20;
+
+    const tagExp = (p.freezeCount || 0) * 15;
+    const tagCoins = (p.freezeCount || 0) * 5;
+
+    const rescueExp = (p.rescueCount || 0) * 20;
+    const rescueCoins = (p.rescueCount || 0) * 10;
+
+    const isMvp = Boolean(best && p.id === (best as ActivePlayer).id && maxPts > 0);
+    const mvpExp = isMvp ? 50 : 0;
+    const mvpCoins = isMvp ? 25 : 0;
+
+    const totalExpGain = baseExp + tagExp + rescueExp + mvpExp;
+    const totalCoinsGain = baseCoins + tagCoins + rescueCoins + mvpCoins;
+
+    const userUid = p.uid || p.id;
+    let profile = getUserProfile(userUid);
+    if (!profile) {
+      profile = guestLogin(p.name, userUid);
+    }
+
+    profile.matchesPlayed = (profile.matchesPlayed || 0) + 1;
+    if (isWinner) profile.matchesWon = (profile.matchesWon || 0) + 1;
+    profile.totalTags = (profile.totalTags || 0) + (p.freezeCount || 0);
+    profile.totalRescues = (profile.totalRescues || 0) + (p.rescueCount || 0);
+
+    const levelResult = addExpAndCoins(profile, totalExpGain, totalCoinsGain);
+
+    p.level = profile.level;
+    p.exp = profile.exp;
+    p.coins = profile.coins;
+
+    const rewardData = {
+      playerId: p.id,
+      isWinner,
+      isMvp,
+      expGained: totalExpGain,
+      coinsGained: totalCoinsGain,
+      level: profile.level,
+      exp: profile.exp,
+      maxExp: profile.maxExp,
+      coins: profile.coins,
+      leveledUp: levelResult.leveledUp,
+      levelBefore: levelResult.levelBefore,
+      levelAfter: levelResult.levelAfter,
+      breakdown: {
+        baseExp,
+        baseCoins,
+        tagExp,
+        tagCoins,
+        rescueExp,
+        rescueCoins,
+        mvpExp,
+        mvpCoins
+      }
+    };
+
+    playerRewards[p.id] = rewardData;
+
+    // Send private rewards notification to player
+    if (p.ws && p.ws.readyState === WebSocket.OPEN) {
+      sendTo(p.ws, "match_rewards", rewardData);
+    }
+  });
+
   broadcastToRoom(room, "round_ended", {
     winner,
     reason,
@@ -1426,6 +1618,7 @@ function end3DRound(room: Active3DRoom, winner: "TAGGERS" | "RUNNERS", reason: s
     currentRound: room.currentRound,
     maxRounds: room.rounds,
     isMatchOver,
+    rewards: playerRewards,
     mvp: best ? {
       id: (best as ActivePlayer).id,
       name: (best as ActivePlayer).name,

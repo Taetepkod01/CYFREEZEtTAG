@@ -40,6 +40,12 @@ signal player_list_updated
 signal game_started
 signal game_ended(winner: String)
 
+# Auth & Progression Signals
+signal auth_succeeded(user: Dictionary)
+signal auth_failed(message: String)
+signal profile_updated(user: Dictionary)
+signal rewards_received(reward_data: Dictionary)
+
 # ── Server Connection Config ──────────────────────────────────────────────────
 # Default to local Node/Colyseus server port 2567, or automatically deduce on Web
 var server_ws_url: String = "ws://127.0.0.1:2567/ws"
@@ -47,6 +53,7 @@ var server_http_url: String = "http://127.0.0.1:2567"
 
 var ws_peer: WebSocketPeer = WebSocketPeer.new()
 var http_request: HTTPRequest = null
+var auth_http: HTTPRequest = null
 var last_ws_state: int = WebSocketPeer.STATE_CLOSED
 
 # ── State Variables ───────────────────────────────────────────────────────────
@@ -56,6 +63,16 @@ var player_id: String:
 	get:
 		return my_peer_id
 var my_player_name: String = "Player 1"
+var current_user: Dictionary = {
+	"uid": "",
+	"email": "",
+	"displayName": "Player 1",
+	"level": 1,
+	"exp": 0,
+	"maxExp": 100,
+	"coins": 50,
+	"isGuest": true
+}
 var current_room_code: String = ""
 var is_host: bool = false
 var is_solo_mode: bool = false
@@ -79,10 +96,15 @@ const PING_INTERVAL: float = 5.0
 
 func _ready() -> void:
 	_init_urls()
+	load_local_user()
 	
 	http_request = HTTPRequest.new()
 	add_child(http_request)
 	http_request.request_completed.connect(_on_http_request_completed)
+	
+	auth_http = HTTPRequest.new()
+	add_child(auth_http)
+	auth_http.request_completed.connect(_on_auth_http_completed)
 
 func _init_urls() -> void:
 	if OS.has_feature("web"):
@@ -156,6 +178,7 @@ func _handle_state_change(new_state: int, old_state: int) -> void:
 		print("[Network] WebSocket Connected successfully!")
 		is_connected_to_server = true
 		ping_timer = PING_INTERVAL
+		auth_sync_websocket()
 		connected_to_server.emit()
 	elif new_state == WebSocketPeer.STATE_CLOSED:
 		ping_timer = 0.0
@@ -349,6 +372,16 @@ func _handle_server_message(raw_text: String) -> void:
 		"round_ended":
 			round_ended.emit(data)
 			
+		"match_rewards":
+			if typeof(data) == TYPE_DICTIONARY:
+				current_user["level"] = int(data.get("level", current_user.get("level", 1)))
+				current_user["exp"] = int(data.get("exp", current_user.get("exp", 0)))
+				current_user["maxExp"] = int(data.get("maxExp", current_user.get("maxExp", 100)))
+				current_user["coins"] = int(data.get("coins", current_user.get("coins", 0)))
+				save_local_user()
+				profile_updated.emit(current_user)
+				rewards_received.emit(data)
+			
 		"returned_to_lobby":
 			room_data = data
 			returned_to_lobby.emit(data)
@@ -423,6 +456,7 @@ func create_room(r_name: String, max_p: int = 8, rounds: int = 3, map_name: Stri
 	send_action("create_room", {
 		"roomName": r_name,
 		"playerName": my_player_name,
+		"uid": current_user.get("uid", ""),
 		"maxPlayers": max_p,
 		"rounds": rounds,
 		"map": map_name,
@@ -436,7 +470,8 @@ func join_room(code: String) -> void:
 		return
 	send_action("join_room", {
 		"roomCode": clean,
-		"playerName": my_player_name
+		"playerName": my_player_name,
+		"uid": current_user.get("uid", "")
 	})
 
 func update_room_settings(max_p: int, rounds: int, map_name: String, is_priv: bool = false) -> void:
@@ -513,3 +548,101 @@ func start_solo_practice() -> void:
 	is_solo_mode = true
 	disconnect_from_server()
 	get_tree().change_scene_to_file("res://scenes/3d/arena_3d.tscn")
+
+# ── Authentication & Progression API ──────────────────────────────────────────
+const USER_PROFILE_FILE: String = "user://player_profile.json"
+
+func auth_sync_websocket() -> void:
+	if ws_peer.get_ready_state() == WebSocketPeer.STATE_OPEN:
+		send_action("auth_sync", {
+			"uid": current_user.get("uid", ""),
+			"name": current_user.get("displayName", my_player_name)
+		})
+
+func auth_register(email_str: String, pass_str: String, name_str: String) -> void:
+	if not auth_http:
+		return
+	var url = server_http_url + "/api/auth/register"
+	var body = JSON.stringify({
+		"email": email_str.strip_edges(),
+		"password": pass_str,
+		"displayName": name_str.strip_edges()
+	})
+	var headers = ["Content-Type: application/json"]
+	auth_http.request(url, headers, HTTPClient.METHOD_POST, body)
+
+func auth_login(email_str: String, pass_str: String) -> void:
+	if not auth_http:
+		return
+	var url = server_http_url + "/api/auth/login"
+	var body = JSON.stringify({
+		"email": email_str.strip_edges(),
+		"password": pass_str
+	})
+	var headers = ["Content-Type: application/json"]
+	auth_http.request(url, headers, HTTPClient.METHOD_POST, body)
+
+func auth_guest(name_str: String) -> void:
+	if not auth_http:
+		return
+	var url = server_http_url + "/api/auth/guest"
+	var body = JSON.stringify({
+		"displayName": name_str.strip_edges(),
+		"uid": current_user.get("uid", "")
+	})
+	var headers = ["Content-Type: application/json"]
+	auth_http.request(url, headers, HTTPClient.METHOD_POST, body)
+
+func _on_auth_http_completed(_result: int, response_code: int, _headers: PackedStringArray, body: PackedByteArray) -> void:
+	var json_str = body.get_string_from_utf8()
+	var parsed = JSON.parse_string(json_str)
+	if typeof(parsed) != TYPE_DICTIONARY:
+		auth_failed.emit("Invalid server response (Code %d)" % response_code)
+		return
+	
+	if response_code == 200 and parsed.get("success", false):
+		var user_data = parsed.get("user", {})
+		if typeof(user_data) == TYPE_DICTIONARY and not user_data.is_empty():
+			current_user = user_data
+			if current_user.has("displayName") and not str(current_user["displayName"]).is_empty():
+				my_player_name = str(current_user["displayName"])
+			save_local_user()
+			auth_sync_websocket()
+			auth_succeeded.emit(current_user)
+			profile_updated.emit(current_user)
+	else:
+		var err_msg = str(parsed.get("message", "Authentication failed"))
+		auth_failed.emit(err_msg)
+
+func save_local_user() -> void:
+	var f = FileAccess.open(USER_PROFILE_FILE, FileAccess.WRITE)
+	if f:
+		f.store_string(JSON.stringify(current_user, "\t"))
+		f.close()
+
+func load_local_user() -> void:
+	if FileAccess.file_exists(USER_PROFILE_FILE):
+		var f = FileAccess.open(USER_PROFILE_FILE, FileAccess.READ)
+		if f:
+			var text = f.get_as_text()
+			f.close()
+			var parsed = JSON.parse_string(text)
+			if typeof(parsed) == TYPE_DICTIONARY:
+				current_user = parsed
+				if current_user.has("displayName") and not str(current_user["displayName"]).is_empty():
+					my_player_name = str(current_user["displayName"])
+				return
+	
+	# Default guest initialization
+	var guest_uid = "guest_" + str(Time.get_ticks_msec())
+	current_user = {
+		"uid": guest_uid,
+		"email": "",
+		"displayName": my_player_name,
+		"level": 1,
+		"exp": 0,
+		"maxExp": 100,
+		"coins": 50,
+		"isGuest": true
+	}
+	save_local_user()

@@ -81,6 +81,7 @@ var practice_role: String = "random"
 # TAB Scoreboard overlay state
 var tab_pressed_time: float = 0.0
 var scoreboard_toggled: bool = false
+var rewards_lbl: Label = null
 
 func _ready() -> void:
 	if status_panel:
@@ -88,6 +89,22 @@ func _ready() -> void:
 	game_over_panel.visible = false
 	menu_modal.visible = false
 	practice_role_modal.visible = false
+	
+	rewards_lbl = Label.new()
+	rewards_lbl.name = "RewardsLabel"
+	rewards_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	rewards_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	rewards_lbl.add_theme_font_size_override("font_size", 12)
+	rewards_lbl.modulate = Color(1.0, 0.9, 0.3)
+	rewards_lbl.anchors_preset = Control.PRESET_TOP_WIDE
+	rewards_lbl.offset_top = 142.0
+	rewards_lbl.offset_bottom = 188.0
+	rewards_lbl.offset_left = 20.0
+	rewards_lbl.offset_right = -20.0
+	if game_over_panel:
+		game_over_panel.offset_top = -175.0
+		game_over_panel.offset_bottom = 175.0
+		game_over_panel.add_child(rewards_lbl)
 	
 	next_round_btn.pressed.connect(_on_next_round_pressed)
 	lobby_btn.pressed.connect(_on_lobby_pressed)
@@ -666,6 +683,22 @@ func _on_net_round_ended(data: Dictionary) -> void:
 	else:
 		mvp_lbl.text = "MVP: Match Complete"
 	
+	var rewards_map = data.get("rewards", {})
+	if typeof(rewards_map) == TYPE_DICTIONARY and Network and rewards_map.has(Network.player_id):
+		var my_reward = rewards_map[Network.player_id]
+		var exp_gained = int(my_reward.get("expGained", 0))
+		var coins_gained = int(my_reward.get("coinsGained", 0))
+		var leveled_up = bool(my_reward.get("leveledUp", false))
+		var new_level = int(my_reward.get("level", 1))
+		var coins_total = int(my_reward.get("coins", 0))
+		
+		var reward_str = "REWARDS: +%d EXP  |  +%d 🪙 COINS (Total: %d)" % [exp_gained, coins_gained, coins_total]
+		if leveled_up:
+			reward_str += "\n🌟 LEVEL UP! You reached Level %d! 🌟" % new_level
+		_show_rewards_display(reward_str, leveled_up)
+	else:
+		_show_rewards_display("", false)
+	
 	if Network.is_host:
 		next_round_btn.visible = true
 		next_round_btn.text = "PLAY AGAIN" if is_match_over else "NEXT ROUND (%d)" % (current_round + 1)
@@ -673,6 +706,15 @@ func _on_net_round_ended(data: Dictionary) -> void:
 	else:
 		next_round_btn.visible = false
 		lobby_btn.visible = true
+
+func _show_rewards_display(text: String, leveled_up: bool) -> void:
+	if not rewards_lbl:
+		return
+	rewards_lbl.text = text
+	if leveled_up:
+		rewards_lbl.modulate = Color(1.0, 0.95, 0.2)
+	else:
+		rewards_lbl.modulate = Color(0.4, 0.9, 1.0)
 
 # -- Events & Log (Practice / Local) -----------------------------------------
 func _on_player_tagged(tagger: CharacterBody3D, victim: CharacterBody3D) -> void:
@@ -846,6 +888,36 @@ func _end_round(winner: String) -> void:
 		mvp_lbl.text = "MVP: %s (%d Tags / %d Rescues)" % [best_player.player_name, best_player.freeze_count, best_player.rescue_count]
 	else:
 		mvp_lbl.text = "MVP: Player 1 (You)"
+	
+	if Network and Network.is_solo_mode:
+		var exp_gain = 35
+		var coins_gain = 20
+		if (local_player and local_player.role == "runner" and winner == "RUNNERS") or (local_player and local_player.role == "tagger" and winner == "TAGGERS"):
+			exp_gain = 60
+			coins_gain = 30
+		if local_player:
+			exp_gain += local_player.freeze_count * 10 + local_player.rescue_count * 15
+			coins_gain += local_player.freeze_count * 5 + local_player.rescue_count * 8
+		
+		var u = Network.current_user
+		u["exp"] = int(u.get("exp", 0)) + exp_gain
+		u["coins"] = int(u.get("coins", 0)) + coins_gain
+		var lv = int(u.get("level", 1))
+		var max_exp = int(u.get("maxExp", 100))
+		var leveled_up = false
+		while u["exp"] >= max_exp:
+			u["exp"] -= max_exp
+			lv += 1
+			max_exp = lv * 100 + (lv - 1) * 50
+			u["level"] = lv
+			u["maxExp"] = max_exp
+			leveled_up = true
+		Network.save_local_user()
+		Network.profile_updated.emit(u)
+		var practice_rew = "PRACTICE REWARDS: +%d EXP  |  +%d 🪙 COINS (Total: %d)" % [exp_gain, coins_gain, u["coins"]]
+		if leveled_up:
+			practice_rew += "\n🌟 LEVEL UP! You reached Level %d! 🌟" % lv
+		_show_rewards_display(practice_rew, leveled_up)
 	
 	lobby_btn.visible = false
 	if current_round >= max_rounds:
