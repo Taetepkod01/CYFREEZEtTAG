@@ -581,6 +581,7 @@ func _update_room_lobby_ui() -> void:
 		_show_browser_view()
 		return
 	
+	var r: Dictionary = active_rooms[current_room_code]
 	var room_phase = str(r.get("phase", "lobby"))
 	
 	# Header

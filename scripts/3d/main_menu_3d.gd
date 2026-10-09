@@ -12,11 +12,11 @@ const TEX_ROLE_RUNNER_OFF = preload("res://assets/ui/buttons/btn_role_runner_off
 @onready var play_online_btn: TextureButton = $MenuButtons/PlayOnlineBtn
 @onready var practice_btn: TextureButton = $MenuButtons/PracticeBtn
 @onready var how_to_play_btn: TextureButton = $MenuButtons/HowToPlayBtn
-@onready var quit_btn: TextureButton = $MenuButtons/QuitBtn
+@onready var quit_btn: Button = $MenuButtons/QuitBtn
 @onready var rules_panel: Panel = $RulesPanel
 @onready var close_rules_btn: TextureButton = $RulesPanel/CloseBtn
 
-# Practice Modal (Matches 4.png)
+# Practice Modal
 @onready var practice_modal: Panel = $PracticeModal
 @onready var random_role_btn: TextureButton = $PracticeModal/RoleButtons/RandomRoleBtn
 @onready var tagger_role_btn: TextureButton = $PracticeModal/RoleButtons/TaggerRoleBtn
@@ -24,50 +24,53 @@ const TEX_ROLE_RUNNER_OFF = preload("res://assets/ui/buttons/btn_role_runner_off
 @onready var start_practice_btn: TextureButton = $PracticeModal/StartPracticeBtn
 @onready var close_practice_btn: TextureButton = $PracticeModal/ClosePracticeBtn
 
-# Profile Bar & Auth Modal Nodes
+# Firebase Auth Panel
+@onready var auth_panel: Panel = $AuthPanel
+@onready var auth_title: Label = $AuthPanel/AuthBox/AuthTitle
+@onready var email_input: LineEdit = $AuthPanel/AuthBox/EmailInput
+@onready var password_input: LineEdit = $AuthPanel/AuthBox/PasswordInput
+@onready var auth_submit_btn: Button = $AuthPanel/AuthBox/AuthSubmitBtn
+@onready var auth_toggle_btn: Button = $AuthPanel/AuthBox/AuthToggleBtn
+@onready var service_status: Label = $ServiceStatus
+
+# Profile Bar Nodes
 var profile_bar: PanelContainer = null
 var profile_level_lbl: Label = null
 var profile_name_lbl: Label = null
 var profile_exp_lbl: Label = null
 var profile_coins_lbl: Label = null
 var profile_account_btn: Button = null
-
-var auth_modal: Panel = null
-var auth_tab_login_btn: Button = null
-var auth_tab_register_btn: Button = null
-var auth_tab_guest_btn: Button = null
-var auth_email_input: LineEdit = null
-var auth_pass_input: LineEdit = null
-var auth_name_input: LineEdit = null
-var auth_email_row: VBoxContainer = null
-var auth_pass_row: VBoxContainer = null
-var auth_name_row: VBoxContainer = null
-var auth_status_lbl: Label = null
-var auth_submit_btn: Button = null
-var auth_cancel_btn: Button = null
-var current_auth_tab: String = "login" # "login", "register", "guest"
+var guest_btn: Button = null
 
 var selected_practice_role: String = "runner"
 var time_passed: float = 0.0
+var is_register_mode: bool = false
 
 func _ready() -> void:
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 	rules_panel.visible = false
 	practice_modal.visible = false
+	menu_buttons.visible = false
+	title_label.visible = false
+	auth_panel.visible = true
+	service_status.visible = false
 	
 	play_online_btn.pressed.connect(_on_play_online_pressed)
 	practice_btn.pressed.connect(_on_practice_pressed)
 	how_to_play_btn.pressed.connect(_on_how_to_play_pressed)
 	quit_btn.pressed.connect(_on_quit_pressed)
+	
 	close_rules_btn.pressed.connect(func():
 		rules_panel.visible = false
 		menu_buttons.visible = true
 		title_label.visible = true
+		if profile_bar: profile_bar.visible = true
 	)
 	close_practice_btn.pressed.connect(func():
 		practice_modal.visible = false
 		menu_buttons.visible = true
 		title_label.visible = true
+		if profile_bar: profile_bar.visible = true
 	)
 	
 	random_role_btn.pressed.connect(func(): _select_role("random"))
@@ -75,21 +78,48 @@ func _ready() -> void:
 	runner_role_btn.pressed.connect(func(): _select_role("runner"))
 	start_practice_btn.pressed.connect(func(): _start_practice(selected_practice_role))
 	
+	auth_submit_btn.pressed.connect(_on_auth_submit_pressed)
+	auth_toggle_btn.pressed.connect(_on_auth_toggle_pressed)
+	
+	if FirebaseService:
+		FirebaseService.auth_error.connect(_on_firebase_auth_error)
+	
+	_setup_guest_button()
+	_setup_profile_bar()
 	_select_role("runner")
 	
-	_setup_profile_bar()
-	_setup_auth_modal()
-	
 	if Network:
-		Network.auth_succeeded.connect(_on_auth_succeeded)
-		Network.auth_failed.connect(_on_auth_failed)
+		Network.auth_succeeded.connect(_on_network_auth_succeeded)
+		Network.auth_failed.connect(_on_network_auth_failed)
 		Network.profile_updated.connect(func(_u): _update_profile_bar())
 		_update_profile_bar()
+	
+	# If player already logged in previously, allow immediate access
+	if FirebaseService and not FirebaseService.current_user.is_empty():
+		_show_main_menu()
+	elif Network and not Network.current_user.is_empty() and not bool(Network.current_user.get("isGuest", true)):
+		_show_main_menu()
+
+# ── Dynamic Guest Play Button ─────────────────────────────────────────────────
+func _setup_guest_button() -> void:
+	if not auth_panel or not auth_panel.has_node("AuthBox"):
+		return
+	var auth_box = auth_panel.get_node("AuthBox")
+	guest_btn = Button.new()
+	guest_btn.name = "GuestBtn"
+	guest_btn.text = "⚡ PLAY AS GUEST (QUICK PLAY)"
+	guest_btn.custom_minimum_size = Vector2(0, 36)
+	guest_btn.flat = true
+	guest_btn.modulate = Color(0.4, 0.85, 1.0)
+	guest_btn.add_theme_font_size_override("font_size", 11)
+	guest_btn.pressed.connect(_on_guest_play_pressed)
+	auth_box.add_child(guest_btn)
 
 # ── Top Profile Bar ───────────────────────────────────────────────────────────
 func _setup_profile_bar() -> void:
 	profile_bar = PanelContainer.new()
 	profile_bar.name = "ProfileBar"
+	profile_bar.visible = false
 	profile_bar.anchors_preset = Control.PRESET_TOP_RIGHT
 	profile_bar.anchor_left = 1.0
 	profile_bar.anchor_right = 1.0
@@ -160,7 +190,7 @@ func _setup_profile_bar() -> void:
 	btn_sb.set_corner_radius_all(6)
 	profile_account_btn.add_theme_stylebox_override("normal", btn_sb)
 	profile_account_btn.add_theme_font_size_override("font_size", 11)
-	profile_account_btn.pressed.connect(_on_open_auth_modal_pressed)
+	profile_account_btn.pressed.connect(_show_auth_panel)
 	hbox.add_child(profile_account_btn)
 	
 	add_child(profile_bar)
@@ -182,229 +212,151 @@ func _update_profile_bar() -> void:
 	profile_coins_lbl.text = "🪙 %d" % coins
 	profile_account_btn.text = "GUEST (LOGIN)" if is_guest else "ACCOUNT"
 
-# ── Authentication Modal ──────────────────────────────────────────────────────
-func _setup_auth_modal() -> void:
-	auth_modal = Panel.new()
-	auth_modal.name = "AuthModal"
-	auth_modal.visible = false
-	auth_modal.anchors_preset = Control.PRESET_CENTER
-	auth_modal.anchor_left = 0.5
-	auth_modal.anchor_top = 0.5
-	auth_modal.anchor_right = 0.5
-	auth_modal.anchor_bottom = 0.5
-	auth_modal.offset_left = -230.0
-	auth_modal.offset_top = -225.0
-	auth_modal.offset_right = 230.0
-	auth_modal.offset_bottom = 225.0
-	auth_modal.grow_horizontal = Control.GROW_DIRECTION_BOTH
-	auth_modal.grow_vertical = Control.GROW_DIRECTION_BOTH
+# ── Authentication Flow ───────────────────────────────────────────────────────
+func _on_auth_submit_pressed() -> void:
+	_set_auth_controls_enabled(false)
+	service_status.visible = false
+	var email_str = email_input.text.strip_edges()
+	var pass_str = password_input.text
 	
-	var sb = StyleBoxFlat.new()
-	sb.bg_color = Color(0.03, 0.08, 0.18, 0.98)
-	sb.border_width_left = 2
-	sb.border_width_top = 2
-	sb.border_width_right = 2
-	sb.border_width_bottom = 2
-	sb.border_color = Color(0.2, 0.8, 1.0, 0.95)
-	sb.set_corner_radius_all(16)
-	sb.shadow_color = Color(0.0, 0.5, 0.95, 0.35)
-	sb.shadow_size = 20
-	auth_modal.add_theme_stylebox_override("panel", sb)
+	if email_str.is_empty() or pass_str.is_empty():
+		_show_service_status("Email and password are required.", true)
+		_set_auth_controls_enabled(true)
+		return
 	
-	var vbox = VBoxContainer.new()
-	vbox.anchors_preset = Control.PRESET_FULL_RECT
-	vbox.offset_left = 24.0
-	vbox.offset_top = 18.0
-	vbox.offset_right = -24.0
-	vbox.offset_bottom = -18.0
-	vbox.add_theme_constant_override("separation", 10)
-	auth_modal.add_child(vbox)
-	
-	var title = Label.new()
-	title.text = "CYBER TAG ACCOUNT"
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title.modulate = Color(0.65, 0.92, 1.0)
-	title.add_theme_font_size_override("font_size", 18)
-	vbox.add_child(title)
-	
-	# Tab switcher
-	var tab_bar = HBoxContainer.new()
-	tab_bar.alignment = BoxContainer.ALIGNMENT_CENTER
-	tab_bar.add_theme_constant_override("separation", 8)
-	vbox.add_child(tab_bar)
-	
-	auth_tab_login_btn = Button.new()
-	auth_tab_login_btn.text = "LOG IN"
-	auth_tab_login_btn.custom_minimum_size = Vector2(120, 32)
-	auth_tab_login_btn.pressed.connect(func(): _switch_auth_tab("login"))
-	tab_bar.add_child(auth_tab_login_btn)
-	
-	auth_tab_register_btn = Button.new()
-	auth_tab_register_btn.text = "REGISTER"
-	auth_tab_register_btn.custom_minimum_size = Vector2(120, 32)
-	auth_tab_register_btn.pressed.connect(func(): _switch_auth_tab("register"))
-	tab_bar.add_child(auth_tab_register_btn)
-	
-	auth_tab_guest_btn = Button.new()
-	auth_tab_guest_btn.text = "GUEST"
-	auth_tab_guest_btn.custom_minimum_size = Vector2(120, 32)
-	auth_tab_guest_btn.pressed.connect(func(): _switch_auth_tab("guest"))
-	tab_bar.add_child(auth_tab_guest_btn)
-	
-	# Form inputs
-	auth_email_row = VBoxContainer.new()
-	var email_lbl = Label.new()
-	email_lbl.text = "EMAIL ADDRESS:"
-	email_lbl.modulate = Color(0.4, 0.85, 1.0)
-	email_lbl.add_theme_font_size_override("font_size", 11)
-	auth_email_row.add_child(email_lbl)
-	auth_email_input = LineEdit.new()
-	auth_email_input.placeholder_text = "user@example.com"
-	auth_email_row.add_child(auth_email_input)
-	vbox.add_child(auth_email_row)
-	
-	auth_pass_row = VBoxContainer.new()
-	var pass_lbl = Label.new()
-	pass_lbl.text = "PASSWORD:"
-	pass_lbl.modulate = Color(0.4, 0.85, 1.0)
-	pass_lbl.add_theme_font_size_override("font_size", 11)
-	auth_pass_row.add_child(pass_lbl)
-	auth_pass_input = LineEdit.new()
-	auth_pass_input.placeholder_text = "••••••••"
-	auth_pass_input.secret = true
-	auth_pass_row.add_child(auth_pass_input)
-	vbox.add_child(auth_pass_row)
-	
-	auth_name_row = VBoxContainer.new()
-	var name_lbl = Label.new()
-	name_lbl.text = "DISPLAY NAME:"
-	name_lbl.modulate = Color(0.4, 0.85, 1.0)
-	name_lbl.add_theme_font_size_override("font_size", 11)
-	auth_name_row.add_child(name_lbl)
-	auth_name_input = LineEdit.new()
-	auth_name_input.placeholder_text = "Nickname (1-16 chars)"
-	auth_name_input.max_length = 16
-	auth_name_row.add_child(auth_name_input)
-	vbox.add_child(auth_name_row)
-	
-	# Status message
-	auth_status_lbl = Label.new()
-	auth_status_lbl.text = ""
-	auth_status_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	auth_status_lbl.add_theme_font_size_override("font_size", 11)
-	vbox.add_child(auth_status_lbl)
-	
-	# Buttons
-	var btn_row = HBoxContainer.new()
-	btn_row.alignment = BoxContainer.ALIGNMENT_CENTER
-	btn_row.add_theme_constant_override("separation", 14)
-	vbox.add_child(btn_row)
-	
-	auth_submit_btn = Button.new()
-	auth_submit_btn.text = "LOG IN"
-	auth_submit_btn.custom_minimum_size = Vector2(170, 38)
-	auth_submit_btn.pressed.connect(_on_auth_submit_pressed)
-	btn_row.add_child(auth_submit_btn)
-	
-	auth_cancel_btn = Button.new()
-	auth_cancel_btn.text = "CLOSE"
-	auth_cancel_btn.custom_minimum_size = Vector2(120, 38)
-	auth_cancel_btn.pressed.connect(func():
-		auth_modal.visible = false
-		menu_buttons.visible = true
-		title_label.visible = true
-	)
-	btn_row.add_child(auth_cancel_btn)
-	
-	add_child(auth_modal)
-	_switch_auth_tab("login")
+	# Attempt Firebase Auth first
+	var succeeded = false
+	if is_register_mode:
+		succeeded = await FirebaseService.sign_up_with_email(email_str, pass_str)
+	else:
+		succeeded = await FirebaseService.sign_in_with_email(email_str, pass_str)
 
-func _switch_auth_tab(tab: String) -> void:
-	current_auth_tab = tab
-	auth_status_lbl.text = ""
+	if succeeded:
+		await _complete_authentication()
+	else:
+		# Fallback to Server REST Auth (covers local persistence or offline dev)
+		if is_register_mode:
+			var d_name = email_str.split("@")[0]
+			Network.auth_register(email_str, pass_str, d_name)
+		else:
+			Network.auth_login(email_str, pass_str)
 	
-	# Style active tabs
-	auth_tab_login_btn.modulate = Color(1.2, 1.2, 1.2) if tab == "login" else Color(0.7, 0.7, 0.7)
-	auth_tab_register_btn.modulate = Color(1.2, 1.2, 1.2) if tab == "register" else Color(0.7, 0.7, 0.7)
-	auth_tab_guest_btn.modulate = Color(1.2, 1.2, 1.2) if tab == "guest" else Color(0.7, 0.7, 0.7)
-	
-	match tab:
-		"login":
-			auth_email_row.visible = true
-			auth_pass_row.visible = true
-			auth_name_row.visible = false
-			auth_submit_btn.text = "LOG IN"
-		"register":
-			auth_email_row.visible = true
-			auth_pass_row.visible = true
-			auth_name_row.visible = true
-			auth_submit_btn.text = "CREATE ACCOUNT"
-		"guest":
-			auth_email_row.visible = false
-			auth_pass_row.visible = false
-			auth_name_row.visible = true
-			auth_submit_btn.text = "PLAY AS GUEST"
+	_set_auth_controls_enabled(true)
 
-func _on_open_auth_modal_pressed() -> void:
-	auth_modal.visible = true
+func _on_guest_play_pressed() -> void:
+	if Network:
+		var d_name = Network.my_player_name
+		if d_name.is_empty() or d_name == "Player 1":
+			d_name = "Guest_" + str(randi() % 900 + 100)
+		Network.auth_guest(d_name)
+	_show_main_menu()
+	_update_profile_bar()
+	_show_service_status("Playing as Guest (Progress saved locally)", false)
+
+func _complete_authentication() -> void:
+	var user: Dictionary = FirebaseService.current_user
+	var d_name = str(user.get("display_name", user.get("email", "").get_slice("@", 0)))
+	if d_name.is_empty():
+		d_name = user.get("email", "Player").get_slice("@", 0)
+	
+	var existing_profile = await FirebaseService.load_player_profile()
+	var cur_level = int(existing_profile.get("level", 1))
+	var cur_exp = int(existing_profile.get("exp", 0))
+	var cur_max_exp = int(existing_profile.get("max_exp", 100))
+	var cur_coins = int(existing_profile.get("coins", 100))
+	
+	var profile := {
+		"email": str(user.get("email", "")),
+		"display_name": d_name,
+		"level": cur_level,
+		"exp": cur_exp,
+		"max_exp": cur_max_exp,
+		"coins": cur_coins,
+		"last_login_at": Time.get_datetime_string_from_system(true)
+	}
+	if is_register_mode:
+		profile["created_at"] = profile["last_login_at"]
+
+	var profile_saved: bool = await FirebaseService.save_player_profile(profile)
+	
+	if Network:
+		Network.current_user["uid"] = str(user.get("uid", ""))
+		Network.current_user["email"] = str(user.get("email", ""))
+		Network.current_user["displayName"] = d_name
+		Network.current_user["level"] = cur_level
+		Network.current_user["exp"] = cur_exp
+		Network.current_user["maxExp"] = cur_max_exp
+		Network.current_user["coins"] = cur_coins
+		Network.current_user["isGuest"] = false
+		Network.my_player_name = d_name
+		Network.save_local_user()
+		Network.auth_sync_websocket()
+		Network.profile_updated.emit(Network.current_user)
+	
+	_show_main_menu()
+	_update_profile_bar()
+	if profile_saved:
+		_show_service_status("Signed in as %s (Lv. %d | 🪙 %d)" % [d_name, cur_level, cur_coins], false)
+	else:
+		_show_service_status("Signed in as %s (Local Mode Active)" % d_name, false)
+
+func _on_network_auth_succeeded(user: Dictionary) -> void:
+	_show_main_menu()
+	_update_profile_bar()
+	_show_service_status("Welcome back, %s!" % user.get("displayName", "Player"), false)
+
+func _on_network_auth_failed(msg: String) -> void:
+	_show_service_status(msg, true)
+
+func _show_main_menu() -> void:
+	auth_panel.visible = false
+	menu_buttons.visible = true
+	title_label.visible = true
+	if profile_bar:
+		profile_bar.visible = true
+	quit_btn.text = "LOG OUT" if (Network and not bool(Network.current_user.get("isGuest", true))) else "QUIT"
+
+func _show_auth_panel() -> void:
+	auth_panel.visible = true
 	menu_buttons.visible = false
 	title_label.visible = false
-	if Network and Network.current_user:
-		auth_name_input.text = Network.current_user.get("displayName", Network.my_player_name)
-		if not Network.current_user.get("email", "").is_empty():
-			auth_email_input.text = Network.current_user.get("email", "")
+	if profile_bar:
+		profile_bar.visible = false
+	password_input.clear()
+	service_status.visible = false
+	is_register_mode = false
+	auth_title.text = "PLAYER LOGIN"
+	auth_submit_btn.text = "SIGN IN"
+	auth_toggle_btn.text = "New player? Create account"
+	quit_btn.text = "QUIT"
 
-func _on_auth_submit_pressed() -> void:
-	auth_submit_btn.disabled = true
-	auth_status_lbl.text = "Connecting..."
-	auth_status_lbl.modulate = Color(0.4, 0.85, 1.0)
-	
-	match current_auth_tab:
-		"login":
-			var email = auth_email_input.text.strip_edges()
-			var password_str = auth_pass_input.text
-			if email.is_empty() or password_str.is_empty():
-				auth_status_lbl.text = "Please enter email and password."
-				auth_status_lbl.modulate = Color(1.0, 0.4, 0.4)
-				auth_submit_btn.disabled = false
-				return
-			Network.auth_login(email, password_str)
-			
-		"register":
-			var email = auth_email_input.text.strip_edges()
-			var password_str = auth_pass_input.text
-			var name_str = auth_name_input.text.strip_edges()
-			if email.is_empty() or password_str.is_empty():
-				auth_status_lbl.text = "Please enter email and password."
-				auth_status_lbl.modulate = Color(1.0, 0.4, 0.4)
-				auth_submit_btn.disabled = false
-				return
-			if name_str.is_empty():
-				name_str = email.split("@")[0]
-			Network.auth_register(email, password_str, name_str)
-			
-		"guest":
-			var name_str = auth_name_input.text.strip_edges()
-			if name_str.is_empty():
-				name_str = "Guest"
-			Network.auth_guest(name_str)
+func _on_auth_toggle_pressed() -> void:
+	is_register_mode = not is_register_mode
+	auth_title.text = "CREATE ACCOUNT" if is_register_mode else "PLAYER LOGIN"
+	auth_submit_btn.text = "CREATE ACCOUNT" if is_register_mode else "SIGN IN"
+	auth_toggle_btn.text = "Already registered? Sign in" if is_register_mode else "New player? Create account"
+	service_status.visible = false
 
-func _on_auth_succeeded(user: Dictionary) -> void:
-	auth_submit_btn.disabled = false
-	auth_status_lbl.text = "Welcome, %s!" % user.get("displayName", "Player")
-	auth_status_lbl.modulate = Color(0.3, 1.0, 0.5)
-	_update_profile_bar()
-	
-	await get_tree().create_timer(0.9).timeout
-	if is_instance_valid(auth_modal):
-		auth_modal.visible = false
-		menu_buttons.visible = true
-		title_label.visible = true
+func _on_firebase_auth_error(message: String) -> void:
+	_show_service_status(message, true)
 
-func _on_auth_failed(msg: String) -> void:
-	auth_submit_btn.disabled = false
-	auth_status_lbl.text = msg
-	auth_status_lbl.modulate = Color(1.0, 0.35, 0.35)
+func _show_service_status(message: String, is_error: bool) -> void:
+	service_status.text = message
+	service_status.add_theme_color_override(
+		"font_color",
+		Color(1.0, 0.55, 0.55) if is_error else Color(0.55, 1.0, 0.75)
+	)
+	service_status.visible = true
+
+func _set_auth_controls_enabled(enabled: bool) -> void:
+	email_input.editable = enabled
+	password_input.editable = enabled
+	auth_submit_btn.disabled = not enabled
+	auth_toggle_btn.disabled = not enabled
+	if guest_btn: guest_btn.disabled = not enabled
+	auth_submit_btn.text = "PLEASE WAIT..." if not enabled else (
+		"CREATE ACCOUNT" if is_register_mode else "SIGN IN"
+	)
 
 func _select_role(role: String) -> void:
 	selected_practice_role = role
@@ -424,6 +376,7 @@ func _on_practice_pressed() -> void:
 	practice_modal.visible = true
 	menu_buttons.visible = false
 	title_label.visible = false
+	if profile_bar: profile_bar.visible = false
 
 func _start_practice(role: String) -> void:
 	start_practice_btn.disabled = true
@@ -443,6 +396,16 @@ func _on_how_to_play_pressed() -> void:
 	rules_panel.visible = true
 	menu_buttons.visible = false
 	title_label.visible = false
+	if profile_bar: profile_bar.visible = false
 
 func _on_quit_pressed() -> void:
+	if FirebaseService and not FirebaseService.current_user.is_empty():
+		FirebaseService.sign_out()
+		_show_auth_panel()
+		return
+	if Network and not bool(Network.current_user.get("isGuest", true)):
+		Network.current_user = {}
+		Network.save_local_user()
+		_show_auth_panel()
+		return
 	get_tree().quit()

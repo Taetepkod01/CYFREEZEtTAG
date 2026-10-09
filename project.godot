@@ -18,7 +18,13 @@ config/icon="res://icon.svg"
 [autoload]
 
 Network="*res://scripts/network.gd"
+FirebaseService="*res://scripts/firebase_service.gd"
 MCPRuntimeServer="*res://addons/godot_mcp_toolkit/runtime/mcp_runtime_server.gd"
+
+[firebase]
+
+api_key="AIzaSyA1dfz0Z82id36JnSzgaZyOsnNhn2ninHc"
+project_id="cyfreezetag-3d-game"
 
 [display]
 
