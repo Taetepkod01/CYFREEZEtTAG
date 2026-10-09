@@ -118,6 +118,70 @@ content_margin_top = 8.0
 content_margin_right = 12.0
 content_margin_bottom = 8.0
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_parkour_ice"]
+bg_color = Color(0.02, 0.18, 0.28, 0.96)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.0, 0.95, 0.85, 0.95)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(0.0, 0.8, 0.8, 0.45)
+shadow_size = 8
+content_margin_left = 12.0
+content_margin_top = 8.0
+content_margin_right = 12.0
+content_margin_bottom = 8.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_parkour_ice_hover"]
+bg_color = Color(0.04, 0.35, 0.45, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.3, 1.0, 0.9, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(0.0, 0.9, 0.9, 0.65)
+shadow_size = 12
+content_margin_left = 12.0
+content_margin_top = 8.0
+content_margin_right = 12.0
+content_margin_bottom = 8.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_map_select"]
+bg_color = Color(0.03, 0.10, 0.22, 0.95)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.2, 0.8, 1.0, 0.8)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+content_margin_left = 8.0
+content_margin_right = 8.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_map_select_hover"]
+bg_color = Color(0.05, 0.20, 0.38, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.4, 0.9, 1.0, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+content_margin_left = 8.0
+content_margin_right = 8.0
+
 [node name="MainMenu3D" type="Control" unique_id=646906610]
 layout_mode = 3
 anchors_preset = 15
@@ -187,9 +251,9 @@ anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
 offset_left = -115.0
-offset_top = -15.0
+offset_top = -45.0
 offset_right = 115.0
-offset_bottom = 225.0
+offset_bottom = 255.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/separation = 10
@@ -206,6 +270,18 @@ custom_minimum_size = Vector2(225, 49)
 layout_mode = 2
 texture_normal = ExtResource("6_btn_practice")
 stretch_mode = 5
+
+[node name="VoidParkourBtn" type="Button" parent="MenuButtons" unique_id=1849204812]
+custom_minimum_size = Vector2(225, 49)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 1, 0.98, 1)
+theme_override_fonts/font = ExtResource("3_font_audio")
+theme_override_font_sizes/font_size = 13
+theme_override_styles/normal = SubResource("StyleBoxFlat_parkour_ice")
+theme_override_styles/hover = SubResource("StyleBoxFlat_parkour_ice_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_parkour_ice_hover")
+theme_override_styles/focus = SubResource("StyleBoxFlat_parkour_ice_hover")
+text = "⚡ TEST VOID PARKOUR"
 
 [node name="HowToPlayBtn" type="TextureButton" parent="MenuButtons" unique_id=367308847]
 custom_minimum_size = Vector2(225, 49)
@@ -258,29 +334,59 @@ anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
 offset_left = -159.5
-offset_top = 87.0
+offset_top = 80.0
 offset_right = 159.5
-offset_bottom = 251.0
+offset_bottom = 226.0
 grow_horizontal = 2
-theme_override_constants/separation = 7
+theme_override_constants/separation = 4
 
 [node name="RandomRoleBtn" type="TextureButton" parent="PracticeModal/RoleButtons" unique_id=615439443]
-custom_minimum_size = Vector2(319, 50)
+custom_minimum_size = Vector2(319, 46)
 layout_mode = 2
 texture_normal = ExtResource("9_role_random_off")
 stretch_mode = 5
 
 [node name="TaggerRoleBtn" type="TextureButton" parent="PracticeModal/RoleButtons" unique_id=1162911907]
-custom_minimum_size = Vector2(319, 50)
+custom_minimum_size = Vector2(319, 46)
 layout_mode = 2
 texture_normal = ExtResource("10_role_tagger_off")
 stretch_mode = 5
 
 [node name="RunnerRoleBtn" type="TextureButton" parent="PracticeModal/RoleButtons" unique_id=22914756]
-custom_minimum_size = Vector2(319, 50)
+custom_minimum_size = Vector2(319, 46)
 layout_mode = 2
 texture_normal = ExtResource("11_role_runner_on")
 stretch_mode = 5
+
+[node name="MapContainer" type="HBoxContainer" parent="PracticeModal" unique_id=1938502847]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -160.0
+offset_top = 232.0
+offset_right = 160.0
+offset_bottom = 266.0
+grow_horizontal = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="MapLabel" type="Label" parent="PracticeModal/MapContainer" unique_id=1849204813]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.9, 1, 1)
+theme_override_fonts/font = ExtResource("3_font_audio")
+theme_override_font_sizes/font_size = 11
+text = "MAP:"
+
+[node name="MapOptionBtn" type="OptionButton" parent="PracticeModal/MapContainer" unique_id=1849204814]
+custom_minimum_size = Vector2(230, 32)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("3_font_audio")
+theme_override_font_sizes/font_size = 11
+theme_override_styles/normal = SubResource("StyleBoxFlat_map_select")
+theme_override_styles/hover = SubResource("StyleBoxFlat_map_select_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_map_select_hover")
+theme_override_styles/focus = SubResource("StyleBoxFlat_map_select_hover")
 
 [node name="StartPracticeBtn" type="TextureButton" parent="PracticeModal" unique_id=484649291]
 custom_minimum_size = Vector2(258, 47)
@@ -289,9 +395,9 @@ anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
 offset_left = -129.0
-offset_top = 271.0
+offset_top = 274.0
 offset_right = 129.0
-offset_bottom = 318.0
+offset_bottom = 321.0
 grow_horizontal = 2
 texture_normal = ExtResource("12_btn_start_practice")
 stretch_mode = 5

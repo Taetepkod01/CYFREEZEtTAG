@@ -87,6 +87,8 @@ var tab_pressed_time: float = 0.0
 var scoreboard_toggled: bool = false
 var rewards_lbl: Label = null
 var exit_choice_from_game_over: bool = false
+var active_map_name: String = "SPACE STATION"
+var is_void_parkour: bool = false
 
 func _ready() -> void:
 	if status_panel:
@@ -222,6 +224,20 @@ func _load_arena_map() -> void:
 				root_light.transform = map_light.transform
 				map_light.queue_free()
 				
+			active_map_name = map_display_name
+			is_void_parkour = upper.contains("PARKOUR") or upper.contains("VOID") or upper.contains("พาร์คัวร์")
+			if is_void_parkour:
+				round_time = 120.0
+				if current_map_node.has_signal("player_checkpoint_reached"):
+					current_map_node.player_checkpoint_reached.connect(func(_p, idx):
+						add_game_log("[color=#40c4ff]✔ Checkpoint %d reached![/color]" % idx)
+					)
+				if current_map_node.has_signal("player_finished_parkour"):
+					current_map_node.player_finished_parkour.connect(func(_p):
+						add_game_log("[color=#00e676]★ CONGRATULATIONS! PARKOUR FINISHED! ★[/color]")
+						_end_round("RUNNERS")
+					)
+			
 			add_game_log("[color=#4fc3f7]Map: %s[/color]" % map_display_name)
 			return
 		else:
@@ -292,7 +308,7 @@ func _process(delta: float) -> void:
 	if round_time <= 0.0:
 		round_time = 0.0
 		if not Network or not Network.is_online_game():
-			_end_round("RUNNERS")
+			_end_round("TAGGERS" if is_void_parkour else "RUNNERS")
 	
 	var mins = int(round_time) / 60
 	var secs = int(round_time) % 60
@@ -448,6 +464,11 @@ func _spawn_match_players() -> void:
 			add_game_log("[color=#69f0ae]Tagger defeated! Runners Win![/color]")
 			_end_round("RUNNERS")
 	)
+	
+	# If Void Parkour in solo/practice mode, don't spawn hostile tagger bots to interrupt parkour testing
+	if is_void_parkour:
+		_update_hud()
+		return
 	
 	# 3 Bots
 	var bot_names = ["Player 2 (Bot)", "Player 3 (Bot)", "Player 4 (Bot)"]
@@ -879,12 +900,12 @@ func _end_round(winner: String) -> void:
 	
 	if winner == "TAGGERS":
 		taggers_score += 1
-		game_over_title.text = "TAGGERS WIN ROUND!"
+		game_over_title.text = "TIME'S UP! TRY AGAIN" if is_void_parkour else "TAGGERS WIN ROUND!"
 		game_over_title.modulate = Color(1.0, 0.4, 0.4)
 	else:
 		runners_score += 1
-		game_over_title.text = "RUNNERS WIN ROUND!"
-		game_over_title.modulate = Color(0.4, 0.95, 1.0)
+		game_over_title.text = "PARKOUR COMPLETED! 🏆" if is_void_parkour else "RUNNERS WIN ROUND!"
+		game_over_title.modulate = Color(0.2, 1.0, 0.6) if is_void_parkour else Color(0.4, 0.95, 1.0)
 	
 	score_lbl.text = "SCORE: Runners %d  -  Taggers %d" % [runners_score, taggers_score]
 	

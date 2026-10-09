@@ -13,6 +13,7 @@ const TEX_ROLE_RUNNER_OFF = preload("res://assets/ui/buttons/btn_role_runner_off
 @onready var practice_btn: TextureButton = $MenuButtons/PracticeBtn
 @onready var how_to_play_btn: TextureButton = $MenuButtons/HowToPlayBtn
 @onready var quit_btn: Button = $MenuButtons/QuitBtn
+@onready var void_parkour_btn: Button = $MenuButtons/VoidParkourBtn
 @onready var rules_panel: Panel = $RulesPanel
 @onready var close_rules_btn: TextureButton = $RulesPanel/CloseBtn
 
@@ -21,8 +22,11 @@ const TEX_ROLE_RUNNER_OFF = preload("res://assets/ui/buttons/btn_role_runner_off
 @onready var random_role_btn: TextureButton = $PracticeModal/RoleButtons/RandomRoleBtn
 @onready var tagger_role_btn: TextureButton = $PracticeModal/RoleButtons/TaggerRoleBtn
 @onready var runner_role_btn: TextureButton = $PracticeModal/RoleButtons/RunnerRoleBtn
+@onready var map_option_btn: OptionButton = get_node_or_null("PracticeModal/MapContainer/MapOptionBtn")
 @onready var start_practice_btn: TextureButton = $PracticeModal/StartPracticeBtn
 @onready var close_practice_btn: TextureButton = $PracticeModal/ClosePracticeBtn
+
+var selected_practice_map: String = "VOID PARKOUR"
 
 # Firebase Auth Panel
 @onready var auth_panel: Panel = $AuthPanel
@@ -59,6 +63,17 @@ func _ready() -> void:
 	practice_btn.pressed.connect(_on_practice_pressed)
 	how_to_play_btn.pressed.connect(_on_how_to_play_pressed)
 	quit_btn.pressed.connect(_on_quit_pressed)
+	if void_parkour_btn:
+		void_parkour_btn.pressed.connect(_on_test_void_parkour_pressed)
+	
+	if map_option_btn:
+		map_option_btn.clear()
+		map_option_btn.add_item("SPACE STATION", 0)
+		map_option_btn.add_item("SNOW TOWN", 1)
+		map_option_btn.add_item("LABYRINTH", 2)
+		map_option_btn.add_item("VOID PARKOUR (NEW)", 3)
+		map_option_btn.select(3)
+		map_option_btn.item_selected.connect(_on_practice_map_selected)
 	
 	close_rules_btn.pressed.connect(func():
 		rules_panel.visible = false
@@ -378,6 +393,24 @@ func _on_practice_pressed() -> void:
 	title_label.visible = false
 	if profile_bar: profile_bar.visible = false
 
+func _on_practice_map_selected(idx: int) -> void:
+	match idx:
+		0: selected_practice_map = "SPACE STATION"
+		1: selected_practice_map = "SNOW TOWN"
+		2: selected_practice_map = "LABYRINTH"
+		3, _: selected_practice_map = "VOID PARKOUR"
+
+func _on_test_void_parkour_pressed() -> void:
+	if void_parkour_btn:
+		void_parkour_btn.disabled = true
+	if Network:
+		Network.is_solo_mode = true
+		Network.selected_practice_role = "runner"
+		Network.selected_map = "VOID PARKOUR"
+		Network.disconnect_from_server()
+	await get_tree().process_frame
+	get_tree().change_scene_to_file("res://scenes/3d/arena_3d.tscn")
+
 func _start_practice(role: String) -> void:
 	start_practice_btn.disabled = true
 	random_role_btn.disabled = true
@@ -387,6 +420,7 @@ func _start_practice(role: String) -> void:
 	if Network:
 		Network.is_solo_mode = true
 		Network.selected_practice_role = role
+		Network.selected_map = selected_practice_map
 		Network.disconnect_from_server()
 	
 	await get_tree().process_frame
