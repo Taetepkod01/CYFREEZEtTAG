@@ -25,12 +25,15 @@ var current_map_node: Node3D = null
 # HUD elements
 @onready var runners_count_lbl: Label = $HUD/TopBar/RunnersBox/Count
 @onready var taggers_count_lbl: Label = $HUD/TopBar/TaggersBox/Count
+@onready var runners_box: Panel = $HUD/TopBar/RunnersBox
+@onready var taggers_box: Panel = $HUD/TopBar/TaggersBox
 @onready var timer_lbl: Label = $HUD/TopBar/TimerBox/TimerLabel
 @onready var round_lbl: Label = $HUD/TopBar/TimerBox/RoundLabel
 @onready var status_panel: Panel = $HUD/PlayerStatusPanel
 @onready var status_container: VBoxContainer = $HUD/PlayerStatusPanel/Scroll/VBox
 @onready var status_title_lbl: Label = $HUD/PlayerStatusPanel/Title
 @onready var minimap: Control = $HUD/MinimapPanel/Minimap
+@onready var inventory_panel: Panel = $HUD/BottomInventoryPanel
 @onready var item_btn: Button = $HUD/BottomInventoryPanel/ItemButton
 @onready var item_name_lbl: Label = $HUD/BottomInventoryPanel/ItemButton/ItemName
 @onready var role_btn: Button = $HUD/PracticeRoleBtn
@@ -158,7 +161,20 @@ func _ready() -> void:
 	_update_hud()
 	_update_item_slot("")
 	
-	if not Network or not Network.is_online_game():
+	if is_void_parkour:
+		if inventory_panel:
+			inventory_panel.visible = false
+		if runners_box:
+			runners_box.visible = false
+		if taggers_box:
+			taggers_box.visible = false
+		if role_btn:
+			role_btn.visible = false
+		for item in items_container.get_children():
+			item.queue_free()
+		if local_player:
+			local_player.held_item = ""
+	elif not Network or not Network.is_online_game():
 		for i in range(4):
 			_spawn_random_item()
 	
@@ -229,13 +245,13 @@ func _load_arena_map() -> void:
 			if is_void_parkour:
 				round_time = 120.0
 				if current_map_node.has_signal("player_checkpoint_reached"):
-					current_map_node.player_checkpoint_reached.connect(func(_p, idx):
-						add_game_log("[color=#40c4ff]✔ Checkpoint %d reached![/color]" % idx)
+					current_map_node.player_checkpoint_reached.connect(func(p, idx):
+						var p_name = p.player_name if is_instance_valid(p) else "Player"
+						add_game_log("[color=#00e5ff]🚩 %s reached Checkpoint %d! (Progress Saved)[/color]" % [p_name, idx])
 					)
 				if current_map_node.has_signal("player_finished_parkour"):
-					current_map_node.player_finished_parkour.connect(func(_p):
-						add_game_log("[color=#00e676]★ CONGRATULATIONS! PARKOUR FINISHED! ★[/color]")
-						_end_round("RUNNERS")
+					current_map_node.player_finished_parkour.connect(func(winner_p):
+						_on_parkour_finish_reached(winner_p)
 					)
 			
 			add_game_log("[color=#4fc3f7]Map: %s[/color]" % map_display_name)
@@ -308,14 +324,17 @@ func _process(delta: float) -> void:
 	if round_time <= 0.0:
 		round_time = 0.0
 		if not Network or not Network.is_online_game():
-			_end_round("TAGGERS" if is_void_parkour else "RUNNERS")
+			if is_void_parkour:
+				_on_parkour_time_expired()
+			else:
+				_end_round("RUNNERS")
 	
 	var mins = int(round_time) / 60
 	var secs = int(round_time) % 60
 	timer_lbl.text = "%02d:%02d" % [mins, secs]
 	
-	# Item spawn cycle for offline mode
-	if not Network or not Network.is_online_game():
+	# Item spawn cycle for offline mode (completely disabled in Parkour mode)
+	if not is_void_parkour and (not Network or not Network.is_online_game()):
 		item_spawn_timer -= delta
 		if item_spawn_timer <= 0.0:
 			item_spawn_timer = randf_range(8.0, 14.0)
@@ -444,13 +463,21 @@ func _spawn_match_players() -> void:
 	
 	# Player 1 (You)
 	var p1 = player_3d_scene.instantiate()
-	p1.player_name = "Player 1 (You)"
+	var my_name = "Player 1"
+	if Network:
+		if Network.current_user and not str(Network.current_user.get("displayName", "")).strip_edges().is_empty():
+			my_name = str(Network.current_user.get("displayName", "")).strip_edges()
+		elif not str(Network.my_player_name).strip_edges().is_empty():
+			my_name = str(Network.my_player_name).strip_edges()
+	p1.player_name = my_name + " (You)"
 	p1.role = "tagger" if p1_is_tagger else "runner"
 	p1.is_bot = false
 	p1.position = chaser_spawn_pos if p1_is_tagger else runner_spawn_positions[0]
 	players_container.add_child(p1)
 	player_nodes.append(p1)
 	local_player = p1
+	if is_void_parkour:
+		p1.held_item = ""
 	
 	p1.tagged.connect(_on_player_tagged)
 	p1.rescued.connect(_on_player_rescued)
@@ -781,6 +808,10 @@ func add_game_log(msg: String) -> void:
 
 # -- Single Item Slot UI Update ----------------------------------------------
 func _update_item_slot(item_name: String) -> void:
+	if is_void_parkour:
+		if inventory_panel:
+			inventory_panel.visible = false
+		return
 	if not item_name_lbl:
 		return
 	if item_name.is_empty():
@@ -809,6 +840,19 @@ func _update_item_slot(item_name: String) -> void:
 
 # -- HUD Update --------------------------------------------------------------
 func _update_hud() -> void:
+	if is_void_parkour:
+		if runners_box:
+			runners_box.visible = false
+		if taggers_box:
+			taggers_box.visible = false
+		if role_btn:
+			role_btn.visible = false
+		if inventory_panel:
+			inventory_panel.visible = false
+		round_lbl.text = "PARKOUR RACE"
+		status_title_lbl.text = "PARKOUR RACERS   %d/%d" % [player_nodes.size(), player_nodes.size()]
+		return
+
 	var runners_count = 0
 	var taggers_count = 0
 	var total_players = player_nodes.size()
@@ -958,6 +1002,80 @@ func _end_round(winner: String) -> void:
 	else:
 		next_round_btn.text = "NEXT ROUND (%d)" % (current_round + 1)
 
+func _on_parkour_finish_reached(winner_node: CharacterBody3D) -> void:
+	if not is_game_active:
+		return
+	
+	var winner_name = "Player"
+	if is_instance_valid(winner_node) and "player_name" in winner_node:
+		winner_name = winner_node.player_name
+	elif local_player and "player_name" in local_player:
+		winner_name = local_player.player_name
+	
+	winner_name = winner_name.replace(" (You)", "").strip_edges()
+	if winner_name.is_empty():
+		winner_name = "Player"
+	
+	var elapsed = max(0.0, 120.0 - round_time)
+	var m = int(elapsed) / 60
+	var s = int(elapsed) % 60
+	var ms = int((elapsed - int(elapsed)) * 100)
+	var time_str = "%02d:%02d.%02d" % [m, s, ms]
+	
+	is_game_active = false
+	game_over_panel.visible = true
+	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+	
+	game_over_title.text = "🏆 %s WINS! 🏆" % winner_name.to_upper()
+	game_over_title.modulate = Color(0.2, 1.0, 0.5)
+	
+	score_lbl.text = "CHAMPION: %s  |  TIME: %s" % [winner_name, time_str]
+	mvp_lbl.text = "PARKOUR CHAMPION: %s" % winner_name
+	
+	add_game_log("[color=#00e676]★ %s REACHED THE FINISH LINE AND WON THE RACE! (Time: %s) ★[/color]" % [winner_name, time_str])
+	
+	if Network and Network.is_solo_mode:
+		var u = Network.current_user
+		var exp_gain = 100
+		var coins_gain = 50
+		u["exp"] = int(u.get("exp", 0)) + exp_gain
+		u["coins"] = int(u.get("coins", 0)) + coins_gain
+		var lv = int(u.get("level", 1))
+		var max_exp = int(u.get("maxExp", 100))
+		var leveled_up = false
+		while u["exp"] >= max_exp:
+			u["exp"] -= max_exp
+			lv += 1
+			max_exp = lv * 100 + (lv - 1) * 50
+			u["level"] = lv
+			u["maxExp"] = max_exp
+			leveled_up = true
+		Network.save_local_user()
+		Network.profile_updated.emit(u)
+		var practice_rew = "PARKOUR VICTORY: +%d EXP  |  +%d 🪙 COINS (Total: %d)" % [exp_gain, coins_gain, u["coins"]]
+		if leveled_up:
+			practice_rew += "\n🌟 LEVEL UP! You reached Level %d! 🌟" % lv
+		_show_rewards_display(practice_rew, leveled_up)
+	
+	next_round_btn.text = "PLAY AGAIN"
+	next_round_btn.visible = true
+	lobby_btn.visible = false
+
+func _on_parkour_time_expired() -> void:
+	if not is_game_active:
+		return
+	is_game_active = false
+	game_over_panel.visible = true
+	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+	game_over_title.text = "TIME'S UP! TRY AGAIN"
+	game_over_title.modulate = Color(1.0, 0.4, 0.4)
+	score_lbl.text = "DID NOT FINISH IN TIME (2:00 LIMIT)"
+	mvp_lbl.text = "TRY AGAIN!"
+	_show_rewards_display("", false)
+	next_round_btn.text = "PLAY AGAIN"
+	next_round_btn.visible = true
+	lobby_btn.visible = false
+
 func _on_net_round_started(data: Dictionary) -> void:
 	game_over_panel.visible = false
 	is_game_active = true
@@ -1005,6 +1123,23 @@ func _on_next_round_pressed() -> void:
 			Network.start_game()
 		return
 	
+	if is_void_parkour:
+		round_time = 120.0
+		is_game_active = true
+		game_over_panel.visible = false
+		Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
+		if current_map_node and current_map_node.has_method("reset_race"):
+			current_map_node.reset_race()
+		for item in items_container.get_children():
+			item.queue_free()
+		for trap in traps_container.get_children():
+			trap.queue_free()
+		_spawn_match_players()
+		_update_hud()
+		_update_item_slot("")
+		add_game_log("[color=#ffe066]Parkour race restarted![/color]")
+		return
+
 	current_round += 1
 	if current_round > max_rounds:
 		current_round = 1

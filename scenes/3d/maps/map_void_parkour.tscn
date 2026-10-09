@@ -113,6 +113,25 @@ size = Vector3(7, 4, 7)
 [sub_resource type="BoxShape3D" id="BoxShape3D_finish"]
 size = Vector3(12, 6, 8)
 
+[sub_resource type="StandardMaterial3D" id="Mat_LightBeam_Green"]
+transparency = 1
+albedo_color = Color(0.1, 1, 0.45, 0.35)
+emission_enabled = true
+emission = Color(0.1, 1, 0.45, 1)
+emission_energy_multiplier = 3.5
+
+[sub_resource type="StandardMaterial3D" id="Mat_LightBeam_Cyan"]
+transparency = 1
+albedo_color = Color(0, 0.85, 1, 0.35)
+emission_enabled = true
+emission = Color(0, 0.85, 1, 1)
+emission_energy_multiplier = 3.5
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_beam"]
+top_radius = 0.5
+bottom_radius = 0.5
+height = 6.0
+
 [node name="MapVoidParkour" type="Node3D"]
 script = ExtResource("1_script")
 
@@ -127,6 +146,8 @@ shadow_enabled = true
 
 [node name="VoidRecoveryArea" type="Area3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -12, -70)
+collision_layer = 4
+collision_mask = 3
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="VoidRecoveryArea"]
 shape = SubResource("BoxShape3D_void_recovery")
@@ -142,6 +163,15 @@ material = SubResource("Mat_VoidPlatform")
 [node name="StartBeacon" type="MeshInstance3D" parent="StartPlatform"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.8, 0)
 mesh = SubResource("TorusMesh_beacon_cyan")
+
+[node name="StartLabel" type="Label3D" parent="StartPlatform"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.8, 0)
+billboard = 1
+double_sided = false
+text = "🚀 START PLATFORM"
+font_size = 46
+outline_size = 6
+modulate = Color(0.3, 0.85, 1, 1)
 
 [node name="BorderNorth" type="CSGBox3D" parent="StartPlatform"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.05, -5.9)
@@ -417,6 +447,8 @@ material = SubResource("Mat_VoidPlatform")
 
 [node name="HazardBall1" type="Area3D" parent="ParkourCourse"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.8, 19.9, -139)
+collision_layer = 4
+collision_mask = 3
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="ParkourCourse/HazardBall1"]
 shape = SubResource("SphereShape3D_hazard_ball")
@@ -429,6 +461,8 @@ mesh = SubResource("TorusMesh_hazard_ring")
 
 [node name="HazardBall2" type="Area3D" parent="ParkourCourse"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.8, 19.9, -139)
+collision_layer = 4
+collision_mask = 3
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="ParkourCourse/HazardBall2"]
 shape = SubResource("SphereShape3D_hazard_ball")
@@ -441,6 +475,8 @@ mesh = SubResource("TorusMesh_hazard_ring")
 
 [node name="HazardBall3" type="Area3D" parent="ParkourCourse"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 19.9, -139)
+collision_layer = 4
+collision_mask = 3
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="ParkourCourse/HazardBall3"]
 shape = SubResource("SphereShape3D_hazard_ball")
@@ -465,12 +501,28 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.02, 0)
 size = Vector3(7.4, 0.05, 7.4)
 material = SubResource("Mat_GreenCheck")
 
+[node name="LightPillar1" type="MeshInstance3D" parent="Checkpoint1Platform"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.5, 0)
+mesh = SubResource("CylinderMesh_beam")
+surface_material_override/0 = SubResource("Mat_LightBeam_Green")
+
+[node name="Checkpoint1Label" type="Label3D" parent="Checkpoint1Platform"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.2, 0)
+billboard = 1
+double_sided = false
+text = "🚩 CHECKPOINT 1"
+font_size = 48
+outline_size = 6
+modulate = Color(0.1, 1, 0.45, 1)
+
 [node name="BeaconRing" type="MeshInstance3D" parent="Checkpoint1Platform"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.8, 0)
 mesh = SubResource("TorusMesh_beacon_green")
 
 [node name="CheckpointArea" type="Area3D" parent="Checkpoint1Platform"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
+collision_layer = 4
+collision_mask = 3
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Checkpoint1Platform/CheckpointArea"]
 shape = SubResource("BoxShape3D_checkpoint_1")
@@ -489,12 +541,28 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.02, 0)
 size = Vector3(6.4, 0.05, 6.4)
 material = SubResource("Mat_CyanGlow")
 
+[node name="LightPillar2" type="MeshInstance3D" parent="Checkpoint2Platform"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.5, 0)
+mesh = SubResource("CylinderMesh_beam")
+surface_material_override/0 = SubResource("Mat_LightBeam_Cyan")
+
+[node name="Checkpoint2Label" type="Label3D" parent="Checkpoint2Platform"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.2, 0)
+billboard = 1
+double_sided = false
+text = "🚩 CHECKPOINT 2"
+font_size = 48
+outline_size = 6
+modulate = Color(0, 0.85, 1, 1)
+
 [node name="BeaconRing" type="MeshInstance3D" parent="Checkpoint2Platform"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.8, 0)
 mesh = SubResource("TorusMesh_beacon_cyan")
 
 [node name="CheckpointArea" type="Area3D" parent="Checkpoint2Platform"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
+collision_layer = 4
+collision_mask = 3
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Checkpoint2Platform/CheckpointArea"]
 shape = SubResource("BoxShape3D_checkpoint_2")
@@ -536,6 +604,15 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 7.2, 4.55)
 size = Vector3(9, 0.5, 0.15)
 material = SubResource("Mat_CyanGlow")
 
+[node name="FinishLabel" type="Label3D" parent="FinishPlatform"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 6.2, 3.5)
+billboard = 1
+double_sided = false
+text = "🏆 FINISH LINE 🏆"
+font_size = 54
+outline_size = 8
+modulate = Color(1, 0.85, 0.2, 1)
+
 [node name="VictoryTrophy" type="Node3D" parent="FinishPlatform"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
 
@@ -544,6 +621,8 @@ mesh = SubResource("PrismMesh_trophy")
 
 [node name="FinishGoalArea" type="Area3D" parent="FinishPlatform"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 2)
+collision_layer = 4
+collision_mask = 3
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="FinishPlatform/FinishGoalArea"]
 shape = SubResource("BoxShape3D_finish")

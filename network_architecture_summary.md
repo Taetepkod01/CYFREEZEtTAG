@@ -85,13 +85,13 @@
 2. **การเกลี่ยการเคลื่อนที่ (Entity Interpolation - Client Smoothing):**
    * ข้อมูลพิกัดถูกส่งมาด้วยความถี่ 20 Hz (ทุก 50ms) หากนำพิกัดมาแสดงผลตรงๆ จะทำให้ตัวละครกระตุกเป็นจังหวะตามแพ็กเก็ต
    * ฝั่ง Client จึงใช้สมการ Exponential Smoothing ในการคำนวณตำแหน่งทุกเฟรม (60–144 FPS):
-     $$\vec{P}_{\text{render}} = \text{lerp}(\vec{P}_{\text{render}}, \vec{P}_{\text{target}}, 16.0 \times \Delta t)$$
-     $$\theta_{\text{render}} = \text{lerp\_angle}(\theta_{\text{render}}, \theta_{\text{target}}, 16.0 \times \Delta t)$$
-     ส่งผลให้การเคลื่อนที่ของเพื่อนและศัตรูในจอภาพดูนุ่มนวลและต่อเนื่อง ไม่มีอาการ Micro-stuttering
+	 $$\vec{P}_{\text{render}} = \text{lerp}(\vec{P}_{\text{render}}, \vec{P}_{\text{target}}, 16.0 \times \Delta t)$$
+	 $$\theta_{\text{render}} = \text{lerp\_angle}(\theta_{\text{render}}, \theta_{\text{target}}, 16.0 \times \Delta t)$$
+	 ส่งผลให้การเคลื่อนที่ของเพื่อนและศัตรูในจอภาพดูนุ่มนวลและต่อเนื่อง ไม่มีอาการ Micro-stuttering
 3. **การประหยัดแบนด์วิธด้วย Stationary Threshold Filtering (Delta Check):**
    * ในการเล่นจริง ผู้เล่นมักจะมีการแอบซุ่ม หรือยืนรอจังหวะ หากส่งพิกัด 20 ครั้ง/วินาทีตลอดเวลาจะสิ้นเปลืองแบนด์วิธโดยใช่เหตุ
    * โค้ดใน `player_3d.gd` จะตรวจสอบระยะขจัด ($\Delta d$) และมุมหมุน ($\Delta \theta$):
-     `if global_position.distance_to(last_sent_pos) > 0.04 or abs(rot - last_sent_rot_y) > 0.05:`
+	 `if global_position.distance_to(last_sent_pos) > 0.04 or abs(rot - last_sent_rot_y) > 0.05:`
    * หากยืนนิ่ง ขยับไม่เกิน 4 เซนติเมตร และหมุนไม่เกิน 0.05 เรเดียน ตัวเกมจะไม่ส่งแพ็กเก็ตพิกัดขึ้นเซิร์ฟเวอร์เลย ลดแบนด์วิธขาขึ้นเหลือ 0 B/s ในขณะยืนนิ่ง
 4. **Authoritative Event Synchronization (การซิงค์เหตุการณ์สำคัญในเกม):**
    * คำสั่งที่มีผลต่อเกมทั้งหมด (เช่น Tag ผู้เล่น, Rescue ช่วยเพื่อน, ชน Tackle, วางกล้วย, เก็บ/ใช้ไอเทม) จะต้องส่งเป็น Event ขึ้นไปขออนุมัติจากเซิร์ฟเวอร์
@@ -104,17 +104,17 @@
 * **Application-Level Heartbeat (Ping/Pong) & Half-Open Connection Handling (อัปเดตล่าสุด):**
   * **ปัญหา Half-Open Connection:** เมื่อผู้เล่นดึงสายแลนออก หรือสัญญาณ WiFi ดับกะทันหัน Client จะไม่มีโอกาสส่งแพ็กเก็ต `TCP FIN` หรือ `RST` มาบอก Server ทำให้ OS Kernel ของ Server ยังมองว่าท่อ TCP เปิดอยู่ (หากรอ TCP Keep-Alive ปกติของ OS อาจค้างนาน 1–2 นาที กลายเป็น "หุ่นนิ่ง" ยืนค้างในเกม)
   * **ปัญหา Edge Case เมื่อผู้เล่นถูกแช่แข็ง (Frozen State 25–35 วินาที):**
-    * เมื่อผู้เล่นโดนแช่แข็ง ตัวละครจะขยับไม่ได้ ส่งผลให้ Stationary Threshold Filter หยุดส่งแพ็กเก็ตพิกัด ทำให้ท่อการเชื่อมต่อเงียบสนิท
-    * หากไม่มีกลไกพิเศษ Cloudflare หรือ Reverse Proxy ของ Render.com (ซึ่งมี Idle Connection Timeout 30–60 วินาที) จะเข้าใจผิดว่าท่อเน็ตตายแล้วตัดสายทิ้งทันที
+	* เมื่อผู้เล่นโดนแช่แข็ง ตัวละครจะขยับไม่ได้ ส่งผลให้ Stationary Threshold Filter หยุดส่งแพ็กเก็ตพิกัด ทำให้ท่อการเชื่อมต่อเงียบสนิท
+	* หากไม่มีกลไกพิเศษ Cloudflare หรือ Reverse Proxy ของ Render.com (ซึ่งมี Idle Connection Timeout 30–60 วินาที) จะเข้าใจผิดว่าท่อเน็ตตายแล้วตัดสายทิ้งทันที
   * **กลไก Keep-Alive ฝั่ง Client (`network.gd: L71-72, L137-142`):**
-    * ในระดับ Autoload ของ `network.gd` มีการรันตัวจับเวลาอิสระใน `_process(delta)`
-    * ตัวเกมจะส่งข้อความระดับแอปพลิเคชัน `{ action: "ping", time: ... }` ขึ้นไปยัง Server ทุกๆ **5.0 วินาที** อย่างต่อเนื่อง ไม่ว่าตัวละครจะขยับ ยืนนิ่ง ถูกแช่แข็ง หรืออยู่ในหน้าล็อบบี้
+	* ในระดับ Autoload ของ `network.gd` มีการรันตัวจับเวลาอิสระใน `_process(delta)`
+	* ตัวเกมจะส่งข้อความระดับแอปพลิเคชัน `{ action: "ping", time: ... }` ขึ้นไปยัง Server ทุกๆ **5.0 วินาที** อย่างต่อเนื่อง ไม่ว่าตัวละครจะขยับ ยืนนิ่ง ถูกแช่แข็ง หรืออยู่ในหน้าล็อบบี้
   * **กลไกตรวจจับความเงียบและ Idle Timeout บนเซิร์ฟเวอร์ (`index.ts: L211-235`):**
-    * เซิร์ฟเวอร์รันรอบตรวจทุก 10 วินาที (`HEARTBEAT_CHECK_INTERVAL_MS = 10000`)
-    * ตรวจสอบเวลา `lastActiveTime` ของแต่ละ Socket หาก Client ส่งข้อความใดๆ (รวมถึง Keep-Alive Ping) จะรีเซ็ตเวลา `lastActiveTime = Date.now()` ทันที
-    * เซิร์ฟเวอร์ยิง `ws.ping()` ควบคู่เพื่อกระตุ้นและรักษาท่อผ่าน Cloud Proxy
-    * **Dead Socket Termination (35s Timeout):** หาก Client เงียบสนิทติดต่อกันเกิน **35 วินาที** (`SOCKET_IDLE_TIMEOUT_MS = 35000`) เซิร์ฟเวอร์จะสั่ง **`ws.terminate()`** ทันที เพื่อทำลายท่อ TCP ขยะทิ้ง
-    * **ข้อพิสูจน์ว่าผู้เล่นแช่แข็ง 25–35 วินาทีจะไม่หลุด:** ในช่วง 35 วินาทีที่ผู้เล่นอยู่นิ่ง Client จะส่ง Ping ไปรีเซ็ตเวลากับเซิร์ฟเวอร์ถึง **6–7 ครั้ง** ทำให้เวลานับถอยหลังของเซิร์ฟเวอร์เริ่มนับ 0 ใหม่อยู่ตลอดเวลา การเชื่อมต่อจึงคงอยู่ 100% ปลอดภัยแน่นอน
+	* เซิร์ฟเวอร์รันรอบตรวจทุก 10 วินาที (`HEARTBEAT_CHECK_INTERVAL_MS = 10000`)
+	* ตรวจสอบเวลา `lastActiveTime` ของแต่ละ Socket หาก Client ส่งข้อความใดๆ (รวมถึง Keep-Alive Ping) จะรีเซ็ตเวลา `lastActiveTime = Date.now()` ทันที
+	* เซิร์ฟเวอร์ยิง `ws.ping()` ควบคู่เพื่อกระตุ้นและรักษาท่อผ่าน Cloud Proxy
+	* **Dead Socket Termination (35s Timeout):** หาก Client เงียบสนิทติดต่อกันเกิน **35 วินาที** (`SOCKET_IDLE_TIMEOUT_MS = 35000`) เซิร์ฟเวอร์จะสั่ง **`ws.terminate()`** ทันที เพื่อทำลายท่อ TCP ขยะทิ้ง
+	* **ข้อพิสูจน์ว่าผู้เล่นแช่แข็ง 25–35 วินาทีจะไม่หลุด:** ในช่วง 35 วินาทีที่ผู้เล่นอยู่นิ่ง Client จะส่ง Ping ไปรีเซ็ตเวลากับเซิร์ฟเวอร์ถึง **6–7 ครั้ง** ทำให้เวลานับถอยหลังของเซิร์ฟเวอร์เริ่มนับ 0 ใหม่อยู่ตลอดเวลา การเชื่อมต่อจึงคงอยู่ 100% ปลอดภัยแน่นอน
   * **Application-Layer Latency Ping (`action: "ping"`):** เซิร์ฟเวอร์รองรับ Message `ping` ระดับแอปพลิเคชัน เพื่อส่งคืน `pong` พร้อม `serverTime` และ Client Timestamp สำหรับให้ Client นำไปคำนวณ Round-Trip Time (RTT) ได้
 * **Ghost Room & Dead Socket Sweeper:**
   * ฟังก์ชัน `cleanupGhostRooms()` ทำงานทุก 4 วินาที และทำงานซ้ำทุกครั้งที่มีการดึงรายชื่อห้อง (`index.ts: L80-113`)
@@ -145,36 +145,36 @@
 
 1. **การกรองข้อมูลบน Server (Server-side Filtering):**
    * ทั้งใน REST API (`GET /api/rooms`) และ WebSocket Action (`get_rooms`) เซิร์ฟเวอร์จะมีเงื่อนไขเข้มงวด:
-     ```typescript
-     active3DRooms.forEach((r) => {
-       if (r.isPrivate) return; // กรองทิ้งทันที ไม่ส่งข้อมูลห้องส่วนตัวออกไป
-       list.push({ code: r.code, name: r.name, playersCount: r.players.size, maxPlayers: r.maxPlayers, map: r.map, rounds: r.rounds, hasStarted: r.phase !== "lobby" });
-     });
-     ```
+	 ```typescript
+	 active3DRooms.forEach((r) => {
+	   if (r.isPrivate) return; // กรองทิ้งทันที ไม่ส่งข้อมูลห้องส่วนตัวออกไป
+	   list.push({ code: r.code, name: r.name, playersCount: r.players.size, maxPlayers: r.maxPlayers, map: r.map, rounds: r.rounds, hasStarted: r.phase !== "lobby" });
+	 });
+	 ```
    * ทำให้ห้องส่วนตัวถูกซ่อนอย่างสมบูรณ์แบบที่ระดับ Server ไคลเอนต์ภายนอกไม่สามารถดักฟังหรือรู้ชื่อห้อง Private ได้เลย (`server/src/index.ts: L128-139, L425-436`)
 
 2. **UI Architecture ของห้องสาธารณะ (อัปเดตล่าสุด):**
    * บนหน้า Lobby Browser การ์ดของ Public Room จะแสดงผลด้วย Cyber Theme Card:
-     ```text
-     Room 101
-     Players: 1/8  |  SPACE STATION
-     ```
+	 ```text
+	 Room 101
+	 Players: 1/8  |  SPACE STATION
+	 ```
    * **นโยบายความปลอดภัย:** ระบบ **ไม่แสดงรหัส PIN 6 หลักบนการ์ดห้องสาธารณะ** (`scripts/3d/lobby_3d.gd: L253-261`) เพื่อป้องกันความสับสนของผู้เล่น และแยกความแตกต่างอย่างชัดเจนระหว่างห้องสาธารณะ (กดเข้าได้เลย) กับห้องส่วนตัว (ต้องมี PIN)
    * เมื่อผู้เล่นคลิกที่การ์ดห้อง ระบบจะส่งคำขอ `join_room` ตรงไปยังเซิร์ฟเวอร์ทันที โดยไม่ต้องผ่านการกรอก PIN ในช่อง Join
 
 3. **ความปลอดภัยและคณิตศาสตร์ของรหัส PIN 6 หลัก (Cryptographic Space & Anti-Brute Force):**
    * **ชุดอักขระ Base32 ไร้ความกำกวม (No Ambiguous Characters):**
-     * ตัวเกมใช้ตัวอักษร 32 ตัว: `ABCDEFGHJKLMNPQRSTUVWXYZ23456789` (`scripts/3d/lobby_3d.gd: L4`, `server/src/index.ts: L20`)
-     * **ตัดตัวอักษรที่สับสนง่ายออกทั้งหมด:** ไม่มีเลข `0` กับอักษร `O`, ไม่มีเลข `1` กับอักษร `I` ทำให้ผู้เล่นส่งต่อรหัสให้เพื่อนพิมพ์ตามได้ง่าย ไม่ผิดพลาด
+	 * ตัวเกมใช้ตัวอักษร 32 ตัว: `ABCDEFGHJKLMNPQRSTUVWXYZ23456789` (`scripts/3d/lobby_3d.gd: L4`, `server/src/index.ts: L20`)
+	 * **ตัดตัวอักษรที่สับสนง่ายออกทั้งหมด:** ไม่มีเลข `0` กับอักษร `O`, ไม่มีเลข `1` กับอักษร `I` ทำให้ผู้เล่นส่งต่อรหัสให้เพื่อนพิมพ์ตามได้ง่าย ไม่ผิดพลาด
    * **ขนาด Key Space มหาศาล:**
-     $$N = 32^6 = 1,073,741,824 \text{ รูปแบบ (มากกว่า 1.07 พันล้านชุด)}$$
+	 $$N = 32^6 = 1,073,741,824 \text{ รูปแบบ (มากกว่า 1.07 พันล้านชุด)}$$
    * **ความน่าจะเป็นในการสุ่มเดา (Brute Force Probability):**
-     * หากเซิร์ฟเวอร์มีห้อง Private เปิดอยู่เต็มความจุ 50 ห้องพร้อมกัน ความน่าจะเป็นที่ผู้ไม่หวังดีจะสุ่มเดาถูกใน 1 ครั้งคือ:
-       $$P = \frac{50}{1,073,741,824} \approx 4.65 \times 10^{-8} \quad (0.0000046\%)$$
+	 * หากเซิร์ฟเวอร์มีห้อง Private เปิดอยู่เต็มความจุ 50 ห้องพร้อมกัน ความน่าจะเป็นที่ผู้ไม่หวังดีจะสุ่มเดาถูกใน 1 ครั้งคือ:
+	   $$P = \frac{50}{1,073,741,824} \approx 4.65 \times 10^{-8} \quad (0.0000046\%)$$
    * **ระบบป้องกัน Anti-Brute Force สองชั้นบน Server (`index.ts: L441-455`):**
-     * **ชั้นที่ 1 (Rate Limiting):** ตรวจสอบระยะเวลาระหว่างคำขอ Join หากส่งถี่กว่า 1 ครั้งต่อ 600ms จะถูกปฏิเสธทันที
-     * **ชั้นที่ 2 (Lockout Penalty):** หากไคลเอนต์ใส่รหัสผิดสะสมครบ 5 ครั้ง เซิร์ฟเวอร์จะทำการระงับการเชื่อมต่อ (Lockout) ทันทีเป็นเวลา 5 วินาที
-     * **บทวิเคราะห์ความปลอดภัย:** ด้วยการจำกัดอัตรานี้ แฮกเกอร์จะลองรหัสได้ไม่เกิน $\approx 1$ ครั้งต่อวินาที การจะสุ่มเดาจนเจอห้อง Private ต้องใช้เวลาเฉลี่ยถึง **34 ปี** จึงปลอดภัยจากการเดารหัส 100%
+	 * **ชั้นที่ 1 (Rate Limiting):** ตรวจสอบระยะเวลาระหว่างคำขอ Join หากส่งถี่กว่า 1 ครั้งต่อ 600ms จะถูกปฏิเสธทันที
+	 * **ชั้นที่ 2 (Lockout Penalty):** หากไคลเอนต์ใส่รหัสผิดสะสมครบ 5 ครั้ง เซิร์ฟเวอร์จะทำการระงับการเชื่อมต่อ (Lockout) ทันทีเป็นเวลา 5 วินาที
+	 * **บทวิเคราะห์ความปลอดภัย:** ด้วยการจำกัดอัตรานี้ แฮกเกอร์จะลองรหัสได้ไม่เกิน $\approx 1$ ครั้งต่อวินาที การจะสุ่มเดาจนเจอห้อง Private ต้องใช้เวลาเฉลี่ยถึง **34 ปี** จึงปลอดภัยจากการเดารหัส 100%
 
 4. **การแชร์รหัสห้องส่วนตัว (PIN Sharing):**
    * เมื่อ Host สร้างห้องแบบ Private ในหน้าห้องรอ (Waiting Room) จะมีกล่องแสดงรหัส PIN 6 หลักตัวโต พร้อมปุ่ม **"COPY"** (`scripts/3d/lobby_3d.gd: L634-639`)
@@ -202,11 +202,11 @@
 * **การประเมิน Bandwidth:**
   * ขนาดแพ็กเก็ตพิกัด: ขาไป ~70 Bytes, ขากลับ ~100 Bytes (รวม TCP/WS Frame Header $\approx 150 \text{ Bytes}$)
   * ต่อผู้เล่น 1 คน (ห้อง 8 คน มีคนอื่นวิ่ง 7 คน):
-    * อัปโหลด: $150 \text{ B} \times 20 \text{ Hz} \approx 3 \text{ KB/s}$ (~**24 Kbps**)
-    * ดาวน์โหลด: $150 \text{ B} \times 20 \text{ Hz} \times 7 \approx 21 \text{ KB/s}$ (~**168 Kbps**)
+	* อัปโหลด: $150 \text{ B} \times 20 \text{ Hz} \approx 3 \text{ KB/s}$ (~**24 Kbps**)
+	* ดาวน์โหลด: $150 \text{ B} \times 20 \text{ Hz} \times 7 \approx 21 \text{ KB/s}$ (~**168 Kbps**)
   * สำหรับ 30 ห้องพร้อมกัน (240 ผู้เล่น Active พร้อมกัน):
-    * Server Inbound: ~**5.76 Mbps**
-    * Server Outbound: ~**40.3 Mbps** (~5 MB/s)
+	* Server Inbound: ~**5.76 Mbps**
+	* Server Outbound: ~**40.3 Mbps** (~5 MB/s)
 
 ---
 
@@ -275,9 +275,9 @@
    * Ping วัด One-way ตรงๆ ไม่ได้เพราะ: (1) ปัญหา Clock Synchronization ข้ามเครื่อง และ (2) Asymmetric Routing (ขาไปกับขากลับวิ่งคนละเส้นทาง)
 3. **โจทย์คำนวณ $d_{\text{trans}}$ vs $d_{\text{prop}}$:**
    * แพ็กเก็ต $150\text{ B} = 1,200\text{ bits}$, ลิงก์ $10\text{ Mbps}$, ระยะ $3,000\text{ km}$:
-     * $d_{\text{trans}} = 1,200 / 10,000,000 = \mathbf{0.12\text{ ms}}$
-     * $d_{\text{prop}} = 3,000\text{ km} / 200,000\text{ km/s} = \mathbf{15.0\text{ ms}}$
-     * **Propagation Delay (15 ms) เด่นกว่า Transmission Delay (0.12 ms) ถึง 125 เท่า!**
+	 * $d_{\text{trans}} = 1,200 / 10,000,000 = \mathbf{0.12\text{ ms}}$
+	 * $d_{\text{prop}} = 3,000\text{ km} / 200,000\text{ km/s} = \mathbf{15.0\text{ ms}}$
+	 * **Propagation Delay (15 ms) เด่นกว่า Transmission Delay (0.12 ms) ถึง 125 เท่า!**
 4. **ทำไมอัปเกรดเน็ต 100M เป็น 1G ปิงแทบไม่ลด:**
    * การอัปเกรดแบนด์วิธลดเฉพาะ $d_{\text{trans}}$ (ประหยัดได้แค่ $0.01\text{ ms}$) แต่ปิงถูกครอบงำด้วย $d_{\text{prop}}$ (ระยะทางสายไฟเบอร์) ซึ่งไม่เปลี่ยนแปลง
 5. **Queuing Delay & Bufferbloat:**
@@ -295,39 +295,39 @@
 9. **ทำไม Loss 2% ทำให้ TCP Throughput ตกหนัก:**
    * เพราะ TCP ถือว่า Loss คือสัญญาณเตือน Congestion จึงสั่งตัด Congestion Window (cwnd) ลงครึ่งหนึ่งทันที (Multiplicative Decrease) ตามสมการ Mathis Throughput $\propto \frac{1}{\text{RTT}\sqrt{p}}$ ค่า cwnd จึงไม่สามารถโตได้
 10. **ทำไมค่าเฉลี่ยปิงบอกอะไรไม่ได้:**
-    * ค่าเฉลี่ยเกลี่ย Spike ให้ดูเรียบ (เช่น 99 แพ็กเก็ต 40ms + 1 แพ็กเก็ต 400ms = เฉลี่ย 43.6ms แต่ผู้ใช้กระตุกไปแล้ว) ต้องดู Percentile ($P_{95}, P_{99}$), Max Latency และ Jitter แทน
+	* ค่าเฉลี่ยเกลี่ย Spike ให้ดูเรียบ (เช่น 99 แพ็กเก็ต 40ms + 1 แพ็กเก็ต 400ms = เฉลี่ย 43.6ms แต่ผู้ใช้กระตุกไปแล้ว) ต้องดู Percentile ($P_{95}, P_{99}$), Max Latency และ Jitter แทน
 
 ### หมวด 3: แบนด์วิธและ Throughput (พร้อมโจทย์คำนวณ)
 11. **Bandwidth vs Throughput vs Goodput:**
-    * Bandwidth = ขีดจำกัดทางทฤษฎีสูงสุด
-    * Throughput = อัตราข้อมูลจริงรวม Header และ Retransmit
-    * Goodput = เฉพาะ Application Payload ที่ส่งสำเร็จ ($\text{Goodput} < \text{Throughput} \le \text{Bandwidth}$)
+	* Bandwidth = ขีดจำกัดทางทฤษฎีสูงสุด
+	* Throughput = อัตราข้อมูลจริงรวม Header และ Retransmit
+	* Goodput = เฉพาะ Application Payload ที่ส่งสำเร็จ ($\text{Goodput} < \text{Throughput} \le \text{Bandwidth}$)
 12. **Small Packet Problem & Header Overhead:**
-    * Payload 100 ไบต์ + Ethernet (18B) + IPv4 (20B) + TCP (20B) + TLS 1.3 (21B) + WebSocket (6B) $\approx 185\text{ ไบต์}$
-    * สัดส่วน Header สูงถึง 46%–60% สิ้นเปลืองเมื่อส่งถี่
+	* Payload 100 ไบต์ + Ethernet (18B) + IPv4 (20B) + TCP (20B) + TLS 1.3 (21B) + WebSocket (6B) $\approx 185\text{ ไบต์}$
+	* สัดส่วน Header สูงถึง 46%–60% สิ้นเปลืองเมื่อส่งถี่
 13. **โจทย์คำนวณที่ 1 (แบนด์วิธต่อผู้เล่น 1 คน):**
-    * ผู้เล่น 1 คนส่ง 100B 20 Hz, รับจาก 7 คน คนละ 20 Hz (รวมรับ 140 msg/s):
-      * ไม่รวม overhead: Uplink = $2\text{ KB/s}$ (16 Kbps), Downlink = $14\text{ KB/s}$ (112 Kbps)
-      * รวม overhead 50B (แพ็กเก็ต 150B): Uplink = $3\text{ KB/s}$ (24 Kbps), Downlink = $21\text{ KB/s}$ (168 Kbps)
-      * สัดส่วน Overhead = $50/150 = \mathbf{33.33\%}$ (เพิ่มขึ้น +50% ของ Payload)
+	* ผู้เล่น 1 คนส่ง 100B 20 Hz, รับจาก 7 คน คนละ 20 Hz (รวมรับ 140 msg/s):
+	  * ไม่รวม overhead: Uplink = $2\text{ KB/s}$ (16 Kbps), Downlink = $14\text{ KB/s}$ (112 Kbps)
+	  * รวม overhead 50B (แพ็กเก็ต 150B): Uplink = $3\text{ KB/s}$ (24 Kbps), Downlink = $21\text{ KB/s}$ (168 Kbps)
+	  * สัดส่วน Overhead = $50/150 = \mathbf{33.33\%}$ (เพิ่มขึ้น +50% ของ Payload)
 14. **โจทย์คำนวณที่ 2 (ภาระเซิร์ฟเวอร์ที่ 400 ผู้ใช้ 50 ห้อง):**
-    * ขาเข้า: $400 \times 20 = \mathbf{8,000\text{ msg/s}}$
-    * ขาออก (Fan-out $\times 7$): $8,000 \times 7 = \mathbf{56,000\text{ msg/s}}$
-    * แบนด์วิธขาออก (ที่ 150B รวม overhead): $56,000 \times 150\text{ B} = 8.4\text{ MB/s} = \mathbf{67.2\text{ Mbps}}$
-    * สมการเติบโตต่อห้อง: $R_{\text{out}} = N(N-1)f \approx \mathbf{O(N^2)}$
-    * **ทำไม CPU ตันก่อน Bandwidth:** ท่อ Cloud รองรับได้ 1 Gbps (ใช้ไปแค่ 6.7%) แต่ Node.js เป็น Single Thread การส่ง 56,000 msg/s ทำให้ CPU แตะ 100% จนเกิด Event Loop Starvation
+	* ขาเข้า: $400 \times 20 = \mathbf{8,000\text{ msg/s}}$
+	* ขาออก (Fan-out $\times 7$): $8,000 \times 7 = \mathbf{56,000\text{ msg/s}}$
+	* แบนด์วิธขาออก (ที่ 150B รวม overhead): $56,000 \times 150\text{ B} = 8.4\text{ MB/s} = \mathbf{67.2\text{ Mbps}}$
+	* สมการเติบโตต่อห้อง: $R_{\text{out}} = N(N-1)f \approx \mathbf{O(N^2)}$
+	* **ทำไม CPU ตันก่อน Bandwidth:** ท่อ Cloud รองรับได้ 1 Gbps (ใช้ไปแค่ 6.7%) แต่ Node.js เป็น Single Thread การส่ง 56,000 msg/s ทำให้ CPU แตะ 100% จนเกิด Event Loop Starvation
 15. **5 ทางเลือกในการลด Bandwidth 50%:**
-    * ลดความถี่ (20 $\rightarrow$ 10 Hz), เปลี่ยนเป็น Binary (Protobuf/MsgPack), Threshold Filtering (หยุดส่งตอนยืนนิ่ง), Delta Compression, Message Batching
+	* ลดความถี่ (20 $\rightarrow$ 10 Hz), เปลี่ยนเป็น Binary (Protobuf/MsgPack), Threshold Filtering (หยุดส่งตอนยืนนิ่ง), Delta Compression, Message Batching
 16. **Message Batching Trade-off:**
-    * ลด Overhead เพราะแชร์ Header ชุดเดียว แต่เพิ่ม Latency เพราะแพ็กเก็ตแรกต้องจอดรอในคิวรวมก้อน
+	* ลด Overhead เพราะแชร์ Header ชุดเดียว แต่เพิ่ม Latency เพราะแพ็กเก็ตแรกต้องจอดรอในคิวรวมก้อน
 
 ### หมวด 4: เจาะลึกกลไก TCP
 17. **Handshake RTT Budget:**
-    * TCP 3-Way Handshake = 1 RTT, TLS 1.3 = 1 RTT รวมก่อนส่งข้อมูลจริงได้ = 2 RTTs
+	* TCP 3-Way Handshake = 1 RTT, TLS 1.3 = 1 RTT รวมก่อนส่งข้อมูลจริงได้ = 2 RTTs
 18. **Flow Control vs Congestion Control:**
-    * Flow Control ป้องกัน Receiver Buffer ล้น (ควบคุมด้วย rwnd), Congestion Control ป้องกัน Network Link ล้น (ควบคุมด้วย cwnd)
+	* Flow Control ป้องกัน Receiver Buffer ล้น (ควบคุมด้วย rwnd), Congestion Control ป้องกัน Network Link ล้น (ควบคุมด้วย cwnd)
 19. **Slow Start & cwnd:**
-    * เริ่มจาก cwnd ต่ำ แล้วโตแบบ Exponential ($2^n$) ทุก 1 RTT การเชื่อมต่อใหม่จึงส่งได้ช้ากว่าการเชื่อมต่อเก่าที่ cwnd ขยายเต็ม BDP แล้ว
+	* เริ่มจาก cwnd ต่ำ แล้วโตแบบ Exponential ($2^n$) ทุก 1 RTT การเชื่อมต่อใหม่จึงส่งได้ช้ากว่าการเชื่อมต่อเก่าที่ cwnd ขยายเต็ม BDP แล้ว
 20. **Nagle's Algorithm + Delayed ACK = Latency Trap:**
     * Nagle รอ ACK แต่ Delayed ACK รอข้อมูล ทำให้ข้อความเล็กหน่วงค้าง 40–200ms ต้องแก้ด้วย `TCP_NODELAY`
 21. **Half-Open Connection & Keepalive Lessons Learned:**
