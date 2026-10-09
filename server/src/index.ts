@@ -1124,8 +1124,20 @@ wss.on("connection", (ws: WebSocket, req: any) => {
             });
           } else if (itemType === "vortex") {
             // Teleport user to random location on map
-            p.x = Math.round((Math.random() * 40 - 20) * 10) / 10;
-            p.z = Math.round((Math.random() * 40 - 20) * 10) / 10;
+            const roomMap = (currentRoom.map || "").toUpperCase();
+            if (roomMap.includes("PARKOUR") || roomMap.includes("VOID")) {
+              const safeSpots = [
+                { x: 0.0, y: 1.2, z: 0.0 },
+                { x: 0.0, y: 5.8, z: -56.0 },
+                { x: 0.0, y: 10.8, z: -96.0 },
+                { x: 0.0, y: 16.0, z: -140.0 }
+              ];
+              const s = safeSpots[Math.floor(Math.random() * safeSpots.length)];
+              p.x = s.x; p.y = s.y; p.z = s.z;
+            } else {
+              p.x = Math.round((Math.random() * 40 - 20) * 10) / 10;
+              p.z = Math.round((Math.random() * 40 - 20) * 10) / 10;
+            }
             broadcastToRoom(currentRoom, "player_moved", { id: p.id, x: p.x, y: p.y, z: p.z, rotY: p.rotY });
             broadcastToRoom(currentRoom, "chat_message", { msg: `🌀 ${p.name} teleported across the arena!` });
           } else if (itemType === "tackle") {
@@ -1288,6 +1300,7 @@ function start3DRound(room: Active3DRoom) {
   const isSpaceStation = mapUpper.includes("SPACE");
   const isSnowTown = mapUpper.includes("SNOW") || mapUpper.includes("TOWN") || mapUpper.includes("หิมะ");
   const isLabyrinth = mapUpper.includes("LABYRINTH") || mapUpper.includes("MAZE") || mapUpper.includes("เขาวงกต");
+  const isVoidParkour = mapUpper.includes("PARKOUR") || mapUpper.includes("VOID") || mapUpper.includes("พาร์คัวร์");
 
   const spaceStationRunnerSpawns = [
     { x: 0, y: 0.5, z: 22 },
@@ -1312,6 +1325,14 @@ function start3DRound(room: Active3DRoom) {
     { x: 16.0, y: 5.4, z: -2.0 },
     { x: -16.0, y: 5.2, z: 6.0 },
     { x: -5.0, y: 5.0, z: -2.0 }
+  ];
+  const voidParkourRunnerSpawns = [
+    { x: 0.0, y: 1.2, z: 0.0 },
+    { x: -3.0, y: 1.2, z: 0.0 },
+    { x: 3.0, y: 1.2, z: 0.0 },
+    { x: -1.5, y: 1.2, z: -2.0 },
+    { x: 1.5, y: 1.2, z: -2.0 },
+    { x: 0.0, y: 1.2, z: -3.0 }
   ];
   let runnerSpawnIdx = 0;
 
@@ -1347,6 +1368,14 @@ function start3DRound(room: Active3DRoom) {
         p.x = -15.0; p.y = 5.6; p.z = -16.0;
       } else {
         const sp = labyrinthRunnerSpawns[runnerSpawnIdx % labyrinthRunnerSpawns.length];
+        p.x = sp.x; p.y = sp.y; p.z = sp.z;
+        runnerSpawnIdx++;
+      }
+    } else if (isVoidParkour) {
+      if (p.role === "tagger") {
+        p.x = 0.0; p.y = 1.2; p.z = 2.5;
+      } else {
+        const sp = voidParkourRunnerSpawns[runnerSpawnIdx % voidParkourRunnerSpawns.length];
         p.x = sp.x; p.y = sp.y; p.z = sp.z;
         runnerSpawnIdx++;
       }
@@ -1400,6 +1429,21 @@ function start3DRound(room: Active3DRoom) {
         { x: 12.0, y: 5.4, z: 10.0 },
         { x: -10.0, y: 5.2, z: 5.0 },
         { x: 5.0, y: 5.0, z: -12.0 }
+      ];
+      const spot = spots[i % spots.length];
+      x = spot.x;
+      y = spot.y;
+      z = spot.z;
+    } else if (isVoidParkour) {
+      const spots = [
+        { x: 0.0, y: 1.2, z: -2.0 },
+        { x: 0.0, y: 1.8, z: -20.0 },
+        { x: 0.0, y: 5.2, z: -47.5 },
+        { x: 0.0, y: 5.8, z: -56.0 },
+        { x: 0.0, y: 8.2, z: -75.0 },
+        { x: 0.0, y: 10.8, z: -96.0 },
+        { x: 0.0, y: 12.8, z: -112.0 },
+        { x: 0.0, y: 16.0, z: -140.0 }
       ];
       const spot = spots[i % spots.length];
       x = spot.x;
@@ -1473,6 +1517,19 @@ function start3DRound(room: Active3DRoom) {
         { x: 12.0, y: 5.4, z: 10.0 },
         { x: -10.0, y: 5.2, z: 5.0 },
         { x: 5.0, y: 5.0, z: -12.0 }
+      ];
+      const spot = spots[Math.floor(Math.random() * spots.length)];
+      x = spot.x; y = spot.y; z = spot.z;
+    } else if (isVoidParkour) {
+      const spots = [
+        { x: 0.0, y: 1.2, z: -2.0 },
+        { x: 0.0, y: 1.8, z: -20.0 },
+        { x: 0.0, y: 5.2, z: -47.5 },
+        { x: 0.0, y: 5.8, z: -56.0 },
+        { x: 0.0, y: 8.2, z: -75.0 },
+        { x: 0.0, y: 10.8, z: -96.0 },
+        { x: 0.0, y: 12.8, z: -112.0 },
+        { x: 0.0, y: 16.0, z: -140.0 }
       ];
       const spot = spots[Math.floor(Math.random() * spots.length)];
       x = spot.x; y = spot.y; z = spot.z;

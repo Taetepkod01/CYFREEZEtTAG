@@ -1,0 +1,478 @@
+[gd_scene load_steps=22 format=3 uid="uid://map_void_parkour_001"]
+
+[ext_resource type="Script" path="res://scripts/3d/map_void_parkour.gd" id="1_script"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_void"]
+sky_top_color = Color(0.015, 0.025, 0.06, 1)
+sky_horizon_color = Color(0.04, 0.08, 0.18, 1)
+ground_bottom_color = Color(0.005, 0.008, 0.02, 1)
+ground_horizon_color = Color(0.03, 0.05, 0.12, 1)
+
+[sub_resource type="Sky" id="Sky_void"]
+sky_material = SubResource("ProceduralSkyMaterial_void")
+
+[sub_resource type="Environment" id="Environment_void"]
+background_mode = 2
+sky = SubResource("Sky_void")
+ambient_light_source = 2
+ambient_light_color = Color(0.3, 0.4, 0.65, 1)
+ambient_light_energy = 0.85
+tonemap_mode = 2
+glow_enabled = true
+glow_intensity = 0.85
+glow_bloom = 0.25
+
+[sub_resource type="StandardMaterial3D" id="Mat_VoidPlatform"]
+albedo_color = Color(0.08, 0.11, 0.16, 1)
+metallic = 0.5
+roughness = 0.35
+
+[sub_resource type="StandardMaterial3D" id="Mat_CyanGlow"]
+albedo_color = Color(0.05, 0.9, 1, 1)
+emission_enabled = true
+emission = Color(0, 0.85, 1, 1)
+emission_energy_multiplier = 3.0
+
+[sub_resource type="StandardMaterial3D" id="Mat_MagentaGlow"]
+albedo_color = Color(1, 0.15, 0.65, 1)
+emission_enabled = true
+emission = Color(1, 0.1, 0.6, 1)
+emission_energy_multiplier = 3.5
+
+[sub_resource type="StandardMaterial3D" id="Mat_GreenCheck"]
+albedo_color = Color(0.1, 1, 0.45, 1)
+emission_enabled = true
+emission = Color(0.1, 0.95, 0.4, 1)
+emission_energy_multiplier = 3.5
+
+[sub_resource type="StandardMaterial3D" id="Mat_YellowMoving"]
+albedo_color = Color(1, 0.8, 0.05, 1)
+emission_enabled = true
+emission = Color(1, 0.75, 0.05, 1)
+emission_energy_multiplier = 2.8
+
+[sub_resource type="StandardMaterial3D" id="Mat_GoldTrophy"]
+albedo_color = Color(1, 0.85, 0.2, 1)
+metallic = 0.9
+roughness = 0.2
+emission_enabled = true
+emission = Color(0.85, 0.65, 0.15, 1)
+emission_energy_multiplier = 1.5
+
+[sub_resource type="TorusMesh" id="TorusMesh_beacon_cyan"]
+material = SubResource("Mat_CyanGlow")
+inner_radius = 1.6
+outer_radius = 1.85
+
+[sub_resource type="TorusMesh" id="TorusMesh_beacon_green"]
+material = SubResource("Mat_GreenCheck")
+inner_radius = 1.6
+outer_radius = 1.85
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_moving_1"]
+size = Vector3(3.2, 0.8, 3.2)
+
+[sub_resource type="BoxMesh" id="BoxMesh_moving_1"]
+material = SubResource("Mat_MagentaGlow")
+size = Vector3(3.2, 0.8, 3.2)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_moving_2"]
+size = Vector3(3.2, 0.8, 3.2)
+
+[sub_resource type="BoxMesh" id="BoxMesh_moving_2"]
+material = SubResource("Mat_YellowMoving")
+size = Vector3(3.2, 0.8, 3.2)
+
+[sub_resource type="PrismMesh" id="PrismMesh_trophy"]
+material = SubResource("Mat_GoldTrophy")
+size = Vector3(1.4, 1.8, 1.4)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_void_recovery"]
+size = Vector3(320, 12, 340)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_checkpoint_1"]
+size = Vector3(8, 4, 8)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_checkpoint_2"]
+size = Vector3(7, 4, 7)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_finish"]
+size = Vector3(12, 6, 8)
+
+[node name="MapVoidParkour" type="Node3D"]
+script = ExtResource("1_script")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_void")
+
+[node name="SunLight" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.866025, -0.353553, 0.353553, 0, 0.707107, 0.707107, -0.5, -0.612372, 0.612372, 0, 30, 0)
+light_color = Color(0.85, 0.92, 1, 1)
+light_energy = 0.95
+shadow_enabled = true
+
+[node name="VoidRecoveryArea" type="Area3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -12, -70)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="VoidRecoveryArea"]
+shape = SubResource("BoxShape3D_void_recovery")
+
+[node name="StartPlatform" type="Node3D" parent="."]
+
+[node name="Base" type="CSGBox3D" parent="StartPlatform"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 0)
+use_collision = true
+size = Vector3(12, 1, 12)
+material = SubResource("Mat_VoidPlatform")
+
+[node name="StartBeacon" type="MeshInstance3D" parent="StartPlatform"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.8, 0)
+mesh = SubResource("TorusMesh_beacon_cyan")
+
+[node name="BorderNorth" type="CSGBox3D" parent="StartPlatform"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.05, -5.9)
+size = Vector3(12, 0.1, 0.2)
+material = SubResource("Mat_CyanGlow")
+
+[node name="BorderSouth" type="CSGBox3D" parent="StartPlatform"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.05, 5.9)
+size = Vector3(12, 0.1, 0.2)
+material = SubResource("Mat_CyanGlow")
+
+[node name="BorderEast" type="CSGBox3D" parent="StartPlatform"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.9, 0.05, 0)
+size = Vector3(0.2, 0.1, 12)
+material = SubResource("Mat_CyanGlow")
+
+[node name="BorderWest" type="CSGBox3D" parent="StartPlatform"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.9, 0.05, 0)
+size = Vector3(0.2, 0.1, 12)
+material = SubResource("Mat_CyanGlow")
+
+[node name="PillarNW" type="CSGBox3D" parent="StartPlatform"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.5, 1, -5.5)
+use_collision = true
+size = Vector3(0.8, 2, 0.8)
+material = SubResource("Mat_VoidPlatform")
+
+[node name="PillarNE" type="CSGBox3D" parent="StartPlatform"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.5, 1, -5.5)
+use_collision = true
+size = Vector3(0.8, 2, 0.8)
+material = SubResource("Mat_VoidPlatform")
+
+[node name="PillarSW" type="CSGBox3D" parent="StartPlatform"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.5, 1, 5.5)
+use_collision = true
+size = Vector3(0.8, 2, 0.8)
+material = SubResource("Mat_VoidPlatform")
+
+[node name="PillarSE" type="CSGBox3D" parent="StartPlatform"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.5, 1, 5.5)
+use_collision = true
+size = Vector3(0.8, 2, 0.8)
+material = SubResource("Mat_VoidPlatform")
+
+[node name="ParkourCourse" type="Node3D" parent="."]
+
+[node name="Step1" type="CSGBox3D" parent="ParkourCourse"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.2, -9.5)
+use_collision = true
+size = Vector3(4, 0.8, 4)
+material = SubResource("Mat_VoidPlatform")
+
+[node name="Step1Trim" type="CSGBox3D" parent="ParkourCourse"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.22, -9.5)
+size = Vector3(3.6, 0.05, 3.6)
+material = SubResource("Mat_CyanGlow")
+
+[node name="Step2" type="CSGBox3D" parent="ParkourCourse"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.5, 0.2, -15.5)
+use_collision = true
+size = Vector3(3.5, 0.8, 3.5)
+material = SubResource("Mat_VoidPlatform")
+
+[node name="Step2Trim" type="CSGBox3D" parent="ParkourCourse"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.5, 0.62, -15.5)
+size = Vector3(3.1, 0.05, 3.1)
+material = SubResource("Mat_CyanGlow")
+
+[node name="Step3" type="CSGBox3D" parent="ParkourCourse"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.5, 0.6, -21.5)
+use_collision = true
+size = Vector3(3.5, 0.8, 3.5)
+material = SubResource("Mat_VoidPlatform")
+
+[node name="Step3Trim" type="CSGBox3D" parent="ParkourCourse"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.5, 1.02, -21.5)
+size = Vector3(3.1, 0.05, 3.1)
+material = SubResource("Mat_MagentaGlow")
+
+[node name="Step4" type="CSGBox3D" parent="ParkourCourse"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, -27.5)
+use_collision = true
+size = Vector3(3.2, 0.8, 3.2)
+material = SubResource("Mat_VoidPlatform")
+
+[node name="Step4Trim" type="CSGBox3D" parent="ParkourCourse"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.42, -27.5)
+size = Vector3(2.8, 0.05, 2.8)
+material = SubResource("Mat_CyanGlow")
+
+[node name="Step5" type="CSGBox3D" parent="ParkourCourse"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 1.6, -34)
+use_collision = true
+size = Vector3(3, 0.8, 3)
+material = SubResource("Mat_VoidPlatform")
+
+[node name="Step5Trim" type="CSGBox3D" parent="ParkourCourse"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 2.02, -34)
+size = Vector3(2.6, 0.05, 2.6)
+material = SubResource("Mat_MagentaGlow")
+
+[node name="Step6" type="CSGBox3D" parent="ParkourCourse"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3, 2.3, -40.5)
+use_collision = true
+size = Vector3(2.8, 0.8, 2.8)
+material = SubResource("Mat_VoidPlatform")
+
+[node name="Step6Trim" type="CSGBox3D" parent="ParkourCourse"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3, 2.72, -40.5)
+size = Vector3(2.4, 0.05, 2.4)
+material = SubResource("Mat_CyanGlow")
+
+[node name="Step7" type="CSGBox3D" parent="ParkourCourse"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.5, 3.1, -47)
+use_collision = true
+size = Vector3(2.8, 0.8, 2.8)
+material = SubResource("Mat_VoidPlatform")
+
+[node name="Step7Trim" type="CSGBox3D" parent="ParkourCourse"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.5, 3.52, -47)
+size = Vector3(2.4, 0.05, 2.4)
+material = SubResource("Mat_MagentaGlow")
+
+[node name="Step8" type="CSGBox3D" parent="ParkourCourse"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.8, -52.5)
+use_collision = true
+size = Vector3(3, 0.8, 3)
+material = SubResource("Mat_VoidPlatform")
+
+[node name="Step8Trim" type="CSGBox3D" parent="ParkourCourse"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.22, -52.5)
+size = Vector3(2.6, 0.05, 2.6)
+material = SubResource("Mat_GreenCheck")
+
+[node name="Step9" type="CSGBox3D" parent="ParkourCourse"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3, 5.3, -64.5)
+use_collision = true
+size = Vector3(2.5, 0.8, 2.5)
+material = SubResource("Mat_VoidPlatform")
+
+[node name="Step9Trim" type="CSGBox3D" parent="ParkourCourse"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3, 5.72, -64.5)
+size = Vector3(2.1, 0.05, 2.1)
+material = SubResource("Mat_CyanGlow")
+
+[node name="Step10" type="CSGBox3D" parent="ParkourCourse"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 6.1, -70)
+use_collision = true
+size = Vector3(2.5, 0.8, 2.5)
+material = SubResource("Mat_VoidPlatform")
+
+[node name="Step10Trim" type="CSGBox3D" parent="ParkourCourse"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 6.52, -70)
+size = Vector3(2.1, 0.05, 2.1)
+material = SubResource("Mat_MagentaGlow")
+
+[node name="MovingPillar1" type="AnimatableBody3D" parent="ParkourCourse"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 7.5, -75)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="ParkourCourse/MovingPillar1"]
+shape = SubResource("BoxShape3D_moving_1")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="ParkourCourse/MovingPillar1"]
+mesh = SubResource("BoxMesh_moving_1")
+
+[node name="Step11" type="CSGBox3D" parent="ParkourCourse"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3, 8, -81)
+use_collision = true
+size = Vector3(2.5, 0.8, 2.5)
+material = SubResource("Mat_VoidPlatform")
+
+[node name="Step11Trim" type="CSGBox3D" parent="ParkourCourse"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3, 8.42, -81)
+size = Vector3(2.1, 0.05, 2.1)
+material = SubResource("Mat_CyanGlow")
+
+[node name="Step12" type="CSGBox3D" parent="ParkourCourse"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 8.8, -87)
+use_collision = true
+size = Vector3(2.5, 0.8, 2.5)
+material = SubResource("Mat_VoidPlatform")
+
+[node name="Step12Trim" type="CSGBox3D" parent="ParkourCourse"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 9.22, -87)
+size = Vector3(2.1, 0.05, 2.1)
+material = SubResource("Mat_MagentaGlow")
+
+[node name="Step13" type="CSGBox3D" parent="ParkourCourse"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 9.4, -92)
+use_collision = true
+size = Vector3(2.8, 0.8, 2.8)
+material = SubResource("Mat_VoidPlatform")
+
+[node name="Step13Trim" type="CSGBox3D" parent="ParkourCourse"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 9.82, -92)
+size = Vector3(2.4, 0.05, 2.4)
+material = SubResource("Mat_GreenCheck")
+
+[node name="MovingPillar2" type="AnimatableBody3D" parent="ParkourCourse"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 11, -104.5)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="ParkourCourse/MovingPillar2"]
+shape = SubResource("BoxShape3D_moving_2")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="ParkourCourse/MovingPillar2"]
+mesh = SubResource("BoxMesh_moving_2")
+
+[node name="Step14" type="CSGBox3D" parent="ParkourCourse"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 11.8, -112)
+use_collision = true
+size = Vector3(2.6, 0.8, 2.6)
+material = SubResource("Mat_VoidPlatform")
+
+[node name="Step14Trim" type="CSGBox3D" parent="ParkourCourse"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 12.22, -112)
+size = Vector3(2.2, 0.05, 2.2)
+material = SubResource("Mat_CyanGlow")
+
+[node name="Step15" type="CSGBox3D" parent="ParkourCourse"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.2, 12.6, -118)
+use_collision = true
+size = Vector3(2.4, 0.8, 2.4)
+material = SubResource("Mat_VoidPlatform")
+
+[node name="Step15Trim" type="CSGBox3D" parent="ParkourCourse"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.2, 13.02, -118)
+size = Vector3(2, 0.05, 2)
+material = SubResource("Mat_MagentaGlow")
+
+[node name="Step16" type="CSGBox3D" parent="ParkourCourse"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.2, 13.4, -124.5)
+use_collision = true
+size = Vector3(2.4, 0.8, 2.4)
+material = SubResource("Mat_VoidPlatform")
+
+[node name="Step16Trim" type="CSGBox3D" parent="ParkourCourse"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.2, 13.82, -124.5)
+size = Vector3(2, 0.05, 2)
+material = SubResource("Mat_CyanGlow")
+
+[node name="Step17" type="CSGBox3D" parent="ParkourCourse"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 14.1, -131)
+use_collision = true
+size = Vector3(3, 0.8, 3)
+material = SubResource("Mat_VoidPlatform")
+
+[node name="Step17Trim" type="CSGBox3D" parent="ParkourCourse"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 14.52, -131)
+size = Vector3(2.6, 0.05, 2.6)
+material = SubResource("Mat_GoldTrophy")
+
+[node name="Checkpoint1Platform" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.5, -56)
+
+[node name="Base" type="CSGBox3D" parent="Checkpoint1Platform"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+use_collision = true
+size = Vector3(8, 1, 8)
+material = SubResource("Mat_VoidPlatform")
+
+[node name="Trim" type="CSGBox3D" parent="Checkpoint1Platform"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.02, 0)
+size = Vector3(7.4, 0.05, 7.4)
+material = SubResource("Mat_GreenCheck")
+
+[node name="BeaconRing" type="MeshInstance3D" parent="Checkpoint1Platform"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.8, 0)
+mesh = SubResource("TorusMesh_beacon_green")
+
+[node name="CheckpointArea" type="Area3D" parent="Checkpoint1Platform"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Checkpoint1Platform/CheckpointArea"]
+shape = SubResource("BoxShape3D_checkpoint_1")
+
+[node name="Checkpoint2Platform" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 9.5, -96)
+
+[node name="Base" type="CSGBox3D" parent="Checkpoint2Platform"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+use_collision = true
+size = Vector3(7, 1, 7)
+material = SubResource("Mat_VoidPlatform")
+
+[node name="Trim" type="CSGBox3D" parent="Checkpoint2Platform"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.02, 0)
+size = Vector3(6.4, 0.05, 6.4)
+material = SubResource("Mat_CyanGlow")
+
+[node name="BeaconRing" type="MeshInstance3D" parent="Checkpoint2Platform"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.8, 0)
+mesh = SubResource("TorusMesh_beacon_cyan")
+
+[node name="CheckpointArea" type="Area3D" parent="Checkpoint2Platform"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Checkpoint2Platform/CheckpointArea"]
+shape = SubResource("BoxShape3D_checkpoint_2")
+
+[node name="FinishPlatform" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 14.5, -140)
+
+[node name="Base" type="CSGBox3D" parent="FinishPlatform"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+use_collision = true
+size = Vector3(14, 1.2, 14)
+material = SubResource("Mat_VoidPlatform")
+
+[node name="Trim" type="CSGBox3D" parent="FinishPlatform"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.12, 0)
+size = Vector3(13.4, 0.05, 13.4)
+material = SubResource("Mat_GoldTrophy")
+
+[node name="ArchPillarLeft" type="CSGBox3D" parent="FinishPlatform"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5, 4, 4)
+use_collision = true
+size = Vector3(1, 6, 1)
+material = SubResource("Mat_VoidPlatform")
+
+[node name="ArchPillarRight" type="CSGBox3D" parent="FinishPlatform"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 4, 4)
+use_collision = true
+size = Vector3(1, 6, 1)
+material = SubResource("Mat_VoidPlatform")
+
+[node name="ArchCrossbeam" type="CSGBox3D" parent="FinishPlatform"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 7.2, 4)
+use_collision = true
+size = Vector3(11, 0.8, 1)
+material = SubResource("Mat_VoidPlatform")
+
+[node name="ArchNeonBanner" type="CSGBox3D" parent="FinishPlatform"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 7.2, 4.55)
+size = Vector3(9, 0.5, 0.15)
+material = SubResource("Mat_CyanGlow")
+
+[node name="VictoryTrophy" type="Node3D" parent="FinishPlatform"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
+
+[node name="TrophyPrism" type="MeshInstance3D" parent="FinishPlatform/VictoryTrophy"]
+mesh = SubResource("PrismMesh_trophy")
+
+[node name="FinishGoalArea" type="Area3D" parent="FinishPlatform"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 2)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="FinishPlatform/FinishGoalArea"]
+shape = SubResource("BoxShape3D_finish")

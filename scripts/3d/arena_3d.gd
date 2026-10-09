@@ -189,6 +189,9 @@ func _load_arena_map() -> void:
 	elif upper.contains("LABYRINTH") or upper.contains("MAZE") or upper.contains("เขาวงกต"):
 		map_scene_path = "res://scenes/3d/maps/map_labyrinth.tscn"
 		map_display_name = "LABYRINTH"
+	elif upper.contains("PARKOUR") or upper.contains("VOID") or upper.contains("พาร์คัวร์"):
+		map_scene_path = "res://scenes/3d/maps/map_void_parkour.tscn"
+		map_display_name = "VOID PARKOUR"
 	else:
 		map_scene_path = "res://scenes/3d/maps/map_space_station.tscn"
 		map_display_name = chosen_map

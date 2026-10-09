@@ -865,6 +865,8 @@ func _update_map_preview_image(map_name: String) -> void:
 			map_preview_img.texture = load("res://assets/maps/map_space_station.png")
 		"LABYRINTH":
 			map_preview_img.texture = load("res://assets/maps/map_labyrinth.png")
+		"VOID PARKOUR":
+			map_preview_img.texture = load("res://assets/maps/map_space_station.png")
 		"SNOW TOWN", _:
 			map_preview_img.texture = load("res://assets/maps/map_preview_snow_town.png")
 

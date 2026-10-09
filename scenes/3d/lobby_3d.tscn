@@ -781,10 +781,10 @@ offset_right = -20.0
 offset_bottom = -20.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/separation = 12
+theme_override_constants/separation = 8
 
 [node name="SpaceStationBtn" type="Button" parent="RoomView/HBox/MapSelectionCard/Grid" unique_id=1019781662]
-custom_minimum_size = Vector2(0, 110)
+custom_minimum_size = Vector2(0, 80)
 layout_mode = 2
 theme_override_font_sizes/font_size = 12
 theme_override_styles/normal = SubResource("StyleBoxFlat_map_btn")
@@ -795,7 +795,7 @@ vertical_icon_alignment = 0
 expand_icon = true
 
 [node name="SnowTownBtn" type="Button" parent="RoomView/HBox/MapSelectionCard/Grid" unique_id=1724146943]
-custom_minimum_size = Vector2(0, 110)
+custom_minimum_size = Vector2(0, 80)
 layout_mode = 2
 theme_override_font_sizes/font_size = 12
 theme_override_styles/normal = SubResource("StyleBoxFlat_map_btn")
@@ -806,12 +806,23 @@ vertical_icon_alignment = 0
 expand_icon = true
 
 [node name="LabyrinthBtn" type="Button" parent="RoomView/HBox/MapSelectionCard/Grid" unique_id=1016726323]
-custom_minimum_size = Vector2(0, 110)
+custom_minimum_size = Vector2(0, 80)
 layout_mode = 2
 theme_override_font_sizes/font_size = 12
 theme_override_styles/normal = SubResource("StyleBoxFlat_map_btn")
 text = "LABYRINTH"
 icon = ExtResource("6_map_laby")
+icon_alignment = 1
+vertical_icon_alignment = 0
+expand_icon = true
+
+[node name="VoidParkourBtn" type="Button" parent="RoomView/HBox/MapSelectionCard/Grid" unique_id=1028374619]
+custom_minimum_size = Vector2(0, 80)
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+theme_override_styles/normal = SubResource("StyleBoxFlat_map_btn")
+text = "VOID PARKOUR"
+icon = ExtResource("5_map_space")
 icon_alignment = 1
 vertical_icon_alignment = 0
 expand_icon = true
