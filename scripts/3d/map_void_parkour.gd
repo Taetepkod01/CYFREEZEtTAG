@@ -27,29 +27,36 @@ var item_spawns: Array[Vector3] = [
 	Vector3(-2.2, 7.6, -76.5),     # Beam Left 3
 	Vector3(2.2, 7.6, -76.5),      # Beam Right 3
 	Vector3(0.0, 10.8, -96.0),     # Checkpoint 2
-	Vector3(0.0, 12.8, -112.0),    # Section 6 High Jump
-	Vector3(0.0, 16.0, -140.0)     # Finish Platform
+	Vector3(0.0, 15.5, -119.5),    # Hazard Ramp Center
+	Vector3(0.0, 20.0, -147.0)     # Finish Platform
 ]
 
 # Checkpoint tracker per player instance
 var player_checkpoints: Dictionary = {}
 
-@onready var moving_pillar_1: AnimatableBody3D = get_node_or_null("ParkourCourse/MovingPillar1")
-@onready var moving_pillar_2: AnimatableBody3D = get_node_or_null("ParkourCourse/MovingPillar2")
 @onready var finish_trophy: Node3D = get_node_or_null("FinishPlatform/VictoryTrophy")
 @onready var start_beacon: MeshInstance3D = get_node_or_null("StartPlatform/StartBeacon")
 @onready var cp1_beacon: MeshInstance3D = get_node_or_null("Checkpoint1Platform/BeaconRing")
 @onready var cp2_beacon: MeshInstance3D = get_node_or_null("Checkpoint2Platform/BeaconRing")
 
-var moving_pillar_1_origin: Vector3 = Vector3(0.0, 7.5, -75.0)
-var moving_pillar_2_origin: Vector3 = Vector3(0.0, 11.0, -104.5)
+# ── Rolling Hazard Balls Controller ──────────────────────────────────────────
+const RAMP_TOP_POS := Vector3(0.0, 19.9, -139.0)
+const RAMP_BOTTOM_POS := Vector3(0.0, 10.9, -99.5)
+
+@onready var hazard_ball_1: Area3D = get_node_or_null("ParkourCourse/HazardBall1")
+@onready var hazard_ball_2: Area3D = get_node_or_null("ParkourCourse/HazardBall2")
+@onready var hazard_ball_3: Area3D = get_node_or_null("ParkourCourse/HazardBall3")
+
+var hazard_balls: Array[Area3D] = []
+var ball_progress: Array[float] = [0.0, 0.35, 0.70]
+var ball_lanes: Array[float] = [-1.8, 1.8, 0.0]
 var time_passed: float = 0.0
 
 func _ready() -> void:
-	if moving_pillar_1:
-		moving_pillar_1_origin = moving_pillar_1.position
-	if moving_pillar_2:
-		moving_pillar_2_origin = moving_pillar_2.position
+	hazard_balls = [hazard_ball_1, hazard_ball_2, hazard_ball_3]
+	for ball in hazard_balls:
+		if ball:
+			ball.body_entered.connect(_on_hazard_ball_body_entered)
 	
 	_setup_recovery_and_checkpoint_areas()
 
@@ -95,30 +102,47 @@ func _on_void_recovery_body_entered(body: Node3D) -> void:
 		body.velocity = Vector3.ZERO
 		body.global_position = target_spawn + Vector3(0, 0.5, 0)
 
+func _on_hazard_ball_body_entered(body: Node3D) -> void:
+	if body is CharacterBody3D:
+		# Player hit by rolling hazard ball -> returned to latest checkpoint
+		var target_spawn = player_checkpoints.get(body, Vector3(0.0, 10.8, -96.0))
+		body.velocity = Vector3.ZERO
+		body.global_position = target_spawn + Vector3(0, 0.5, 0)
+
 func _flash_beacon(beacon: MeshInstance3D, _color: Color) -> void:
 	if is_instance_valid(beacon):
 		var tween = create_tween()
 		tween.tween_property(beacon, "scale", Vector3(1.4, 1.4, 1.4), 0.2)
 		tween.tween_property(beacon, "scale", Vector3(1.0, 1.0, 1.0), 0.3)
 
-# ── Process Animations (Floating Platforms, Trophy & Beacons) ─────────────────
+# ── Process Animations (Rolling Hazard Balls, Trophy & Beacons) ───────────────
 func _process(delta: float) -> void:
 	time_passed += delta
 	
-	# Vertical floating oscillation for Pillar 1
-	if is_instance_valid(moving_pillar_1):
-		var y_offset = sin(time_passed * 2.2) * 1.2
-		moving_pillar_1.position.y = moving_pillar_1_origin.y + y_offset
-	
-	# Horizontal sliding oscillation for Pillar 2
-	if is_instance_valid(moving_pillar_2):
-		var x_offset = sin(time_passed * 1.8) * 2.5
-		moving_pillar_2.position.x = moving_pillar_2_origin.x + x_offset
+	# Animate Rolling Hazard Balls down the ramp
+	for i in range(hazard_balls.size()):
+		var ball = hazard_balls[i]
+		if is_instance_valid(ball):
+			ball_progress[i] += delta * 0.28 # ~3.6s to roll down the 41m slope (~11.4 m/s)
+			if ball_progress[i] >= 1.0:
+				ball_progress[i] -= 1.0 # Disappears at bottom, respawns at top
+				var available_lanes: Array[float] = [-2.0, 0.0, 2.0]
+				ball_lanes[i] = available_lanes[(i + int(time_passed * 1.5)) % available_lanes.size()]
+			
+			var t = ball_progress[i]
+			var current_pos = RAMP_TOP_POS.lerp(RAMP_BOTTOM_POS, t)
+			current_pos.x = ball_lanes[i]
+			ball.position = current_pos
+			
+			# Visual rolling rotation on X axis
+			var sphere_mesh = ball.get_node_or_null("SphereMesh") as Node3D
+			if sphere_mesh:
+				sphere_mesh.rotate_x(12.0 * delta)
 	
 	# Rotating Victory Trophy at Finish Line
 	if is_instance_valid(finish_trophy):
 		finish_trophy.rotate_y(1.2 * delta)
-		finish_trophy.position.y = 16.5 + sin(time_passed * 2.0) * 0.25
+		finish_trophy.position.y = 2.0 + sin(time_passed * 2.0) * 0.25
 	
 	# Pulse glowing Start Beacon
 	if is_instance_valid(start_beacon):

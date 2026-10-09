@@ -1130,7 +1130,7 @@ wss.on("connection", (ws: WebSocket, req: any) => {
                 { x: 0.0, y: 1.2, z: 0.0 },
                 { x: 0.0, y: 5.8, z: -56.0 },
                 { x: 0.0, y: 10.8, z: -96.0 },
-                { x: 0.0, y: 16.0, z: -140.0 }
+                { x: 0.0, y: 20.0, z: -147.0 }
               ];
               const s = safeSpots[Math.floor(Math.random() * safeSpots.length)];
               p.x = s.x; p.y = s.y; p.z = s.z;
@@ -1443,8 +1443,8 @@ function start3DRound(room: Active3DRoom) {
         { x: -2.2, y: 7.6, z: -76.5 },
         { x: 2.2, y: 7.6, z: -76.5 },
         { x: 0.0, y: 10.8, z: -96.0 },
-        { x: 0.0, y: 12.8, z: -112.0 },
-        { x: 0.0, y: 16.0, z: -140.0 }
+        { x: 0.0, y: 15.5, z: -119.5 },
+        { x: 0.0, y: 20.0, z: -147.0 }
       ];
       const spot = spots[i % spots.length];
       x = spot.x;
@@ -1530,8 +1530,8 @@ function start3DRound(room: Active3DRoom) {
         { x: -2.2, y: 7.6, z: -76.5 },
         { x: 2.2, y: 7.6, z: -76.5 },
         { x: 0.0, y: 10.8, z: -96.0 },
-        { x: 0.0, y: 12.8, z: -112.0 },
-        { x: 0.0, y: 16.0, z: -140.0 }
+        { x: 0.0, y: 15.5, z: -119.5 },
+        { x: 0.0, y: 20.0, z: -147.0 }
       ];
       const spot = spots[Math.floor(Math.random() * spots.length)];
       x = spot.x; y = spot.y; z = spot.z;

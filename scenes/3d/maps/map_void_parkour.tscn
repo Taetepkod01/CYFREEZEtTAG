@@ -76,12 +76,26 @@ size = Vector3(3.2, 0.8, 3.2)
 material = SubResource("Mat_MagentaGlow")
 size = Vector3(3.2, 0.8, 3.2)
 
-[sub_resource type="BoxShape3D" id="BoxShape3D_moving_2"]
-size = Vector3(3.2, 0.8, 3.2)
+[sub_resource type="StandardMaterial3D" id="Mat_HazardBall"]
+albedo_color = Color(1, 0.3, 0.05, 1)
+metallic = 0.3
+roughness = 0.2
+emission_enabled = true
+emission = Color(1, 0.2, 0, 1)
+emission_energy_multiplier = 4.0
 
-[sub_resource type="BoxMesh" id="BoxMesh_moving_2"]
-material = SubResource("Mat_YellowMoving")
-size = Vector3(3.2, 0.8, 3.2)
+[sub_resource type="SphereShape3D" id="SphereShape3D_hazard_ball"]
+radius = 0.9
+
+[sub_resource type="SphereMesh" id="SphereMesh_hazard_ball"]
+material = SubResource("Mat_HazardBall")
+radius = 0.9
+height = 1.8
+
+[sub_resource type="TorusMesh" id="TorusMesh_hazard_ring"]
+material = SubResource("Mat_GoldTrophy")
+inner_radius = 0.88
+outer_radius = 0.94
 
 [sub_resource type="PrismMesh" id="PrismMesh_trophy"]
 material = SubResource("Mat_GoldTrophy")
@@ -373,58 +387,69 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.2, 9.22, -89.5)
 size = Vector3(0.8, 0.05, 3)
 material = SubResource("Mat_MagentaGlow")
 
-[node name="MovingPillar2" type="AnimatableBody3D" parent="ParkourCourse"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 11, -104.5)
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="ParkourCourse/MovingPillar2"]
-shape = SubResource("BoxShape3D_moving_2")
-
-[node name="MeshInstance3D" type="MeshInstance3D" parent="ParkourCourse/MovingPillar2"]
-mesh = SubResource("BoxMesh_moving_2")
-
-[node name="Step14" type="CSGBox3D" parent="ParkourCourse"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 11.8, -112)
+[node name="HazardRamp" type="CSGBox3D" parent="ParkourCourse"]
+transform = Transform3D(1, 0, 0, 0, 0.975597, -0.219566, 0, 0.219566, 0.975597, 0, 14, -119.5)
 use_collision = true
-size = Vector3(2.6, 0.8, 2.6)
+size = Vector3(7.2, 1, 41)
 material = SubResource("Mat_VoidPlatform")
 
-[node name="Step14Trim" type="CSGBox3D" parent="ParkourCourse"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 12.22, -112)
-size = Vector3(2.2, 0.05, 2.2)
+[node name="RampStripeLeft" type="CSGBox3D" parent="ParkourCourse/HazardRamp"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.4, 0.52, 0)
+size = Vector3(0.3, 0.05, 41)
 material = SubResource("Mat_CyanGlow")
 
-[node name="Step15" type="CSGBox3D" parent="ParkourCourse"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.2, 12.6, -118)
-use_collision = true
-size = Vector3(2.4, 0.8, 2.4)
-material = SubResource("Mat_VoidPlatform")
-
-[node name="Step15Trim" type="CSGBox3D" parent="ParkourCourse"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.2, 13.02, -118)
-size = Vector3(2, 0.05, 2)
+[node name="RampStripeRight" type="CSGBox3D" parent="ParkourCourse/HazardRamp"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.4, 0.52, 0)
+size = Vector3(0.3, 0.05, 41)
 material = SubResource("Mat_MagentaGlow")
 
-[node name="Step16" type="CSGBox3D" parent="ParkourCourse"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.2, 13.4, -124.5)
+[node name="RampGuardrailL" type="CSGBox3D" parent="ParkourCourse/HazardRamp"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.55, 0.8, 0)
 use_collision = true
-size = Vector3(2.4, 0.8, 2.4)
+size = Vector3(0.2, 0.6, 41)
 material = SubResource("Mat_VoidPlatform")
 
-[node name="Step16Trim" type="CSGBox3D" parent="ParkourCourse"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.2, 13.82, -124.5)
-size = Vector3(2, 0.05, 2)
-material = SubResource("Mat_CyanGlow")
-
-[node name="Step17" type="CSGBox3D" parent="ParkourCourse"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 14.1, -131)
+[node name="RampGuardrailR" type="CSGBox3D" parent="ParkourCourse/HazardRamp"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.55, 0.8, 0)
 use_collision = true
-size = Vector3(3, 0.8, 3)
+size = Vector3(0.2, 0.6, 41)
 material = SubResource("Mat_VoidPlatform")
 
-[node name="Step17Trim" type="CSGBox3D" parent="ParkourCourse"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 14.52, -131)
-size = Vector3(2.6, 0.05, 2.6)
-material = SubResource("Mat_GoldTrophy")
+[node name="HazardBall1" type="Area3D" parent="ParkourCourse"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.8, 19.9, -139)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="ParkourCourse/HazardBall1"]
+shape = SubResource("SphereShape3D_hazard_ball")
+
+[node name="SphereMesh" type="MeshInstance3D" parent="ParkourCourse/HazardBall1"]
+mesh = SubResource("SphereMesh_hazard_ball")
+
+[node name="RingMesh" type="MeshInstance3D" parent="ParkourCourse/HazardBall1/SphereMesh"]
+mesh = SubResource("TorusMesh_hazard_ring")
+
+[node name="HazardBall2" type="Area3D" parent="ParkourCourse"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.8, 19.9, -139)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="ParkourCourse/HazardBall2"]
+shape = SubResource("SphereShape3D_hazard_ball")
+
+[node name="SphereMesh" type="MeshInstance3D" parent="ParkourCourse/HazardBall2"]
+mesh = SubResource("SphereMesh_hazard_ball")
+
+[node name="RingMesh" type="MeshInstance3D" parent="ParkourCourse/HazardBall2/SphereMesh"]
+mesh = SubResource("TorusMesh_hazard_ring")
+
+[node name="HazardBall3" type="Area3D" parent="ParkourCourse"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 19.9, -139)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="ParkourCourse/HazardBall3"]
+shape = SubResource("SphereShape3D_hazard_ball")
+
+[node name="SphereMesh" type="MeshInstance3D" parent="ParkourCourse/HazardBall3"]
+mesh = SubResource("SphereMesh_hazard_ball")
+
+[node name="RingMesh" type="MeshInstance3D" parent="ParkourCourse/HazardBall3/SphereMesh"]
+mesh = SubResource("TorusMesh_hazard_ring")
 
 [node name="Checkpoint1Platform" type="Node3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.5, -56)
@@ -475,7 +500,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
 shape = SubResource("BoxShape3D_checkpoint_2")
 
 [node name="FinishPlatform" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 14.5, -140)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 18.5, -147)
 
 [node name="Base" type="CSGBox3D" parent="FinishPlatform"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
