@@ -555,13 +555,26 @@ func _spawn_online_players() -> void:
 	for p_data in online_list:
 		var p_id = str(p_data.get("id", ""))
 		var is_me = (p_id == Network.my_peer_id)
+		var is_bot = bool(p_data.get("isBot", false))
 		
 		var p_node = player_3d_scene.instantiate()
 		p_node.network_id = p_id
 		p_node.role = str(p_data.get("role", "runner"))
 		p_node.player_name = str(p_data.get("name", "Player")) + (" (You)" if is_me else "")
-		p_node.is_bot = false
-		p_node.is_remote = not is_me
+		
+		if is_bot:
+			if Network.is_host:
+				# Host simulates bot AI and drives movement
+				p_node.is_bot = true
+				p_node.is_remote = false
+			else:
+				# Other clients receive bot transforms remotely
+				p_node.is_bot = false
+				p_node.is_remote = true
+		else:
+			p_node.is_bot = false
+			p_node.is_remote = not is_me
+		
 		p_node.position = Vector3(float(p_data.get("x", 0)), float(p_data.get("y", 0.5)), float(p_data.get("z", 0)))
 		
 		players_container.add_child(p_node)

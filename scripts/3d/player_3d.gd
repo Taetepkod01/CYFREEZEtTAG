@@ -83,6 +83,7 @@ var bot_stuck_time: float = 0.0
 var bot_unstuck_timer: float = 0.0
 var bot_unstuck_dir: Vector3 = Vector3.ZERO
 var bot_jump_cooldown: float = 0.0
+var bot_network_timer: float = 0.0
 
 # Right-mouse button drag support
 var is_rmb_down: bool = false
@@ -323,17 +324,27 @@ func _recover_from_void() -> void:
 			Network.send_move(global_position, rotation.y)
 
 func _send_network_position(delta: float) -> void:
-	if not is_local_player() or not Network or not Network.is_online_game():
+	if not Network or not Network.is_online_game():
 		return
-	Network.move_throttle_timer -= delta
-	if Network.move_throttle_timer <= 0.0:
-		# Only send if position or rotation has actually changed to save bandwidth & reduce lag
-		var rot = visuals.rotation.y + rotation.y
-		if global_position.distance_to(last_sent_pos) > 0.04 or abs(rot - last_sent_rot_y) > 0.05:
-			Network.move_throttle_timer = Network.MOVE_SEND_RATE
-			last_sent_pos = global_position
-			last_sent_rot_y = rot
-			Network.send_move(global_position, rot)
+	if is_local_player():
+		Network.move_throttle_timer -= delta
+		if Network.move_throttle_timer <= 0.0:
+			# Only send if position or rotation has actually changed to save bandwidth & reduce lag
+			var rot = visuals.rotation.y + rotation.y
+			if global_position.distance_to(last_sent_pos) > 0.04 or abs(rot - last_sent_rot_y) > 0.05:
+				Network.move_throttle_timer = Network.MOVE_SEND_RATE
+				last_sent_pos = global_position
+				last_sent_rot_y = rot
+				Network.send_move(global_position, rot)
+	elif is_bot and Network.is_host:
+		bot_network_timer -= delta
+		if bot_network_timer <= 0.0:
+			var rot = visuals.rotation.y + rotation.y
+			if global_position.distance_to(last_sent_pos) > 0.04 or abs(rot - last_sent_rot_y) > 0.05:
+				bot_network_timer = 0.05
+				last_sent_pos = global_position
+				last_sent_rot_y = rot
+				Network.send_bot_move(network_id, global_position, rot)
 
 # -- Item Pickup & Use -------------------------------------------------------
 func pick_up_item(type: String) -> void:
@@ -362,6 +373,8 @@ func use_held_item() -> void:
 	
 	if is_local_player() and Network and Network.is_online_game():
 		Network.send_use_item()
+	elif is_bot and Network and Network.is_online_game() and Network.is_host:
+		Network.send_bot_use_item(network_id)
 	
 	match item_to_use:
 		"speed":
@@ -388,6 +401,8 @@ func use_held_item() -> void:
 			if arena and arena.has_method("spawn_banana_trap"):
 				arena.spawn_banana_trap(drop_pos, self, network_id)
 			if is_local_player() and Network and Network.is_online_game():
+				Network.send_banana_placed(drop_pos)
+			elif is_bot and Network and Network.is_online_game() and Network.is_host:
 				Network.send_banana_placed(drop_pos)
 			item_used.emit("BANANA TRAP (DROPPED BEHIND)")
 		"vortex":
@@ -574,6 +589,13 @@ func _handle_interaction(other: CharacterBody3D) -> void:
 		elif role == "runner" and not is_frozen and other.role == "runner" and other.is_frozen:
 			Network.send_rescue(other.network_id)
 		return
+	elif is_bot and Network and Network.is_online_game() and Network.is_host:
+		if role == "tagger" and other.role == "runner" and not other.is_frozen:
+			if not other.is_tackling and other.invincible_timer <= 0.0:
+				Network.send_bot_tag(network_id, other.network_id)
+		elif role == "runner" and not is_frozen and other.role == "runner" and other.is_frozen:
+			Network.send_bot_rescue(network_id, other.network_id)
+		return
 	
 	# Offline practice mode collision
 	# Tagger tagging Runner (Instant freeze on contact!)
@@ -619,6 +641,8 @@ func _handle_tackle_hit(other: CharacterBody3D) -> void:
 	
 	if is_local_player() and Network and Network.is_online_game():
 		Network.send_tackle(other.network_id)
+	elif is_bot and Network and Network.is_online_game() and Network.is_host:
+		Network.send_bot_tackle(network_id, other.network_id)
 
 # -- 3D Bot AI ---------------------------------------------------------------
 func _calculate_bot_direction(delta: float) -> Vector3:

@@ -53,6 +53,7 @@ var my_player_name: String = "Player 1"
 var selected_map: String = "SPACE STATION"
 var is_dragging_slider: bool = false
 var user_badge_lbl: Label = null
+var add_bot_btn: Button = null
 
 func _update_user_badge() -> void:
 	if not user_badge_lbl:
@@ -110,7 +111,50 @@ func _ready() -> void:
 	host_private_check.toggled.connect(_on_host_private_toggled)
 	copy_code_btn.pressed.connect(_on_copy_code_pressed)
 	action_btn.pressed.connect(_on_action_pressed)
-	leave_btn.pressed.connect(_on_leave_room_pressed)
+	# Adjust player_count_header and inject Add Bot button for room host
+	player_count_header.anchor_left = 0.0
+	player_count_header.anchor_right = 0.0
+	player_count_header.offset_left = 16.0
+	player_count_header.offset_right = 200.0
+	player_count_header.offset_top = 16.0
+	player_count_header.offset_bottom = 40.0
+	player_count_header.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	
+	add_bot_btn = Button.new()
+	add_bot_btn.text = "+ BOT 🤖"
+	add_bot_btn.tooltip_text = "Add an AI bot player to this room"
+	add_bot_btn.focus_mode = Control.FOCUS_NONE
+	add_bot_btn.anchor_left = 1.0
+	add_bot_btn.anchor_right = 1.0
+	add_bot_btn.offset_left = -112.0
+	add_bot_btn.offset_top = 13.0
+	add_bot_btn.offset_right = -16.0
+	add_bot_btn.offset_bottom = 41.0
+	add_bot_btn.add_theme_font_size_override("font_size", 12)
+	
+	var bot_btn_sb = StyleBoxFlat.new()
+	bot_btn_sb.bg_color = Color(0.10, 0.32, 0.52, 0.9)
+	bot_btn_sb.border_color = Color(0.3, 0.85, 1.0, 0.95)
+	bot_btn_sb.set_border_width_all(1)
+	bot_btn_sb.set_corner_radius_all(6)
+	add_bot_btn.add_theme_stylebox_override("normal", bot_btn_sb)
+	
+	var bot_btn_hover = StyleBoxFlat.new()
+	bot_btn_hover.bg_color = Color(0.18, 0.48, 0.78, 1.0)
+	bot_btn_hover.border_color = Color(0.6, 0.95, 1.0, 1.0)
+	bot_btn_hover.set_border_width_all(1)
+	bot_btn_hover.set_corner_radius_all(6)
+	add_bot_btn.add_theme_stylebox_override("hover", bot_btn_hover)
+	
+	var bot_btn_dis = StyleBoxFlat.new()
+	bot_btn_dis.bg_color = Color(0.15, 0.18, 0.22, 0.5)
+	bot_btn_dis.border_color = Color(0.35, 0.4, 0.45, 0.4)
+	bot_btn_dis.set_border_width_all(1)
+	bot_btn_dis.set_corner_radius_all(6)
+	add_bot_btn.add_theme_stylebox_override("disabled", bot_btn_dis)
+	
+	add_bot_btn.pressed.connect(_on_add_bot_pressed)
+	$RoomView/HBox/PlayerListCard.add_child(add_bot_btn)
 	
 	_setup_map_grid_buttons()
 	_connect_network_signals()
@@ -388,6 +432,17 @@ func _on_network_room_joined(data: Dictionary) -> void:
 	}
 	_show_room_view()
 
+func _on_add_bot_pressed() -> void:
+	if not is_host:
+		return
+	if not active_rooms.has(current_room_code):
+		return
+	var r = active_rooms[current_room_code]
+	if r["players"].size() >= r["max_players"]:
+		return
+	if Network and Network.is_connected_to_server:
+		Network.add_bot()
+
 func _on_network_player_joined(data: Dictionary) -> void:
 	if active_rooms.has(current_room_code):
 		var r = active_rooms[current_room_code]
@@ -396,7 +451,9 @@ func _on_network_player_joined(data: Dictionary) -> void:
 			"name": str(data.get("name", "New Player")),
 			"isHost": bool(data.get("isHost", false)),
 			"isReady": bool(data.get("isReady", false)),
-			"isInGame": bool(data.get("isInGame", false))
+			"isInGame": bool(data.get("isInGame", false)),
+			"isBot": bool(data.get("isBot", false)),
+			"level": int(data.get("level", 1))
 		})
 		_update_room_lobby_ui()
 
@@ -615,6 +672,14 @@ func _update_room_lobby_ui() -> void:
 	host_private_check.disabled = not is_host
 	host_settings_title.text = "HOST SETTINGS" if is_host else "ROOM SETTINGS (Host only)"
 	
+	# Update Add Bot Button
+	if add_bot_btn:
+		add_bot_btn.visible = is_host
+		if is_host:
+			var is_full = r["players"].size() >= r["max_players"]
+			add_bot_btn.disabled = is_full
+			add_bot_btn.modulate = Color(0.6, 0.6, 0.6, 0.6) if is_full else Color(1.0, 1.0, 1.0, 1.0)
+	
 	# Action Button
 	if Network and Network.is_host:
 		is_host = true
@@ -626,11 +691,13 @@ func _update_room_lobby_ui() -> void:
 		for p in r["players"]:
 			var p_is_host = false
 			var p_is_ready = false
+			var p_is_bot = false
 			if typeof(p) == TYPE_DICTIONARY:
 				var pid = str(p.get("id", ""))
 				p_is_host = bool(p.get("isHost", false)) or (Network and pid == Network.my_peer_id)
 				p_is_ready = bool(p.get("isReady", false))
-			if not p_is_host and not p_is_ready:
+				p_is_bot = bool(p.get("isBot", false))
+			if not p_is_host and not p_is_ready and not p_is_bot:
 				all_ready = false
 				break
 		if all_ready:
@@ -678,6 +745,7 @@ func _update_player_slots(r: Dictionary) -> void:
 		var p_is_host = false
 		var p_is_ready = false
 		var p_in_game = false
+		var is_bot = false
 		
 		if is_occupied:
 			var item = r["players"][i]
@@ -689,12 +757,14 @@ func _update_player_slots(r: Dictionary) -> void:
 				p_is_ready = bool(item.get("isReady", false))
 				p_in_game = bool(item.get("isInGame", false))
 				p_level = int(item.get("level", 1))
+				is_bot = bool(item.get("isBot", false))
 			else:
 				p_name = str(item)
 				p_is_host = (i == 0)
 				p_is_ready = false
 				p_in_game = false
 				p_level = 1
+				is_bot = false
 			
 			# Clean up any leftover duplicate "(Host)"
 			while p_name.ends_with("(Host)"):
@@ -703,7 +773,20 @@ func _update_player_slots(r: Dictionary) -> void:
 			var full_name = "[Lv. %d] %s" % [p_level, p_name]
 			var is_room_playing = (str(r.get("phase", "lobby")) == "playing")
 			
-			if p_in_game:
+			if is_bot:
+				sb.bg_color = Color(0.09, 0.18, 0.32, 0.9)
+				sb.border_color = Color(0.3, 0.85, 1.0, 0.8)
+				icon_lbl.text = "🤖"
+				icon_lbl.modulate = Color(0.4, 0.9, 1.0)
+				name_lbl.text = "%s (AI)" % full_name
+				name_lbl.modulate = Color(0.75, 0.95, 1.0)
+				if is_room_playing or p_in_game:
+					status_badge.text = "[BOT - IN GAME]"
+					status_badge.modulate = Color(0.3, 0.85, 1.0)
+				else:
+					status_badge.text = "[BOT - READY]"
+					status_badge.modulate = Color(0.3, 0.95, 0.6)
+			elif p_in_game:
 				sb.bg_color = Color(0.06, 0.20, 0.35, 0.9)
 				sb.border_color = Color(0.3, 0.85, 1.0, 0.95)
 				if p_is_host:
@@ -772,25 +855,25 @@ func _update_player_slots(r: Dictionary) -> void:
 		if status_badge.text != "":
 			hbox.add_child(status_badge)
 		
-		# Host Kick button on other players
+		# Host Kick / Remove button on other players and bots
 		if is_host and is_occupied and not p_is_host and not p_id.is_empty() and (not Network or p_id != Network.my_peer_id):
 			var kick_btn = Button.new()
-			kick_btn.text = "KICK"
-			kick_btn.tooltip_text = "Kick %s from room" % p_name
+			kick_btn.text = "REMOVE" if is_bot else "KICK"
+			kick_btn.tooltip_text = "Remove bot %s from room" % p_name if is_bot else "Kick %s from room" % p_name
 			kick_btn.focus_mode = Control.FOCUS_NONE
-			kick_btn.custom_minimum_size = Vector2(48, 22)
+			kick_btn.custom_minimum_size = Vector2(56 if is_bot else 48, 22)
 			kick_btn.add_theme_font_size_override("font_size", 10)
 			
 			var kick_sb = StyleBoxFlat.new()
-			kick_sb.bg_color = Color(0.7, 0.15, 0.2, 0.85)
-			kick_sb.border_color = Color(1.0, 0.3, 0.35, 0.9)
+			kick_sb.bg_color = Color(0.7, 0.15, 0.2, 0.85) if not is_bot else Color(0.5, 0.18, 0.35, 0.85)
+			kick_sb.border_color = Color(1.0, 0.3, 0.35, 0.9) if not is_bot else Color(0.9, 0.4, 0.6, 0.9)
 			kick_sb.set_border_width_all(1)
 			kick_sb.set_corner_radius_all(4)
 			kick_btn.add_theme_stylebox_override("normal", kick_sb)
 			
 			var kick_hover = StyleBoxFlat.new()
-			kick_hover.bg_color = Color(0.9, 0.22, 0.28, 1.0)
-			kick_hover.border_color = Color(1.0, 0.5, 0.55, 1.0)
+			kick_hover.bg_color = Color(0.9, 0.22, 0.28, 1.0) if not is_bot else Color(0.7, 0.25, 0.45, 1.0)
+			kick_hover.border_color = Color(1.0, 0.5, 0.55, 1.0) if not is_bot else Color(1.0, 0.6, 0.8, 1.0)
 			kick_hover.set_border_width_all(1)
 			kick_hover.set_corner_radius_all(4)
 			kick_btn.add_theme_stylebox_override("hover", kick_hover)

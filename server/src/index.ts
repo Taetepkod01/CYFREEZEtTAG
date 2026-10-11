@@ -81,7 +81,8 @@ export interface ActivePlayer {
   id: string;
   name: string;
   ip?: string;
-  ws: WebSocket;
+  ws?: WebSocket;
+  isBot?: boolean;
   x: number;
   y: number;
   z: number;
@@ -136,9 +137,9 @@ const ROOM_CREATE_COOLDOWN_MS = 3000; // 3 seconds cooldown per player
 function cleanupGhostRooms() {
   for (const [code, r] of active3DRooms.entries()) {
     let deletedCount = 0;
-    // Remove any player whose WebSocket is no longer OPEN
+    // Remove any human player whose WebSocket is no longer OPEN
     for (const [pId, p] of r.players.entries()) {
-      if (!p.ws || p.ws.readyState !== WebSocket.OPEN) {
+      if (!p.isBot && (!p.ws || p.ws.readyState !== WebSocket.OPEN)) {
         const leftName = p.name || "Player";
         r.players.delete(pId);
         deletedCount++;
@@ -149,19 +150,20 @@ function cleanupGhostRooms() {
         });
       }
     }
-    // If room has 0 players, purge it immediately from RAM
-    if (r.players.size === 0) {
+    // If room has 0 active human players, purge it immediately from RAM
+    const humanCount = Array.from(r.players.values()).filter(p => !p.isBot).length;
+    if (humanCount === 0) {
       if (r.timerInterval) clearInterval(r.timerInterval);
       if (r.itemSpawnInterval) clearInterval(r.itemSpawnInterval);
       active3DRooms.delete(code);
-      console.log(`[Cleaner] Ghost room ${code} purged (0 active players).`);
+      console.log(`[Cleaner] Ghost room ${code} purged (0 active human players).`);
     } else {
-      if (!r.players.has(r.hostId)) {
-        const newHost = r.players.keys().next().value;
-        if (newHost) {
-          r.hostId = newHost;
-          const hostPlayer = r.players.get(newHost);
-          if (hostPlayer) hostPlayer.isReady = true;
+      // If current host is gone or is a bot, pick a human player to be host
+      if (!r.players.has(r.hostId) || r.players.get(r.hostId)?.isBot) {
+        const humanPlayer = Array.from(r.players.values()).find(p => !p.isBot);
+        if (humanPlayer) {
+          r.hostId = humanPlayer.id;
+          humanPlayer.isReady = true;
           const pList: any[] = [];
           r.players.forEach((pl) => {
             pList.push({
@@ -169,14 +171,15 @@ function cleanupGhostRooms() {
               name: pl.name,
               isHost: pl.id === r.hostId,
               isReady: pl.id === r.hostId ? true : Boolean(pl.isReady),
+              isBot: Boolean(pl.isBot),
               isInGame: Boolean(pl.isInGame),
               level: pl.level || 1,
               coins: pl.coins || 0
             });
           });
           broadcastToRoom(r, "host_changed", {
-            newHostId: newHost,
-            hostName: hostPlayer?.name || "Host",
+            newHostId: humanPlayer.id,
+            hostName: humanPlayer.name || "Host",
             players: pList
           });
         }
@@ -355,7 +358,7 @@ const SPAWN_3D_POSITIONS = [
 function broadcastToRoom(room: Active3DRoom, event: string, data: unknown, excludeWs?: WebSocket) {
   const payload = JSON.stringify({ event, data });
   room.players.forEach(p => {
-    if (p.ws !== excludeWs && p.ws.readyState === WebSocket.OPEN) {
+    if (!p.isBot && p.ws && p.ws !== excludeWs && p.ws.readyState === WebSocket.OPEN) {
       try { p.ws.send(payload); } catch (_e) {}
     }
   });
@@ -541,6 +544,7 @@ wss.on("connection", (ws: WebSocket, req: any) => {
               name: p.name,
               isHost: true,
               isReady: true,
+              isBot: false,
               isInGame: false,
               level: p.level || 1,
               coins: p.coins || 0
@@ -655,6 +659,7 @@ wss.on("connection", (ws: WebSocket, req: any) => {
             name: pl.name,
             isHost: pl.id === room.hostId,
             isReady: pl.id === room.hostId ? true : Boolean(pl.isReady),
+            isBot: Boolean(pl.isBot),
             isInGame: Boolean(pl.isInGame),
             level: pl.level || 1,
             coins: pl.coins || 0
@@ -678,6 +683,7 @@ wss.on("connection", (ws: WebSocket, req: any) => {
             name: newPlayer.name,
             isHost: false,
             isReady: false,
+            isBot: false,
             isInGame: false,
             level: newPlayer.level || 1,
             coins: newPlayer.coins || 0,
@@ -719,6 +725,7 @@ wss.on("connection", (ws: WebSocket, req: any) => {
             name: pl.name,
             isHost: pl.id === room.hostId,
             isReady: pl.id === room.hostId ? true : Boolean(pl.isReady),
+            isBot: Boolean(pl.isBot),
             isInGame: Boolean(pl.isInGame),
             level: pl.level || 1,
             coins: pl.coins || 0
@@ -729,6 +736,74 @@ wss.on("connection", (ws: WebSocket, req: any) => {
             isReady: p.isReady,
             players: pList
           });
+          break;
+        }
+
+        // Add Bot to Room (Host only)
+        case "add_bot": {
+          if (!currentRoom) return;
+          if (currentRoom.hostId !== myPlayerId) {
+            sendTo(ws, "error", { message: "Only the room host can add bots." });
+            return;
+          }
+          if (currentRoom.phase !== "lobby") {
+            sendTo(ws, "error", { message: "Cannot add bots while game is in progress." });
+            return;
+          }
+          if (currentRoom.players.size >= currentRoom.maxPlayers) {
+            sendTo(ws, "error", { message: `Room is already full (${currentRoom.players.size}/${currentRoom.maxPlayers}).` });
+            return;
+          }
+
+          let botCount = 0;
+          currentRoom.players.forEach(p => { if (p.isBot) botCount++; });
+          const botNames = ["Cyber Bot", "Alpha Bot", "Neo Bot", "Glitch Bot", "Spark Bot", "Frost Bot", "Shadow Bot"];
+          const defaultBotName = botNames[botCount % botNames.length] + ` ${botCount + 1}`;
+          const botName = String(msg.botName || defaultBotName).slice(0, 16);
+          const botId = `bot_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+
+          const sp = SPAWN_3D_POSITIONS[currentRoom.players.size % SPAWN_3D_POSITIONS.length];
+          const botPlayer: ActivePlayer = {
+            id: botId,
+            name: botName,
+            isBot: true,
+            level: Math.floor(Math.random() * 5) + 1,
+            exp: 0,
+            coins: 0,
+            x: sp.x,
+            y: sp.y,
+            z: sp.z,
+            rotY: 0,
+            role: "runner",
+            frozen: false,
+            isRescuing: false,
+            hasShield: false,
+            speedMultiplier: 1.0,
+            heldItem: "",
+            freezeCount: 0,
+            rescueCount: 0,
+            hp: 100,
+            invincibleUntil: 0,
+            isReady: true,
+            isInGame: false
+          };
+
+          currentRoom.players.set(botId, botPlayer);
+
+          broadcastToRoom(currentRoom, "player_joined", {
+            id: botPlayer.id,
+            name: botPlayer.name,
+            isHost: false,
+            isReady: true,
+            isBot: true,
+            isInGame: false,
+            level: botPlayer.level || 1,
+            coins: 0,
+            playersCount: currentRoom.players.size,
+            maxPlayers: currentRoom.maxPlayers
+          });
+
+          console.log(`[WS Server] Added ${botName} (${botId}) to room ${currentRoom.code} by host ${myPlayerId}`);
           break;
         }
 
@@ -744,10 +819,10 @@ wss.on("connection", (ws: WebSocket, req: any) => {
           const hostPlayer = room.players.get(room.hostId);
           if (hostPlayer) hostPlayer.isReady = true;
 
-          // Check if all other players are ready!
+          // Check if all other human players are ready!
           let unreadyCount = 0;
           room.players.forEach(p => {
-            if (p.id !== room.hostId && !p.isReady) {
+            if (p.id !== room.hostId && !p.isBot && !p.isReady) {
               unreadyCount++;
             }
           });
@@ -786,7 +861,7 @@ wss.on("connection", (ws: WebSocket, req: any) => {
               p.rescueCount = 0;
               p.hp = 100;
               p.invincibleUntil = 0;
-              p.isReady = (p.id === room.hostId); // Host is ready, non-hosts must ready up again
+              p.isReady = (p.id === room.hostId || Boolean(p.isBot)); // Host and Bots are ready, non-hosts must ready up again
             });
 
             const pList = Array.from(room.players.values()).map(pl => ({
@@ -794,6 +869,7 @@ wss.on("connection", (ws: WebSocket, req: any) => {
               name: pl.name,
               isHost: pl.id === room.hostId,
               isReady: pl.id === room.hostId ? true : Boolean(pl.isReady),
+              isBot: Boolean(pl.isBot),
               isInGame: false,
               level: pl.level || 1,
               coins: pl.coins || 0
@@ -823,6 +899,7 @@ wss.on("connection", (ws: WebSocket, req: any) => {
               name: pl.name,
               isHost: pl.id === room.hostId,
               isReady: pl.id === room.hostId ? true : Boolean(pl.isReady),
+              isBot: Boolean(pl.isBot),
               isInGame: Boolean(pl.isInGame),
               level: pl.level || 1,
               coins: pl.coins || 0
@@ -873,17 +950,19 @@ wss.on("connection", (ws: WebSocket, req: any) => {
             return;
           }
 
-          if (!room.kickedPlayerIds) room.kickedPlayerIds = new Set<string>();
-          if (!room.kickedIps) room.kickedIps = new Set<string>();
-          if (!room.kickedNames) room.kickedNames = new Set<string>();
+          if (!targetPlayer.isBot) {
+            if (!room.kickedPlayerIds) room.kickedPlayerIds = new Set<string>();
+            if (!room.kickedIps) room.kickedIps = new Set<string>();
+            if (!room.kickedNames) room.kickedNames = new Set<string>();
 
-          room.kickedPlayerIds.add(targetId);
-          if (targetPlayer.ip) room.kickedIps.add(targetPlayer.ip);
-          room.kickedNames.add(targetPlayer.name.trim().toLowerCase());
+            room.kickedPlayerIds.add(targetId);
+            if (targetPlayer.ip) room.kickedIps.add(targetPlayer.ip);
+            room.kickedNames.add(targetPlayer.name.trim().toLowerCase());
+          }
           room.players.delete(targetId);
 
           // Notify the kicked player directly
-          if (targetPlayer.ws && targetPlayer.ws.readyState === WebSocket.OPEN) {
+          if (!targetPlayer.isBot && targetPlayer.ws && targetPlayer.ws.readyState === WebSocket.OPEN) {
             sendTo(targetPlayer.ws, "kicked_from_room", {
               reason: "You were kicked by the room host."
             });
@@ -895,6 +974,7 @@ wss.on("connection", (ws: WebSocket, req: any) => {
             name: pl.name,
             isHost: pl.id === room.hostId,
             isReady: pl.id === room.hostId ? true : Boolean(pl.isReady),
+            isBot: Boolean(pl.isBot),
             isInGame: Boolean(pl.isInGame),
             level: pl.level || 1,
             coins: pl.coins || 0
@@ -923,36 +1003,32 @@ wss.on("connection", (ws: WebSocket, req: any) => {
             const p = roomToLeave.players.get(myPlayerId);
             roomToLeave.players.delete(myPlayerId);
 
-            if (roomToLeave.players.size === 0) {
+            const humanPlayers = Array.from(roomToLeave.players.values()).filter(pl => !pl.isBot);
+            if (humanPlayers.length === 0) {
               if (roomToLeave.timerInterval) clearInterval(roomToLeave.timerInterval);
               if (roomToLeave.itemSpawnInterval) clearInterval(roomToLeave.itemSpawnInterval);
               active3DRooms.delete(roomToLeave.code);
-              console.log(`[WS Server] Room ${roomToLeave.code} deleted by leave_room.`);
+              console.log(`[WS Server] Room ${roomToLeave.code} deleted by leave_room (0 human players remaining).`);
             } else {
               if (roomToLeave.hostId === myPlayerId) {
-                const newHostKey = roomToLeave.players.keys().next().value;
-                if (newHostKey) {
-                  roomToLeave.hostId = newHostKey;
-                  const newHost = roomToLeave.players.get(newHostKey);
-                  if (newHost) newHost.isReady = true;
-                  const pList: any[] = [];
-                  roomToLeave.players.forEach((pl) => {
-                    pList.push({
-                      id: pl.id,
-                      name: pl.name,
-                      isHost: pl.id === roomToLeave.hostId,
-                      isReady: pl.id === roomToLeave.hostId ? true : Boolean(pl.isReady),
-                      isInGame: Boolean(pl.isInGame),
-                      level: pl.level || 1,
-                      coins: pl.coins || 0
-                    });
-                  });
-                  broadcastToRoom(roomToLeave, "host_changed", {
-                    newHostId: newHostKey,
-                    hostName: newHost?.name || "Host",
-                    players: pList
-                  });
-                }
+                const newHost = humanPlayers[0];
+                roomToLeave.hostId = newHost.id;
+                newHost.isReady = true;
+                const pList = Array.from(roomToLeave.players.values()).map(pl => ({
+                  id: pl.id,
+                  name: pl.name,
+                  isHost: pl.id === roomToLeave.hostId,
+                  isReady: pl.id === roomToLeave.hostId ? true : Boolean(pl.isReady),
+                  isBot: Boolean(pl.isBot),
+                  isInGame: Boolean(pl.isInGame),
+                  level: pl.level || 1,
+                  coins: pl.coins || 0
+                }));
+                broadcastToRoom(roomToLeave, "host_changed", {
+                  newHostId: newHost.id,
+                  hostName: newHost.name || "Host",
+                  players: pList
+                });
               }
               broadcastToRoom(roomToLeave, "player_left", {
                 id: myPlayerId,
@@ -997,16 +1073,57 @@ wss.on("connection", (ws: WebSocket, req: any) => {
           break;
         }
 
+        // Bot Movement (Host only)
+        case "bot_move": {
+          if (!currentRoom || currentRoom.phase !== "playing") return;
+          if (currentRoom.hostId !== myPlayerId) return; // Only room host drives bot AI
+          const botId = String(msg.botId || "");
+          const bot = currentRoom.players.get(botId);
+          if (!bot || !bot.isBot || bot.frozen) return;
+
+          const rawX = Number(msg.x);
+          const rawY = Number(msg.y);
+          const rawZ = Number(msg.z);
+
+          if (!Number.isFinite(rawX) || !Number.isFinite(rawY) || !Number.isFinite(rawZ)) return;
+          if (Math.abs(rawX) > 40 || Math.abs(rawZ) > 40 || rawY < -10 || rawY > 30) return;
+
+          bot.x = rawX;
+          bot.y = rawY;
+          bot.z = rawZ;
+          if (typeof msg.rotY === "number" && Number.isFinite(msg.rotY)) bot.rotY = msg.rotY;
+
+          broadcastToRoom(currentRoom, "player_moved", {
+            id: botId,
+            x: bot.x,
+            y: bot.y,
+            z: bot.z,
+            rotY: bot.rotY
+          }, ws);
+          break;
+        }
+
         // 6. Tag Player (with Distance & Immunity verification)
         case "tag_player": {
           if (!currentRoom || currentRoom.phase !== "playing") return;
-          const tagger = currentRoom.players.get(myPlayerId);
+          const senderTaggerId = String(msg.taggerId || myPlayerId);
+          let tagger = currentRoom.players.get(senderTaggerId);
+          if (!tagger) tagger = currentRoom.players.get(myPlayerId);
+          if (!tagger) return;
+
+          // If reporting on behalf of another entity, only allow host for bots
+          if (tagger.id !== myPlayerId) {
+            if (currentRoom.hostId !== myPlayerId || !tagger.isBot) {
+              return;
+            }
+          }
+
           const victim = currentRoom.players.get(String(msg.victimId));
-          if (!tagger || !victim || tagger.role !== "tagger" || victim.role !== "runner" || victim.frozen) return;
+          if (!victim || tagger.role !== "tagger" || victim.role !== "runner" || victim.frozen) return;
 
           // Anti-Cheat: Validate Euclidean distance between Tagger and Victim
           const dist = Math.hypot(tagger.x - victim.x, tagger.z - victim.z);
-          const MAX_TAG_DIST = 4.5; // Max reach (1.5m collision radius + latency/speed buffer)
+          const MAX_TAG_DIST = 5.0; // Max reach (1.5m collision radius + latency/speed buffer)
           if (dist > MAX_TAG_DIST) {
             console.warn(`[AntiCheat] Blocked distant tag attempt by ${tagger.name} on ${victim.name} (${dist.toFixed(2)}m)`);
             return;
@@ -1039,13 +1156,23 @@ wss.on("connection", (ws: WebSocket, req: any) => {
         // 7. Rescue Player (with Distance verification)
         case "rescue_player": {
           if (!currentRoom || currentRoom.phase !== "playing") return;
-          const rescuer = currentRoom.players.get(myPlayerId);
+          const senderRescuerId = String(msg.rescuerId || myPlayerId);
+          let rescuer = currentRoom.players.get(senderRescuerId);
+          if (!rescuer) rescuer = currentRoom.players.get(myPlayerId);
+          if (!rescuer) return;
+
+          if (rescuer.id !== myPlayerId) {
+            if (currentRoom.hostId !== myPlayerId || !rescuer.isBot) {
+              return;
+            }
+          }
+
           const victim = currentRoom.players.get(String(msg.victimId));
-          if (!rescuer || !victim || rescuer.role !== "runner" || rescuer.frozen || !victim.frozen) return;
+          if (!victim || rescuer.role !== "runner" || rescuer.frozen || !victim.frozen) return;
 
           // Anti-Cheat: Validate Euclidean distance
           const dist = Math.hypot(rescuer.x - victim.x, rescuer.z - victim.z);
-          const MAX_RESCUE_DIST = 4.5;
+          const MAX_RESCUE_DIST = 5.0;
           if (dist > MAX_RESCUE_DIST) {
             console.warn(`[AntiCheat] Blocked distant rescue attempt by ${rescuer.name} on ${victim.name} (${dist.toFixed(2)}m)`);
             return;
@@ -1079,10 +1206,14 @@ wss.on("connection", (ws: WebSocket, req: any) => {
         // 9. Item Pick up
         case "pick_item": {
           if (!currentRoom || currentRoom.phase !== "playing") return;
-          const p = currentRoom.players.get(myPlayerId);
+          const targetPlayerId = String(msg.botId || myPlayerId);
+          const p = currentRoom.players.get(targetPlayerId);
+          if (!p) return;
+          if (p.id !== myPlayerId && (currentRoom.hostId !== myPlayerId || !p.isBot)) return;
+
           const itemId = String(msg.itemId);
           const item = currentRoom.items.get(itemId);
-          if (!p || !item || p.heldItem !== "") return;
+          if (!item || p.heldItem !== "") return;
           if ((item.type === "heater" || item.type === "tackle") && p.role === "tagger") return;
 
           p.heldItem = item.type;
@@ -1100,8 +1231,10 @@ wss.on("connection", (ws: WebSocket, req: any) => {
         // 10. Item Use
         case "use_item": {
           if (!currentRoom || currentRoom.phase !== "playing") return;
-          const p = currentRoom.players.get(myPlayerId);
+          const targetPlayerId = String(msg.botId || myPlayerId);
+          const p = currentRoom.players.get(targetPlayerId);
           if (!p || p.heldItem === "") return;
+          if (p.id !== myPlayerId && (currentRoom.hostId !== myPlayerId || !p.isBot)) return;
 
           const itemType = p.heldItem;
           p.heldItem = "";
@@ -1155,9 +1288,18 @@ wss.on("connection", (ws: WebSocket, req: any) => {
         // 11. Tackle Player (Runner dashes into Tagger with Cooldown & Distance verification)
         case "tackle_player": {
           if (!currentRoom || currentRoom.phase !== "playing") return;
-          const runner = currentRoom.players.get(myPlayerId);
+          const senderRunnerId = String(msg.attackerId || myPlayerId);
+          let runner = currentRoom.players.get(senderRunnerId);
+          if (!runner) runner = currentRoom.players.get(myPlayerId);
+          if (!runner) return;
+          if (runner.id !== myPlayerId) {
+            if (currentRoom.hostId !== myPlayerId || !runner.isBot) {
+              return;
+            }
+          }
+
           const tagger = currentRoom.players.get(String(msg.targetId));
-          if (!runner || !tagger || runner.role !== "runner" || tagger.role !== "tagger") return;
+          if (!tagger || runner.role !== "runner" || tagger.role !== "tagger") return;
 
           const now = Date.now();
           // Anti-Spam: Enforce 2.0s cooldown per runner on server
@@ -1463,7 +1605,8 @@ function start3DRound(room: Active3DRoom) {
     role: p.role,
     x: p.x,
     y: p.y,
-    z: p.z
+    z: p.z,
+    isBot: Boolean(p.isBot)
   }));
 
   const itemsList = Array.from(room.items.values());
@@ -1602,6 +1745,7 @@ function end3DRound(room: Active3DRoom, winner: "TAGGERS" | "RUNNERS", reason: s
   const playerRewards: Record<string, any> = {};
 
   room.players.forEach(p => {
+    if (p.isBot) return; // Skip bot players from database profile updates
     const isWinner = (p.role === "tagger" && winner === "TAGGERS") || (p.role === "runner" && winner === "RUNNERS");
     const baseExp = isWinner ? 100 : 40;
     const baseCoins = isWinner ? 60 : 20;

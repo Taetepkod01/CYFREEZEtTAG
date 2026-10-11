@@ -241,7 +241,10 @@ func _handle_server_message(raw_text: String) -> void:
 					"name": data.get("name"),
 					"isHost": data.get("isHost", false),
 					"isReady": data.get("isReady", false),
-					"isInGame": data.get("isInGame", false)
+					"isInGame": data.get("isInGame", false),
+					"isBot": bool(data.get("isBot", false)),
+					"level": int(data.get("level", 1)),
+					"coins": int(data.get("coins", 0))
 				})
 			player_joined.emit(data)
 			player_list_updated.emit()
@@ -521,6 +524,34 @@ func send_banana_placed(pos: Vector3) -> void:
 		"y": round(pos.y * 100.0) / 100.0,
 		"z": round(pos.z * 100.0) / 100.0
 	})
+
+# ── Bot Management & Authority Helpers (Host) ─────────────────────────────────
+func add_bot(bot_name: String = "") -> void:
+	send_action("add_bot", { "botName": bot_name })
+
+func send_bot_move(bot_id: String, pos: Vector3, rot_y: float) -> void:
+	send_action("bot_move", {
+		"botId": bot_id,
+		"x": round(pos.x * 100.0) / 100.0,
+		"y": round(pos.y * 100.0) / 100.0,
+		"z": round(pos.z * 100.0) / 100.0,
+		"rotY": round(rot_y * 100.0) / 100.0
+	})
+
+func send_bot_tag(bot_id: String, victim_id: String) -> void:
+	send_action("tag_player", { "taggerId": bot_id, "victimId": victim_id })
+
+func send_bot_rescue(bot_id: String, victim_id: String) -> void:
+	send_action("rescue_player", { "rescuerId": bot_id, "victimId": victim_id })
+
+func send_bot_pick_item(item_id: String, bot_id: String) -> void:
+	send_action("pick_item", { "itemId": item_id, "botId": bot_id })
+
+func send_bot_use_item(bot_id: String) -> void:
+	send_action("use_item", { "botId": bot_id })
+
+func send_bot_tackle(bot_id: String, target_id: String) -> void:
+	send_action("tackle_player", { "attackerId": bot_id, "targetId": target_id })
 
 # ── Query Public Room Browser via WebSocket and HTTP REST ───────────────────────
 func fetch_public_rooms() -> void:

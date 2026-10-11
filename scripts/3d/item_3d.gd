@@ -126,6 +126,10 @@ func _on_body_entered(body: Node3D) -> void:
 				Network.send_pick_item(item_id)
 				body.pick_up_item(item_type)
 				queue_free()
+			elif body.is_bot and Network and Network.is_online_game() and Network.is_host:
+				Network.send_bot_pick_item(item_id, body.network_id)
+				body.pick_up_item(item_type)
+				queue_free()
 			elif not Network or not Network.is_online_game():
 				body.pick_up_item(item_type)
 				queue_free()
