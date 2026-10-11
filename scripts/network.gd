@@ -111,7 +111,7 @@ func _ready() -> void:
 	auth_http.request_completed.connect(_on_auth_http_completed)
 
 # Production backend server URL (Render.com) used when client is served via Cloudflare Pages or external CDN
-const DEFAULT_REMOTE_BACKEND: String = "cpfreezetag-3d.onrender.com"
+const DEFAULT_REMOTE_BACKEND: String = "cyfreezettag.onrender.com"
 
 func _init_urls() -> void:
 	if OS.has_feature("web"):
