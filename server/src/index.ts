@@ -114,6 +114,7 @@ export interface Active3DRoom {
   rounds: number;
   currentRound: number;
   map: string;
+  selectedMapMode?: string;
   isPrivate: boolean;
   phase: "lobby" | "playing" | "ended";
   timeLeft: number;
@@ -477,6 +478,7 @@ wss.on("connection", (ws: WebSocket, req: any) => {
             rounds,
             currentRound: 1,
             map,
+            selectedMapMode: map.toUpperCase().includes("RANDOM") ? "RANDOM" : "",
             isPrivate,
             phase: "lobby",
             timeLeft: 165,
@@ -700,7 +702,10 @@ wss.on("connection", (ws: WebSocket, req: any) => {
           if (!currentRoom || currentRoom.hostId !== myPlayerId) return;
           if (msg.maxPlayers) currentRoom.maxPlayers = Math.max(4, Math.min(8, Number(msg.maxPlayers)));
           if (msg.rounds) currentRoom.rounds = Math.max(1, Math.min(5, Number(msg.rounds)));
-          if (msg.map) currentRoom.map = String(msg.map);
+          if (msg.map) {
+            currentRoom.map = String(msg.map);
+            currentRoom.selectedMapMode = currentRoom.map.toUpperCase().includes("RANDOM") ? "RANDOM" : "";
+          }
           if (typeof msg.isPrivate === "boolean") currentRoom.isPrivate = msg.isPrivate;
 
           broadcastToRoom(currentRoom, "settings_updated", {
@@ -850,6 +855,9 @@ wss.on("connection", (ws: WebSocket, req: any) => {
             room.currentRound = 1;
             room.runnersScore = 0;
             room.taggersScore = 0;
+            if (room.selectedMapMode === "RANDOM") {
+              room.map = "RANDOM MAP";
+            }
 
             room.players.forEach(p => {
               p.isInGame = false;
@@ -1437,6 +1445,12 @@ function start3DRound(room: Active3DRoom) {
   // Assign roles (1 tagger, others runners)
   const pKeys = Array.from(room.players.keys());
   const taggerIdx = Math.floor(Math.random() * pKeys.length);
+
+  if (room.selectedMapMode === "RANDOM" || (room.map || "").toUpperCase().includes("RANDOM")) {
+    room.selectedMapMode = "RANDOM";
+    const mapsPool = ["SPACE STATION", "SNOW TOWN", "LABYRINTH", "VOID PARKOUR"];
+    room.map = mapsPool[Math.floor(Math.random() * mapsPool.length)];
+  }
 
   const mapUpper = (room.map || "").toUpperCase();
   const isSpaceStation = mapUpper.includes("SPACE");

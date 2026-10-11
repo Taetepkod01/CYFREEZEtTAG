@@ -193,6 +193,10 @@ func _load_arena_map() -> void:
 	elif Network and "current_match_map" in Network and not str(Network.current_match_map).strip_edges().is_empty():
 		chosen_map = str(Network.current_match_map).strip_edges()
 	
+	if chosen_map.to_upper().contains("RANDOM"):
+		var maps_pool = ["SPACE STATION", "SNOW TOWN", "LABYRINTH", "VOID PARKOUR"]
+		chosen_map = maps_pool[randi() % maps_pool.size()]
+	
 	print("[Arena3D] Loading map: ", chosen_map)
 	
 	var upper = chosen_map.to_upper()

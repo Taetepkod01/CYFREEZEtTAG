@@ -13,6 +13,7 @@
 [ext_resource type="Texture2D" uid="uid://cknvudwe3covp" path="res://assets/ui/buttons/btn_start_game.png" id="11_btn_start"]
 [ext_resource type="Texture2D" uid="uid://dubwh3orgcdo" path="res://assets/ui/buttons/btn_leave_room.png" id="12_btn_leave"]
 [ext_resource type="Texture2D" uid="uid://08ldbinr7c3x" path="res://assets/ui/buttons/btn_back_menu.png" id="13_btn_back"]
+[ext_resource type="Texture2D" uid="uid://ccy4ilwhdnu5d" path="res://assets/ui/buttons/btn_role_random.png" id="14_btn_random"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_card"]
 bg_color = Color(0.03, 0.08, 0.18, 0.92)
@@ -776,15 +777,15 @@ anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 offset_left = 20.0
-offset_top = 50.0
+offset_top = 46.0
 offset_right = -20.0
-offset_bottom = -20.0
+offset_bottom = -16.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/separation = 8
+theme_override_constants/separation = 6
 
 [node name="SpaceStationBtn" type="Button" parent="RoomView/HBox/MapSelectionCard/Grid" unique_id=1019781662]
-custom_minimum_size = Vector2(0, 80)
+custom_minimum_size = Vector2(0, 68)
 layout_mode = 2
 theme_override_font_sizes/font_size = 12
 theme_override_styles/normal = SubResource("StyleBoxFlat_map_btn")
@@ -795,7 +796,7 @@ vertical_icon_alignment = 0
 expand_icon = true
 
 [node name="SnowTownBtn" type="Button" parent="RoomView/HBox/MapSelectionCard/Grid" unique_id=1724146943]
-custom_minimum_size = Vector2(0, 80)
+custom_minimum_size = Vector2(0, 68)
 layout_mode = 2
 theme_override_font_sizes/font_size = 12
 theme_override_styles/normal = SubResource("StyleBoxFlat_map_btn")
@@ -806,7 +807,7 @@ vertical_icon_alignment = 0
 expand_icon = true
 
 [node name="LabyrinthBtn" type="Button" parent="RoomView/HBox/MapSelectionCard/Grid" unique_id=1016726323]
-custom_minimum_size = Vector2(0, 80)
+custom_minimum_size = Vector2(0, 68)
 layout_mode = 2
 theme_override_font_sizes/font_size = 12
 theme_override_styles/normal = SubResource("StyleBoxFlat_map_btn")
@@ -817,12 +818,23 @@ vertical_icon_alignment = 0
 expand_icon = true
 
 [node name="VoidParkourBtn" type="Button" parent="RoomView/HBox/MapSelectionCard/Grid" unique_id=1028374619]
-custom_minimum_size = Vector2(0, 80)
+custom_minimum_size = Vector2(0, 68)
 layout_mode = 2
 theme_override_font_sizes/font_size = 12
 theme_override_styles/normal = SubResource("StyleBoxFlat_map_btn")
 text = "VOID PARKOUR"
 icon = ExtResource("5_map_space")
+icon_alignment = 1
+vertical_icon_alignment = 0
+expand_icon = true
+
+[node name="RandomMapBtn" type="Button" parent="RoomView/HBox/MapSelectionCard/Grid" unique_id=1039485721]
+custom_minimum_size = Vector2(0, 68)
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+theme_override_styles/normal = SubResource("StyleBoxFlat_map_btn")
+text = "RANDOM MAP"
+icon = ExtResource("14_btn_random")
 icon_alignment = 1
 vertical_icon_alignment = 0
 expand_icon = true

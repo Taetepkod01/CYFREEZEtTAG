@@ -658,9 +658,18 @@ func _update_room_lobby_ui() -> void:
 	if not is_dragging_slider:
 		max_players_slider.set_value_no_signal(r["max_players"])
 	max_players_val_lbl.text = "%d Players" % r["max_players"]
-	map_preview_lbl.text = "MAP: " + r["map"]
-	_update_map_preview_image(r["map"])
-	_update_map_selection_highlight(r["map"])
+	var cur_map = str(r.get("map", "SPACE STATION"))
+	if cur_map.to_upper().contains("RANDOM"):
+		map_preview_lbl.text = "MAP: 🎲 RANDOM MAP"
+	else:
+		map_preview_lbl.text = "MAP: " + cur_map
+	_update_map_preview_image(cur_map)
+	_update_map_selection_highlight(cur_map)
+	
+	for child in map_grid.get_children():
+		if child is Button:
+			child.disabled = not is_host
+
 	
 	max_players_slider.editable = is_host
 	rounds_opt.disabled = not is_host
@@ -928,37 +937,50 @@ func _setup_map_grid_buttons() -> void:
 		if child is Button:
 			child.pressed.connect(func():
 				var clean_name = child.text.strip_edges()
-				selected_map = clean_name
+				if clean_name.to_upper().contains("RANDOM"):
+					selected_map = "RANDOM MAP"
+				else:
+					selected_map = clean_name
+				
 				if Network:
-					Network.selected_map = clean_name
+					Network.selected_map = selected_map
 				if active_rooms.has(current_room_code):
-					active_rooms[current_room_code]["map"] = clean_name
-				map_preview_lbl.text = "MAP: " + clean_name
-				_update_map_preview_image(clean_name)
-				_update_map_selection_highlight(clean_name)
+					active_rooms[current_room_code]["map"] = selected_map
+				
+				if selected_map == "RANDOM MAP":
+					map_preview_lbl.text = "MAP: 🎲 RANDOM MAP"
+				else:
+					map_preview_lbl.text = "MAP: " + selected_map
+				
+				_update_map_preview_image(selected_map)
+				_update_map_selection_highlight(selected_map)
 				if is_host and active_rooms.has(current_room_code) and Network and Network.is_connected_to_server:
-					Network.update_room_settings(active_rooms[current_room_code]["max_players"], active_rooms[current_room_code]["rounds"], clean_name, bool(active_rooms[current_room_code].get("is_private", false)))
+					Network.update_room_settings(active_rooms[current_room_code]["max_players"], active_rooms[current_room_code]["rounds"], selected_map, bool(active_rooms[current_room_code].get("is_private", false)))
 			)
 
 func _update_map_preview_image(map_name: String) -> void:
 	if not map_preview_img:
 		return
-	match map_name:
-		"SPACE STATION":
-			map_preview_img.texture = load("res://assets/maps/map_space_station.png")
-		"LABYRINTH":
-			map_preview_img.texture = load("res://assets/maps/map_labyrinth.png")
-		"VOID PARKOUR":
-			map_preview_img.texture = load("res://assets/maps/map_space_station.png")
-		"SNOW TOWN", _:
-			map_preview_img.texture = load("res://assets/maps/map_preview_snow_town.png")
+	var upper = map_name.to_upper()
+	if upper.contains("RANDOM"):
+		map_preview_img.texture = load("res://assets/ui/buttons/btn_role_random.png")
+	elif upper.contains("SPACE"):
+		map_preview_img.texture = load("res://assets/maps/map_space_station.png")
+	elif upper.contains("LABYRINTH"):
+		map_preview_img.texture = load("res://assets/maps/map_labyrinth.png")
+	elif upper.contains("PARKOUR") or upper.contains("VOID"):
+		map_preview_img.texture = load("res://assets/maps/map_space_station.png")
+	else:
+		map_preview_img.texture = load("res://assets/maps/map_preview_snow_town.png")
 
 func _update_map_selection_highlight(map_name: String) -> void:
+	var target = map_name.to_upper().strip_edges()
 	for child in map_grid.get_children():
 		if child is Button:
-			var is_selected = (child.text.strip_edges() == map_name)
+			var btn_txt = child.text.to_upper().strip_edges()
+			var is_selected = (btn_txt == target) or (target.contains("RANDOM") and btn_txt.contains("RANDOM"))
 			if is_selected:
-				child.modulate = Color(1.2, 1.2, 1.2)
+				child.modulate = Color(1.3, 1.3, 1.3)
 			else:
 				child.modulate = Color(0.7, 0.75, 0.85)
 
@@ -1010,6 +1032,9 @@ func _on_action_pressed() -> void:
 			print("[Lobby3D] Host starting game...")
 			Network.start_game()
 		else:
+			if selected_map.to_upper().contains("RANDOM") and Network:
+				var maps_pool = ["SPACE STATION", "SNOW TOWN", "LABYRINTH", "VOID PARKOUR"]
+				Network.selected_map = maps_pool[randi() % maps_pool.size()]
 			get_tree().change_scene_to_file("res://scenes/3d/arena_3d.tscn")
 	else:
 		is_ready = not is_ready
