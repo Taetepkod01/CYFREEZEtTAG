@@ -1,5 +1,10 @@
 extends Node3D
 
+# Low gravity space physics parameters
+const MAP_GRAVITY: float = 3.2
+const MAP_JUMP_VELOCITY: float = 5.2
+const HAS_LOW_GRAVITY: bool = true
+
 @onready var earth_hologram: MeshInstance3D = get_node_or_null("CentralHub/EarthHologram")
 @onready var holo_ring: MeshInstance3D = get_node_or_null("CentralHub/HoloRing")
 @onready var cryo_core: MeshInstance3D = get_node_or_null("Laboratory/CryoChamber/Core")

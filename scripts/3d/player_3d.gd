@@ -119,6 +119,21 @@ func _ready() -> void:
 		spring_arm.visible = false
 	
 	interaction_area.body_entered.connect(_on_interaction_body_entered)
+	
+	# Check for Space Station low gravity mode
+	var arena = get_tree().current_scene
+	if arena and "is_space_station" in arena and arena.is_space_station:
+		set_low_gravity_mode(true, 3.2, 5.2)
+	elif arena and "current_map_node" in arena and arena.current_map_node != null and "MAP_GRAVITY" in arena.current_map_node:
+		set_low_gravity_mode(true, float(arena.current_map_node.MAP_GRAVITY), float(arena.current_map_node.MAP_JUMP_VELOCITY))
+
+func set_low_gravity_mode(enabled: bool, custom_g: float = 3.2, custom_jump: float = 5.2) -> void:
+	if enabled:
+		gravity = custom_g
+		jump_velocity = custom_jump
+	else:
+		gravity = ProjectSettings.get_setting("physics/3d/default_gravity", 9.8)
+		jump_velocity = 5.8
 
 func is_local_player() -> bool:
 	return not is_bot and not is_remote

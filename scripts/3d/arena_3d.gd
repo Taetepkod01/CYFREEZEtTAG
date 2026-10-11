@@ -92,6 +92,7 @@ var rewards_lbl: Label = null
 var exit_choice_from_game_over: bool = false
 var active_map_name: String = "SPACE STATION"
 var is_void_parkour: bool = false
+var is_space_station: bool = false
 
 func _ready() -> void:
 	if status_panel:
@@ -242,6 +243,9 @@ func _load_arena_map() -> void:
 				
 			active_map_name = map_display_name
 			is_void_parkour = upper.contains("PARKOUR") or upper.contains("VOID") or upper.contains("พาร์คัวร์")
+			is_space_station = upper.contains("SPACE")
+			if is_space_station:
+				add_game_log("[color=#80d8ff]🚀 Low Gravity Environment Activated! (Floaty Space Jumps)[/color]")
 			if is_void_parkour:
 				round_time = 120.0
 				if current_map_node.has_signal("player_checkpoint_reached"):
@@ -476,6 +480,7 @@ func _spawn_match_players() -> void:
 	players_container.add_child(p1)
 	player_nodes.append(p1)
 	local_player = p1
+	_apply_map_physics_to_player(p1)
 	if is_void_parkour:
 		p1.held_item = ""
 	
@@ -512,6 +517,7 @@ func _spawn_match_players() -> void:
 			runner_cursor += 1
 		players_container.add_child(bot)
 		player_nodes.append(bot)
+		_apply_map_physics_to_player(bot)
 		
 		bot.tagged.connect(_on_player_tagged)
 		bot.rescued.connect(_on_player_rescued)
@@ -525,6 +531,24 @@ func _spawn_match_players() -> void:
 		)
 	
 	_update_hud()
+
+func _apply_map_physics_to_player(p: CharacterBody3D) -> void:
+	if not is_instance_valid(p):
+		return
+	if is_space_station or (current_map_node and "MAP_GRAVITY" in current_map_node):
+		var g = float(current_map_node.MAP_GRAVITY) if (current_map_node and "MAP_GRAVITY" in current_map_node) else 3.2
+		var j = float(current_map_node.MAP_JUMP_VELOCITY) if (current_map_node and "MAP_JUMP_VELOCITY" in current_map_node) else 5.2
+		if p.has_method("set_low_gravity_mode"):
+			p.set_low_gravity_mode(true, g, j)
+		else:
+			p.gravity = g
+			p.jump_velocity = j
+	else:
+		if p.has_method("set_low_gravity_mode"):
+			p.set_low_gravity_mode(false)
+		else:
+			p.gravity = ProjectSettings.get_setting("physics/3d/default_gravity", 9.8)
+			p.jump_velocity = 5.8
 
 func _spawn_online_players() -> void:
 	var online_list = Network.current_match_players
@@ -542,6 +566,7 @@ func _spawn_online_players() -> void:
 		
 		players_container.add_child(p_node)
 		player_nodes.append(p_node)
+		_apply_map_physics_to_player(p_node)
 		
 		if is_me:
 			local_player = p_node
