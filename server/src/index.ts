@@ -12,7 +12,11 @@ const PORT = Number(process.env.PORT) || 2567;
 const clientBuildPath = path.join(__dirname, "../public");
 
 const app = express();
-app.use(cors());
+app.use(cors({
+  origin: "*",
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"]
+}));
 app.use(express.json());
 
 // COOP and COEP headers for Godot 4 WebAssembly / SharedArrayBuffer

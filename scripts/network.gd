@@ -108,13 +108,39 @@ func _ready() -> void:
 	add_child(auth_http)
 	auth_http.request_completed.connect(_on_auth_http_completed)
 
+# Production backend server URL (Render.com) used when client is served via Cloudflare Pages or external CDN
+const DEFAULT_REMOTE_BACKEND: String = "cpfreezetag-3d.onrender.com"
+
 func _init_urls() -> void:
 	if OS.has_feature("web"):
-		# Running on WebGL / Browser (e.g. Render.com deployment)
+		# 1. Check for manual URL override via window.CY_SERVER_URL or ?server= query param
+		var custom_backend = JavaScriptBridge.eval("""(function() {
+			try {
+				if (window.CY_SERVER_URL && window.CY_SERVER_URL.length > 0) return window.CY_SERVER_URL;
+				var params = new URLSearchParams(window.location.search);
+				if (params.get('server')) return params.get('server');
+			} catch(e) {}
+			return '';
+		})()""")
+		
 		var host = JavaScriptBridge.eval("window.location.host")
 		var proto = JavaScriptBridge.eval("window.location.protocol")
-		if host and host != "":
-			if proto == "https:":
+		
+		if custom_backend and str(custom_backend).strip_edges() != "":
+			var cb: String = str(custom_backend).strip_edges()
+			if cb.begins_with("https://") or cb.begins_with("http://"):
+				server_http_url = cb.trim_suffix("/")
+				server_ws_url = cb.replace("https://", "wss://").replace("http://", "ws://").trim_suffix("/") + "/ws"
+			else:
+				server_http_url = "https://" + cb.trim_suffix("/")
+				server_ws_url = "wss://" + cb.trim_suffix("/") + "/ws"
+		elif host and host != "":
+			var host_str: String = str(host).to_lower()
+			# If running on Cloudflare Pages (*.pages.dev), GitHub Pages, or external CDN (not localhost or onrender)
+			if host_str.contains("pages.dev") or host_str.contains("cloudflare") or host_str.contains("github.io"):
+				server_http_url = "https://" + DEFAULT_REMOTE_BACKEND
+				server_ws_url = "wss://" + DEFAULT_REMOTE_BACKEND + "/ws"
+			elif proto == "https:":
 				server_ws_url = "wss://" + str(host) + "/ws"
 				server_http_url = "https://" + str(host)
 			else:
