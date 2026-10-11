@@ -295,36 +295,14 @@ offset_bottom = 158.0
 grow_horizontal = 2
 text = "Room 101"
 placeholder_text = "e.g. Room 101"
-
-[node name="MaxPlayersLabel" type="Label" parent="BrowserView/HBox/CreateRoomCard" unique_id=2036647217]
-layout_mode = 0
-offset_left = 24.0
-offset_top = 175.0
-offset_right = 130.0
-offset_bottom = 195.0
-theme_override_colors/font_color = Color(0.7, 0.85, 1, 1)
-theme_override_font_sizes/font_size = 12
-text = "Max Players:"
-
-[node name="MaxPlayersInput" type="LineEdit" parent="BrowserView/HBox/CreateRoomCard" unique_id=1093122576]
-layout_mode = 1
-anchors_preset = 10
-anchor_right = 1.0
-offset_left = 24.0
-offset_top = 200.0
-offset_right = -24.0
-offset_bottom = 238.0
-grow_horizontal = 2
-text = "4"
-
 [node name="PrivateCheck" type="CheckBox" parent="BrowserView/HBox/CreateRoomCard" unique_id=64954891]
 layout_mode = 1
 anchors_preset = 10
 anchor_right = 1.0
 offset_left = 24.0
-offset_top = 255.0
+offset_top = 175.0
 offset_right = -24.0
-offset_bottom = 290.0
+offset_bottom = 210.0
 grow_horizontal = 2
 theme_override_colors/font_color = Color(1, 0.88, 0.4, 1)
 theme_override_font_sizes/font_size = 13

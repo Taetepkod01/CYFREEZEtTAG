@@ -429,6 +429,8 @@ func _on_practice_map_selected(idx: int) -> void:
 func _on_test_lobby_pressed() -> void:
 	if test_lobby_btn:
 		test_lobby_btn.disabled = true
+	if Network:
+		Network.auto_create_test_lobby = true
 	get_tree().change_scene_to_file("res://scenes/3d/lobby_3d.tscn")
 
 func _on_test_void_parkour_pressed() -> void:

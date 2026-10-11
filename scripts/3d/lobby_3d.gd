@@ -181,8 +181,67 @@ func _ready() -> void:
 				"is_private": bool(Network.room_data.get("isPrivate", false))
 			}
 		_show_room_view()
+	elif Network and Network.auto_create_test_lobby:
+		Network.auto_create_test_lobby = false
+		_start_immediate_test_room()
 	else:
 		_show_browser_view()
+
+func _start_immediate_test_room() -> void:
+	var test_code = generate_unique_code()
+	current_room_code = test_code
+	is_host = true
+	is_ready = true
+	
+	if Network:
+		Network.current_room_code = test_code
+		Network.is_host = true
+		Network.is_solo_mode = false
+	
+	var p_id = Network.my_peer_id if (Network and not Network.my_peer_id.is_empty()) else "host_local"
+	var p_lv = int(Network.current_user.get("level", 1)) if Network else 1
+	var p_coins = int(Network.current_user.get("coins", 50)) if Network else 50
+	var host_player = {
+		"id": p_id,
+		"name": my_player_name,
+		"isHost": true,
+		"isReady": true,
+		"isInGame": false,
+		"isBot": false,
+		"level": p_lv,
+		"coins": p_coins
+	}
+	
+	active_rooms[current_room_code] = {
+		"name": "Room " + current_room_code,
+		"code": current_room_code,
+		"host": my_player_name,
+		"host_id": p_id,
+		"max_players": 8,
+		"rounds": 3,
+		"map": selected_map,
+		"is_private": false,
+		"phase": "lobby",
+		"players": [host_player]
+	}
+	
+	if Network:
+		Network.room_data = active_rooms[current_room_code]
+	
+	_show_room_view()
+	
+	if Network:
+		if Network.is_connected_to_server:
+			Network.create_room("Room " + current_room_code, 8, 3, selected_map, false)
+		else:
+			var conn_holder: Array = []
+			var cb = func():
+				if Network and Network.connected_to_server.is_connected(conn_holder[0]):
+					Network.connected_to_server.disconnect(conn_holder[0])
+				if current_room_code == test_code and is_host and room_view.visible:
+					Network.create_room("Room " + test_code, 8, 3, selected_map, false)
+			conn_holder.append(cb)
+			Network.connected_to_server.connect(cb)
 
 func _on_refresh_pressed() -> void:
 	if Network:
@@ -442,6 +501,21 @@ func _on_add_bot_pressed() -> void:
 		return
 	if Network and Network.is_connected_to_server:
 		Network.add_bot()
+	else:
+		var bot_names = ["Bot Alpha", "Bot Beta", "Bot Gamma", "Bot Delta", "Bot Cyber"]
+		var existing_count = r["players"].size()
+		var b_name = bot_names[existing_count % bot_names.size()]
+		r["players"].append({
+			"id": "bot_" + str(randi_range(100, 999)),
+			"name": b_name,
+			"isHost": false,
+			"isReady": true,
+			"isInGame": false,
+			"isBot": true,
+			"level": 1,
+			"coins": 0
+		})
+		_update_room_lobby_ui()
 
 func _on_network_player_joined(data: Dictionary) -> void:
 	if active_rooms.has(current_room_code):
@@ -629,8 +703,17 @@ func _on_kick_player_pressed(target_id: String, target_name: String) -> void:
 	if not is_host:
 		return
 	print("[Lobby3D] Host kicking player: ", target_name, " (", target_id, ")")
-	if Network:
+	if Network and Network.is_connected_to_server:
 		Network.kick_player(target_id)
+	else:
+		if active_rooms.has(current_room_code):
+			var r = active_rooms[current_room_code]
+			for i in range(r["players"].size() - 1, -1, -1):
+				var p = r["players"][i]
+				if typeof(p) == TYPE_DICTIONARY and str(p.get("id")) == target_id:
+					r["players"].remove_at(i)
+					break
+			_update_room_lobby_ui()
 
 # -- In-Room UI & Customization ----------------------------------------------
 func _update_room_lobby_ui() -> void:
@@ -1049,6 +1132,11 @@ func _on_leave_room_pressed() -> void:
 	if active_rooms.has(current_room_code):
 		active_rooms.erase(current_room_code)
 	
+	if Network:
+		Network.current_room_code = ""
+		Network.is_host = false
+		Network.room_data.clear()
+	
 	current_room_code = ""
 	is_host = false
 	is_ready = false
@@ -1057,4 +1145,8 @@ func _on_leave_room_pressed() -> void:
 func _on_back_to_menu_pressed() -> void:
 	if Network and Network.is_connected_to_server:
 		Network.leave_room()
+	if Network:
+		Network.current_room_code = ""
+		Network.is_host = false
+		Network.room_data.clear()
 	get_tree().change_scene_to_file("res://scenes/3d/main_menu_3d.tscn")

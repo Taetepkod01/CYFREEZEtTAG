@@ -80,6 +80,7 @@ var is_solo_mode: bool = false
 var selected_practice_role: String = "random" # "random", "tagger", "runner"
 var selected_map: String = "SPACE STATION" # Default to SPACE STATION
 var kicked_rooms: Array[String] = []
+var auto_create_test_lobby: bool = false
 
 var room_data: Dictionary = {}
 var current_match_players: Array = []
