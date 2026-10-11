@@ -45,6 +45,14 @@ var profile_coins_lbl: Label = null
 var profile_account_btn: Button = null
 var guest_btn: Button = null
 
+# Account Modal Nodes
+var account_modal: Panel = null
+var account_name_lbl: Label = null
+var account_email_lbl: Label = null
+var account_stats_lbl: Label = null
+var account_sign_out_btn: Button = null
+var account_close_btn: Button = null
+
 var selected_practice_role: String = "runner"
 var time_passed: float = 0.0
 var is_register_mode: bool = false
@@ -98,6 +106,7 @@ func _ready() -> void:
 	
 	_setup_guest_button()
 	_setup_profile_bar()
+	_setup_account_modal()
 	_select_role("runner")
 	
 	if Network:
@@ -214,10 +223,197 @@ func _setup_profile_bar() -> void:
 	btn_sb.set_corner_radius_all(6)
 	profile_account_btn.add_theme_stylebox_override("normal", btn_sb)
 	profile_account_btn.add_theme_font_size_override("font_size", 11)
-	profile_account_btn.pressed.connect(_show_auth_panel)
+	profile_account_btn.pressed.connect(_on_profile_account_pressed)
 	hbox.add_child(profile_account_btn)
 	
 	add_child(profile_bar)
+
+# ── Account Modal (Sign Out & Close) ──────────────────────────────────────────
+func _setup_account_modal() -> void:
+	account_modal = Panel.new()
+	account_modal.name = "AccountModal"
+	account_modal.visible = false
+	account_modal.anchors_preset = Control.PRESET_CENTER
+	account_modal.anchor_left = 0.5
+	account_modal.anchor_top = 0.5
+	account_modal.anchor_right = 0.5
+	account_modal.anchor_bottom = 0.5
+	account_modal.offset_left = -190.0
+	account_modal.offset_top = -130.0
+	account_modal.offset_right = 190.0
+	account_modal.offset_bottom = 130.0
+	account_modal.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	account_modal.grow_vertical = Control.GROW_DIRECTION_BOTH
+	
+	var panel_sb = StyleBoxFlat.new()
+	panel_sb.bg_color = Color(0.04, 0.09, 0.18, 0.96)
+	panel_sb.border_width_left = 2
+	panel_sb.border_width_top = 2
+	panel_sb.border_width_right = 2
+	panel_sb.border_width_bottom = 2
+	panel_sb.border_color = Color(0.12, 0.65, 0.95, 0.9)
+	panel_sb.set_corner_radius_all(16)
+	panel_sb.shadow_color = Color(0, 0.5, 0.95, 0.35)
+	panel_sb.shadow_size = 20
+	account_modal.add_theme_stylebox_override("panel", panel_sb)
+	
+	var vbox = VBoxContainer.new()
+	vbox.anchors_preset = Control.PRESET_FULL_RECT
+	vbox.anchor_right = 1.0
+	vbox.anchor_bottom = 1.0
+	vbox.offset_left = 24.0
+	vbox.offset_top = 18.0
+	vbox.offset_right = -24.0
+	vbox.offset_bottom = -18.0
+	vbox.add_theme_constant_override("separation", 10)
+	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	account_modal.add_child(vbox)
+	
+	var title = Label.new()
+	title.text = "ACCOUNT"
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.modulate = Color(0.65, 0.92, 1.0)
+	title.add_theme_font_size_override("font_size", 18)
+	vbox.add_child(title)
+	
+	account_name_lbl = Label.new()
+	account_name_lbl.text = "Player"
+	account_name_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	account_name_lbl.modulate = Color(1.0, 1.0, 1.0)
+	account_name_lbl.add_theme_font_size_override("font_size", 15)
+	vbox.add_child(account_name_lbl)
+	
+	account_email_lbl = Label.new()
+	account_email_lbl.text = "player@example.com"
+	account_email_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	account_email_lbl.modulate = Color(0.45, 0.85, 1.0)
+	account_email_lbl.add_theme_font_size_override("font_size", 12)
+	vbox.add_child(account_email_lbl)
+	
+	account_stats_lbl = Label.new()
+	account_stats_lbl.text = "★ Lv. 1   |   🪙 50"
+	account_stats_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	account_stats_lbl.modulate = Color(1.0, 0.85, 0.3)
+	account_stats_lbl.add_theme_font_size_override("font_size", 13)
+	vbox.add_child(account_stats_lbl)
+	
+	var spacer = Control.new()
+	spacer.custom_minimum_size = Vector2(0, 6)
+	vbox.add_child(spacer)
+	
+	var btn_hbox = HBoxContainer.new()
+	btn_hbox.add_theme_constant_override("separation", 14)
+	btn_hbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	vbox.add_child(btn_hbox)
+	
+	account_sign_out_btn = Button.new()
+	account_sign_out_btn.text = "SIGN OUT"
+	account_sign_out_btn.custom_minimum_size = Vector2(130, 40)
+	var signout_sb = StyleBoxFlat.new()
+	signout_sb.bg_color = Color(0.45, 0.12, 0.18, 0.95)
+	signout_sb.border_width_left = 1
+	signout_sb.border_width_top = 1
+	signout_sb.border_width_right = 1
+	signout_sb.border_width_bottom = 1
+	signout_sb.border_color = Color(1.0, 0.35, 0.45, 0.9)
+	signout_sb.set_corner_radius_all(8)
+	var signout_hover = signout_sb.duplicate()
+	signout_hover.bg_color = Color(0.65, 0.18, 0.25, 1.0)
+	account_sign_out_btn.add_theme_stylebox_override("normal", signout_sb)
+	account_sign_out_btn.add_theme_stylebox_override("hover", signout_hover)
+	account_sign_out_btn.add_theme_stylebox_override("pressed", signout_hover)
+	account_sign_out_btn.add_theme_font_size_override("font_size", 12)
+	account_sign_out_btn.modulate = Color(1.0, 0.85, 0.85)
+	account_sign_out_btn.pressed.connect(_on_account_sign_out_pressed)
+	btn_hbox.add_child(account_sign_out_btn)
+	
+	account_close_btn = Button.new()
+	account_close_btn.text = "CLOSE"
+	account_close_btn.custom_minimum_size = Vector2(130, 40)
+	var close_sb = StyleBoxFlat.new()
+	close_sb.bg_color = Color(0.06, 0.22, 0.42, 0.95)
+	close_sb.border_width_left = 1
+	close_sb.border_width_top = 1
+	close_sb.border_width_right = 1
+	close_sb.border_width_bottom = 1
+	close_sb.border_color = Color(0.25, 0.75, 1.0, 0.9)
+	close_sb.set_corner_radius_all(8)
+	var close_hover = close_sb.duplicate()
+	close_hover.bg_color = Color(0.10, 0.35, 0.60, 1.0)
+	account_close_btn.add_theme_stylebox_override("normal", close_sb)
+	account_close_btn.add_theme_stylebox_override("hover", close_hover)
+	account_close_btn.add_theme_stylebox_override("pressed", close_hover)
+	account_close_btn.add_theme_font_size_override("font_size", 12)
+	account_close_btn.modulate = Color(0.85, 0.95, 1.0)
+	account_close_btn.pressed.connect(_on_account_close_pressed)
+	btn_hbox.add_child(account_close_btn)
+	
+	add_child(account_modal)
+
+func _on_profile_account_pressed() -> void:
+	var is_logged_in = false
+	if FirebaseService and not FirebaseService.current_user.is_empty():
+		is_logged_in = true
+	elif Network and not bool(Network.current_user.get("isGuest", true)):
+		is_logged_in = true
+	
+	if is_logged_in:
+		_show_account_modal()
+	else:
+		_show_auth_panel()
+
+func _show_account_modal() -> void:
+	if not account_modal:
+		return
+	var u = Network.current_user if Network else {}
+	var email = ""
+	if FirebaseService and not FirebaseService.current_user.is_empty():
+		email = str(FirebaseService.current_user.get("email", ""))
+	if email.is_empty():
+		email = str(u.get("email", ""))
+	
+	var d_name = str(u.get("displayName", Network.my_player_name if Network else "Player"))
+	var lv = int(u.get("level", 1))
+	var exp_cur = int(u.get("exp", 0))
+	var exp_max = int(u.get("maxExp", 100))
+	var coins = int(u.get("coins", 0))
+	
+	account_name_lbl.text = d_name
+	account_email_lbl.text = email if not email.is_empty() else "Logged in account"
+	account_stats_lbl.text = "★ Lv. %d (EXP: %d/%d)   |   🪙 %d" % [lv, exp_cur, exp_max, coins]
+	
+	account_modal.visible = true
+
+func _on_account_close_pressed() -> void:
+	if account_modal:
+		account_modal.visible = false
+
+func _on_account_sign_out_pressed() -> void:
+	if account_modal:
+		account_modal.visible = false
+	_perform_sign_out()
+
+func _perform_sign_out() -> void:
+	if FirebaseService:
+		FirebaseService.sign_out()
+	if Network:
+		Network.current_user = {
+			"uid": "",
+			"email": "",
+			"displayName": "Player 1",
+			"level": 1,
+			"exp": 0,
+			"maxExp": 100,
+			"coins": 50,
+			"isGuest": true,
+			"has_chosen_guest": false
+		}
+		Network.my_player_name = "Player 1"
+		Network.save_local_user()
+		Network.profile_updated.emit(Network.current_user)
+	_update_profile_bar()
+	_show_auth_panel()
+	_show_service_status("Signed out successfully.", false)
 
 func _update_profile_bar() -> void:
 	if not profile_bar or not Network:
@@ -340,6 +536,8 @@ func _on_network_auth_failed(msg: String) -> void:
 
 func _show_main_menu() -> void:
 	auth_panel.visible = false
+	if account_modal:
+		account_modal.visible = false
 	menu_buttons.visible = true
 	title_label.visible = true
 	if profile_bar:
@@ -348,6 +546,8 @@ func _show_main_menu() -> void:
 
 func _show_auth_panel() -> void:
 	auth_panel.visible = true
+	if account_modal:
+		account_modal.visible = false
 	menu_buttons.visible = false
 	title_label.visible = false
 	if profile_bar:
@@ -408,6 +608,8 @@ func _on_play_online_pressed() -> void:
 	get_tree().change_scene_to_file("res://scenes/3d/lobby_3d.tscn")
 
 func _on_practice_pressed() -> void:
+	if account_modal:
+		account_modal.visible = false
 	practice_modal.visible = true
 	menu_buttons.visible = false
 	title_label.visible = false
@@ -436,23 +638,21 @@ func _start_practice(role: String) -> void:
 	get_tree().change_scene_to_file("res://scenes/3d/arena_3d.tscn")
 
 func _on_how_to_play_pressed() -> void:
+	if account_modal:
+		account_modal.visible = false
 	rules_panel.visible = true
 	menu_buttons.visible = false
 	title_label.visible = false
 	if profile_bar: profile_bar.visible = false
 
 func _on_quit_pressed() -> void:
+	var is_logged_in = false
 	if FirebaseService and not FirebaseService.current_user.is_empty():
-		FirebaseService.sign_out()
-		if Network:
-			Network.current_user["has_chosen_guest"] = false
-			Network.save_local_user()
-		_show_auth_panel()
-		return
-	if Network and not bool(Network.current_user.get("isGuest", true)):
-		Network.current_user = {}
-		Network.current_user["has_chosen_guest"] = false
-		Network.save_local_user()
-		_show_auth_panel()
+		is_logged_in = true
+	elif Network and not bool(Network.current_user.get("isGuest", true)):
+		is_logged_in = true
+	
+	if is_logged_in:
+		_perform_sign_out()
 		return
 	get_tree().quit()
