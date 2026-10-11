@@ -14,6 +14,7 @@ const TEX_ROLE_RUNNER_OFF = preload("res://assets/ui/buttons/btn_role_runner_off
 @onready var how_to_play_btn: TextureButton = $MenuButtons/HowToPlayBtn
 @onready var quit_btn: Button = $MenuButtons/QuitBtn
 @onready var void_parkour_btn: Button = $MenuButtons/VoidParkourBtn
+@onready var test_lobby_btn: Button = get_node_or_null("MenuButtons/TestLobbyBtn")
 @onready var rules_panel: Panel = $RulesPanel
 @onready var close_rules_btn: TextureButton = $RulesPanel/CloseBtn
 
@@ -65,6 +66,8 @@ func _ready() -> void:
 	quit_btn.pressed.connect(_on_quit_pressed)
 	if void_parkour_btn:
 		void_parkour_btn.pressed.connect(_on_test_void_parkour_pressed)
+	if test_lobby_btn:
+		test_lobby_btn.pressed.connect(_on_test_lobby_pressed)
 	
 	if map_option_btn:
 		map_option_btn.clear()
@@ -422,6 +425,11 @@ func _on_practice_map_selected(idx: int) -> void:
 		1: selected_practice_map = "SNOW TOWN"
 		2: selected_practice_map = "LABYRINTH"
 		3, _: selected_practice_map = "VOID PARKOUR"
+
+func _on_test_lobby_pressed() -> void:
+	if test_lobby_btn:
+		test_lobby_btn.disabled = true
+	get_tree().change_scene_to_file("res://scenes/3d/lobby_3d.tscn")
 
 func _on_test_void_parkour_pressed() -> void:
 	if void_parkour_btn:
