@@ -156,6 +156,7 @@ func _send_json_request(
 	body: String = ""
 ) -> Dictionary:
 	var http := HTTPRequest.new()
+	http.accept_gzip = false
 	http.timeout = 20.0
 	add_child(http)
 	var header_list: PackedStringArray = []
@@ -172,10 +173,14 @@ func _send_json_request(
 	var result_code: int = response[0]
 	var response_code: int = response[1]
 	var response_body: PackedByteArray = response[3]
-	var parsed: Variant = JSON.parse_string(response_body.get_string_from_utf8())
+	var raw_str: String = response_body.get_string_from_utf8()
+	var parsed: Variant = JSON.parse_string(raw_str)
 	var data: Dictionary = parsed if parsed is Dictionary else {}
 	if result_code != HTTPRequest.RESULT_SUCCESS:
-		return {"ok": false, "error": "Firebase network request failed (error %d)." % result_code}
+		if not data.is_empty():
+			result_code = HTTPRequest.RESULT_SUCCESS
+		else:
+			return {"ok": false, "error": "Firebase network request failed (error %d)." % result_code}
 	if response_code < 200 or response_code >= 300:
 		var error_info: Dictionary = data.get("error", {})
 		return {

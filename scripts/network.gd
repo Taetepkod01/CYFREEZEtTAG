@@ -101,10 +101,12 @@ func _ready() -> void:
 	load_local_user()
 	
 	http_request = HTTPRequest.new()
+	http_request.accept_gzip = false
 	add_child(http_request)
 	http_request.request_completed.connect(_on_http_request_completed)
 	
 	auth_http = HTTPRequest.new()
+	auth_http.accept_gzip = false
 	add_child(auth_http)
 	auth_http.request_completed.connect(_on_auth_http_completed)
 
