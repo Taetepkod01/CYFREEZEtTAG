@@ -13,8 +13,6 @@ const TEX_ROLE_RUNNER_OFF = preload("res://assets/ui/buttons/btn_role_runner_off
 @onready var practice_btn: TextureButton = $MenuButtons/PracticeBtn
 @onready var how_to_play_btn: TextureButton = $MenuButtons/HowToPlayBtn
 @onready var quit_btn: Button = $MenuButtons/QuitBtn
-@onready var void_parkour_btn: Button = $MenuButtons/VoidParkourBtn
-@onready var test_lobby_btn: Button = get_node_or_null("MenuButtons/TestLobbyBtn")
 @onready var rules_panel: Panel = $RulesPanel
 @onready var close_rules_btn: TextureButton = $RulesPanel/CloseBtn
 
@@ -64,10 +62,6 @@ func _ready() -> void:
 	practice_btn.pressed.connect(_on_practice_pressed)
 	how_to_play_btn.pressed.connect(_on_how_to_play_pressed)
 	quit_btn.pressed.connect(_on_quit_pressed)
-	if void_parkour_btn:
-		void_parkour_btn.pressed.connect(_on_test_void_parkour_pressed)
-	if test_lobby_btn:
-		test_lobby_btn.pressed.connect(_on_test_lobby_pressed)
 	
 	if map_option_btn:
 		map_option_btn.clear()
@@ -425,24 +419,6 @@ func _on_practice_map_selected(idx: int) -> void:
 		1: selected_practice_map = "SNOW TOWN"
 		2: selected_practice_map = "LABYRINTH"
 		3, _: selected_practice_map = "VOID PARKOUR"
-
-func _on_test_lobby_pressed() -> void:
-	if test_lobby_btn:
-		test_lobby_btn.disabled = true
-	if Network:
-		Network.auto_create_test_lobby = true
-	get_tree().change_scene_to_file("res://scenes/3d/lobby_3d.tscn")
-
-func _on_test_void_parkour_pressed() -> void:
-	if void_parkour_btn:
-		void_parkour_btn.disabled = true
-	if Network:
-		Network.is_solo_mode = true
-		Network.selected_practice_role = "runner"
-		Network.selected_map = "VOID PARKOUR"
-		Network.disconnect_from_server()
-	await get_tree().process_frame
-	get_tree().change_scene_to_file("res://scenes/3d/arena_3d.tscn")
 
 func _start_practice(role: String) -> void:
 	start_practice_btn.disabled = true
