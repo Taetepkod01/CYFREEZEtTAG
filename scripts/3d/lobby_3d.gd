@@ -1112,12 +1112,85 @@ func _on_action_pressed() -> void:
 		if Network:
 			Network.selected_map = selected_map
 		if Network and Network.is_connected_to_server:
-			print("[Lobby3D] Host starting game...")
+			print("[Lobby3D] Host starting game on server...")
 			Network.start_game()
 		else:
-			if selected_map.to_upper().contains("RANDOM") and Network:
-				var maps_pool = ["SPACE STATION", "SNOW TOWN", "LABYRINTH", "VOID PARKOUR"]
-				Network.selected_map = maps_pool[randi() % maps_pool.size()]
+			print("[Lobby3D] Host starting game locally with all lobby players...")
+			var r = active_rooms[current_room_code] if active_rooms.has(current_room_code) else {}
+			var r_players: Array = r.get("players", [])
+			if r_players.is_empty():
+				r_players = [{
+					"id": "host_local",
+					"name": my_player_name,
+					"isHost": true,
+					"isReady": true,
+					"isBot": false,
+					"level": int(Network.current_user.get("level", 1)) if Network else 1
+				}]
+			
+			var match_list: Array = []
+			var tagger_idx = randi() % max(1, r_players.size())
+			
+			var chaser_spawn_pos = Vector3(0, 0.5, -22)
+			var runner_spawns = [
+				Vector3(0, 0.5, 22),
+				Vector3(-22, 0.5, 0),
+				Vector3(22, 0.5, 0),
+				Vector3(-20, 0.5, -20),
+				Vector3(20, 0.5, 20),
+				Vector3(-20, 0.5, 20),
+				Vector3(20, 0.5, -20),
+				Vector3(0, 0.5, 12),
+				Vector3(12, 0.5, 0),
+				Vector3(-12, 0.5, 0)
+			]
+			
+			var runner_cursor = 0
+			for i in range(r_players.size()):
+				var p_info = r_players[i]
+				var p_id = "p_%d" % i
+				var p_name = "Player %d" % (i + 1)
+				var is_b = (i > 0)
+				var is_h = (i == 0)
+				var p_lv = 1
+				
+				if typeof(p_info) == TYPE_DICTIONARY:
+					p_id = str(p_info.get("id", p_id))
+					p_name = str(p_info.get("name", p_name))
+					is_b = bool(p_info.get("isBot", i > 0))
+					is_h = bool(p_info.get("isHost", i == 0))
+					p_lv = int(p_info.get("level", 1))
+				else:
+					p_name = str(p_info)
+				
+				var p_role = "tagger" if (i == tagger_idx) else "runner"
+				var spawn_pos = chaser_spawn_pos if (p_role == "tagger") else runner_spawns[runner_cursor % runner_spawns.size()]
+				if p_role == "runner":
+					runner_cursor += 1
+				
+				match_list.append({
+					"id": p_id,
+					"name": p_name,
+					"role": p_role,
+					"isBot": is_b,
+					"isHost": is_h,
+					"level": p_lv,
+					"x": spawn_pos.x,
+					"y": spawn_pos.y,
+					"z": spawn_pos.z,
+					"rotY": 0.0
+				})
+			
+			if Network:
+				Network.current_match_players = match_list
+				Network.current_round = 1
+				Network.max_rounds = int(r.get("rounds", 3))
+				if selected_map.to_upper().contains("RANDOM"):
+					var maps_pool = ["SPACE STATION", "SNOW TOWN", "LABYRINTH", "VOID PARKOUR"]
+					Network.selected_map = maps_pool[randi() % maps_pool.size()]
+				else:
+					Network.selected_map = selected_map
+			
 			get_tree().change_scene_to_file("res://scenes/3d/arena_3d.tscn")
 	else:
 		is_ready = not is_ready

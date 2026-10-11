@@ -1461,10 +1461,14 @@ function start3DRound(room: Active3DRoom) {
   const spaceStationRunnerSpawns = [
     { x: 0, y: 0.5, z: 22 },
     { x: -22, y: 0.5, z: 0 },
+    { x: 22, y: 0.5, z: 0 },
     { x: -20, y: 0.5, z: -20 },
     { x: 20, y: 0.5, z: 20 },
     { x: -20, y: 0.5, z: 20 },
-    { x: 20, y: 0.5, z: -20 }
+    { x: 20, y: 0.5, z: -20 },
+    { x: 0, y: 0.5, z: 12 },
+    { x: 12, y: 0.5, z: 0 },
+    { x: -12, y: 0.5, z: 0 }
   ];
   const snowTownRunnerSpawns = [
     { x: 14.0, y: 0.5, z: -8.0 },
@@ -1472,7 +1476,9 @@ function start3DRound(room: Active3DRoom) {
     { x: 18.0, y: 0.6, z: 14.0 },
     { x: 0.0, y: 0.8, z: -2.0 },
     { x: -16.0, y: 0.6, z: 0.0 },
-    { x: 4.0, y: 0.6, z: 0.0 }
+    { x: 4.0, y: 0.6, z: 0.0 },
+    { x: -10.0, y: 0.6, z: -10.0 },
+    { x: 10.0, y: 0.6, z: 10.0 }
   ];
   const labyrinthRunnerSpawns = [
     { x: -15.0, y: 6.0, z: 12.0 },
@@ -1480,7 +1486,9 @@ function start3DRound(room: Active3DRoom) {
     { x: 7.0, y: 5.1, z: 3.0 },
     { x: 16.0, y: 5.4, z: -2.0 },
     { x: -16.0, y: 5.2, z: 6.0 },
-    { x: -5.0, y: 5.0, z: -2.0 }
+    { x: -5.0, y: 5.0, z: -2.0 },
+    { x: 0.0, y: 5.2, z: 10.0 },
+    { x: 10.0, y: 5.2, z: -10.0 }
   ];
   const voidParkourRunnerSpawns = [
     { x: 0.0, y: 1.2, z: 0.0 },
@@ -1488,7 +1496,9 @@ function start3DRound(room: Active3DRoom) {
     { x: 3.0, y: 1.2, z: 0.0 },
     { x: -1.5, y: 1.2, z: -2.0 },
     { x: 1.5, y: 1.2, z: -2.0 },
-    { x: 0.0, y: 1.2, z: -3.0 }
+    { x: 0.0, y: 1.2, z: -3.0 },
+    { x: -2.0, y: 1.2, z: 2.0 },
+    { x: 2.0, y: 1.2, z: 2.0 }
   ];
   let runnerSpawnIdx = 0;
 

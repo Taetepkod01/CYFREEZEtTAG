@@ -131,12 +131,15 @@ func _ready() -> void:
 	
 	item_btn.pressed.connect(_on_item_button_pressed)
 	
-	if Network and Network.is_online_game():
-		# Online match
+	if Network and (Network.is_online_game() or Network.current_match_players.size() > 0):
+		# Match from lobby (online or offline test with bots)
 		role_btn.visible = false
 		current_round = Network.current_round
 		max_rounds = Network.max_rounds
-		_connect_network_signals()
+		if Network.is_online_game():
+			_connect_network_signals()
+		else:
+			lobby_btn.visible = true
 	else:
 		# AI practice mode
 		role_btn.visible = true
@@ -428,7 +431,7 @@ func _spawn_match_players() -> void:
 		child.queue_free()
 	player_nodes.clear()
 	
-	if Network and Network.is_online_game():
+	if Network and Network.current_match_players.size() > 0:
 		_spawn_online_players()
 		return
 	
@@ -558,7 +561,7 @@ func _spawn_online_players() -> void:
 	var online_list = Network.current_match_players
 	for p_data in online_list:
 		var p_id = str(p_data.get("id", ""))
-		var is_me = (p_id == Network.my_peer_id)
+		var is_me = (Network and not Network.my_peer_id.is_empty() and p_id == Network.my_peer_id) or (not Network or not Network.is_online_game() and bool(p_data.get("isHost", false)))
 		var is_bot = bool(p_data.get("isBot", false))
 		
 		var p_node = player_3d_scene.instantiate()
@@ -567,7 +570,7 @@ func _spawn_online_players() -> void:
 		p_node.player_name = str(p_data.get("name", "Player")) + (" (You)" if is_me else "")
 		
 		if is_bot:
-			if Network.is_host:
+			if not Network or not Network.is_online_game() or Network.is_host:
 				# Host simulates bot AI and drives movement
 				p_node.is_bot = true
 				p_node.is_remote = false
@@ -587,18 +590,44 @@ func _spawn_online_players() -> void:
 		
 		if is_me:
 			local_player = p_node
+			p_node.tagged.connect(_on_player_tagged)
+			p_node.rescued.connect(_on_player_rescued)
 			p_node.item_changed.connect(_update_item_slot)
 			p_node.item_picked_up.connect(_on_player_item_picked_up)
 			p_node.item_used.connect(_on_player_item_used)
+			p_node.player_damaged.connect(func(target, amt):
+				add_game_log(">> [color=#ff9800]%s tackled %s! (-%d HP)[/color]" % [p_node.player_name, target.player_name, amt])
+				_update_hud()
+				if target.hp <= 0 and target.role == "tagger":
+					add_game_log("[color=#69f0ae]Tagger defeated! Runners Win![/color]")
+					_end_round("RUNNERS")
+			)
+		elif is_bot and not p_node.is_remote:
+			# Bot simulated by local host
+			p_node.tagged.connect(_on_player_tagged)
+			p_node.rescued.connect(_on_player_rescued)
+			p_node.item_picked_up.connect(_on_player_item_picked_up)
+			p_node.item_used.connect(func(item): add_game_log("%s used [color=#ffe066]%s[/color]!" % [p_node.player_name, item]))
+			p_node.player_damaged.connect(func(target, amt):
+				add_game_log(">> [color=#ff9800]%s tackled %s! (-%d HP)[/color]" % [p_node.player_name, target.player_name, amt])
+				_update_hud()
+				if target.hp <= 0 and target.role == "tagger":
+					add_game_log("[color=#69f0ae]Tagger defeated! Runners Win![/color]")
+					_end_round("RUNNERS")
+			)
 	
-	# Spawn initial server items
-	for child in items_container.get_children():
-		child.queue_free()
-	for it in Network.current_match_items:
-		var item = item_3d_scene.instantiate()
-		item.position = Vector3(float(it.get("x", 0)), float(it.get("y", 0.6)), float(it.get("z", 0)))
-		items_container.add_child(item)
-		item.setup(str(it.get("type", "speed")), str(it.get("id", "")))
+	# Spawn initial server items (or local items if offline)
+	if Network and not Network.current_match_items.is_empty():
+		for child in items_container.get_children():
+			child.queue_free()
+		for it in Network.current_match_items:
+			var item = item_3d_scene.instantiate()
+			item.position = Vector3(float(it.get("x", 0)), float(it.get("y", 0.6)), float(it.get("z", 0)))
+			items_container.add_child(item)
+			item.setup(str(it.get("type", "speed")), str(it.get("id", "")))
+	elif not is_void_parkour and items_container.get_child_count() == 0:
+		for i in range(4):
+			_spawn_random_item()
 
 func _spawn_random_item() -> void:
 	if items_container.get_child_count() >= 6:
