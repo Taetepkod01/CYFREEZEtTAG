@@ -1340,10 +1340,23 @@ wss.on("connection", (ws: WebSocket, req: any) => {
           });
 
           if (tagger.hp <= 0) {
-            broadcastToRoom(currentRoom, "chat_message", {
-              msg: `👑 Tagger ${tagger.name} ran out of HP! RUNNERS WIN!`
+            tagger.frozen = true;
+            let aliveTaggers = 0;
+            currentRoom.players.forEach(p => {
+              if (p.isInGame && p.role === "tagger" && (p.hp === undefined || p.hp > 0)) {
+                aliveTaggers++;
+              }
             });
-            end3DRound(currentRoom, "RUNNERS", "Taggers Defeated");
+            if (aliveTaggers === 0) {
+              broadcastToRoom(currentRoom, "chat_message", {
+                msg: `👑 All Taggers were knocked out! RUNNERS WIN!`
+              });
+              end3DRound(currentRoom, "RUNNERS", "All Taggers Defeated");
+            } else {
+              broadcastToRoom(currentRoom, "chat_message", {
+                msg: `⚠️ Tagger ${tagger.name} was knocked out! (${aliveTaggers} tagger${aliveTaggers > 1 ? "s" : ""} remaining)`
+              });
+            }
           }
           break;
         }
@@ -1442,9 +1455,27 @@ function start3DRound(room: Active3DRoom) {
   room.phase = "playing";
   room.timeLeft = 165; // 02:45
 
-  // Assign roles (1 tagger, others runners)
+  // Assign roles based on player count (including bots):
+  // <= 5 players: 1 tagger
+  // 6 - 7 players: 2 taggers
+  // >= 8 players: 3 taggers
   const pKeys = Array.from(room.players.keys());
-  const taggerIdx = Math.floor(Math.random() * pKeys.length);
+  const totalCount = pKeys.length;
+  let taggerCount = 1;
+  if (totalCount >= 8) {
+    taggerCount = 3;
+  } else if (totalCount >= 6) {
+    taggerCount = 2;
+  } else {
+    taggerCount = 1;
+  }
+  if (totalCount > 1) {
+    taggerCount = Math.min(taggerCount, totalCount - 1);
+  }
+
+  // Shuffle and pick tagger IDs
+  const shuffledKeys = [...pKeys].sort(() => Math.random() - 0.5);
+  const taggerSet = new Set(shuffledKeys.slice(0, taggerCount));
 
   if (room.selectedMapMode === "RANDOM" || (room.map || "").toUpperCase().includes("RANDOM")) {
     room.selectedMapMode = "RANDOM";
@@ -1458,6 +1489,11 @@ function start3DRound(room: Active3DRoom) {
   const isLabyrinth = mapUpper.includes("LABYRINTH") || mapUpper.includes("MAZE") || mapUpper.includes("เขาวงกต");
   const isVoidParkour = mapUpper.includes("PARKOUR") || mapUpper.includes("VOID") || mapUpper.includes("พาร์คัวร์");
 
+  const spaceStationTaggerSpawns = [
+    { x: 0, y: 0.5, z: -22 },
+    { x: -3.5, y: 0.5, z: -22 },
+    { x: 3.5, y: 0.5, z: -22 }
+  ];
   const spaceStationRunnerSpawns = [
     { x: 0, y: 0.5, z: 22 },
     { x: -22, y: 0.5, z: 0 },
@@ -1470,6 +1506,12 @@ function start3DRound(room: Active3DRoom) {
     { x: 12, y: 0.5, z: 0 },
     { x: -12, y: 0.5, z: 0 }
   ];
+
+  const snowTownTaggerSpawns = [
+    { x: -14.0, y: 0.6, z: -14.0 },
+    { x: -11.0, y: 0.6, z: -14.0 },
+    { x: -17.0, y: 0.6, z: -14.0 }
+  ];
   const snowTownRunnerSpawns = [
     { x: 14.0, y: 0.5, z: -8.0 },
     { x: -18.0, y: 0.6, z: 10.0 },
@@ -1479,6 +1521,12 @@ function start3DRound(room: Active3DRoom) {
     { x: 4.0, y: 0.6, z: 0.0 },
     { x: -10.0, y: 0.6, z: -10.0 },
     { x: 10.0, y: 0.6, z: 10.0 }
+  ];
+
+  const labyrinthTaggerSpawns = [
+    { x: -15.0, y: 5.6, z: -16.0 },
+    { x: -12.0, y: 5.6, z: -16.0 },
+    { x: -18.0, y: 5.6, z: -16.0 }
   ];
   const labyrinthRunnerSpawns = [
     { x: -15.0, y: 6.0, z: 12.0 },
@@ -1490,6 +1538,12 @@ function start3DRound(room: Active3DRoom) {
     { x: 0.0, y: 5.2, z: 10.0 },
     { x: 10.0, y: 5.2, z: -10.0 }
   ];
+
+  const voidParkourTaggerSpawns = [
+    { x: 0.0, y: 1.2, z: 2.5 },
+    { x: -2.0, y: 1.2, z: 2.5 },
+    { x: 2.0, y: 1.2, z: 2.5 }
+  ];
   const voidParkourRunnerSpawns = [
     { x: 0.0, y: 1.2, z: 0.0 },
     { x: -3.0, y: 1.2, z: 0.0 },
@@ -1500,12 +1554,20 @@ function start3DRound(room: Active3DRoom) {
     { x: -2.0, y: 1.2, z: 2.0 },
     { x: 2.0, y: 1.2, z: 2.0 }
   ];
+
+  const defaultTaggerSpawns = [
+    { x: 0, y: 0.5, z: -18 },
+    { x: -3.0, y: 0.5, z: -18 },
+    { x: 3.0, y: 0.5, z: -18 }
+  ];
+
+  let taggerSpawnIdx = 0;
   let runnerSpawnIdx = 0;
 
-  pKeys.forEach((id, i) => {
+  pKeys.forEach((id) => {
     const p = room.players.get(id)!;
     p.isInGame = true;
-    p.role = i === taggerIdx ? "tagger" : "runner";
+    p.role = taggerSet.has(id) ? "tagger" : "runner";
     p.frozen = false;
     p.isRescuing = false;
     p.hasShield = false;
@@ -1515,7 +1577,9 @@ function start3DRound(room: Active3DRoom) {
 
     if (isSpaceStation) {
       if (p.role === "tagger") {
-        p.x = 0; p.y = 0.5; p.z = -22;
+        const sp = spaceStationTaggerSpawns[taggerSpawnIdx % spaceStationTaggerSpawns.length];
+        p.x = sp.x; p.y = sp.y; p.z = sp.z;
+        taggerSpawnIdx++;
       } else {
         const sp = spaceStationRunnerSpawns[runnerSpawnIdx % spaceStationRunnerSpawns.length];
         p.x = sp.x; p.y = sp.y; p.z = sp.z;
@@ -1523,7 +1587,9 @@ function start3DRound(room: Active3DRoom) {
       }
     } else if (isSnowTown) {
       if (p.role === "tagger") {
-        p.x = -14.0; p.y = 0.6; p.z = -14.0;
+        const sp = snowTownTaggerSpawns[taggerSpawnIdx % snowTownTaggerSpawns.length];
+        p.x = sp.x; p.y = sp.y; p.z = sp.z;
+        taggerSpawnIdx++;
       } else {
         const sp = snowTownRunnerSpawns[runnerSpawnIdx % snowTownRunnerSpawns.length];
         p.x = sp.x; p.y = sp.y; p.z = sp.z;
@@ -1531,7 +1597,9 @@ function start3DRound(room: Active3DRoom) {
       }
     } else if (isLabyrinth) {
       if (p.role === "tagger") {
-        p.x = -15.0; p.y = 5.6; p.z = -16.0;
+        const sp = labyrinthTaggerSpawns[taggerSpawnIdx % labyrinthTaggerSpawns.length];
+        p.x = sp.x; p.y = sp.y; p.z = sp.z;
+        taggerSpawnIdx++;
       } else {
         const sp = labyrinthRunnerSpawns[runnerSpawnIdx % labyrinthRunnerSpawns.length];
         p.x = sp.x; p.y = sp.y; p.z = sp.z;
@@ -1539,17 +1607,24 @@ function start3DRound(room: Active3DRoom) {
       }
     } else if (isVoidParkour) {
       if (p.role === "tagger") {
-        p.x = 0.0; p.y = 1.2; p.z = 2.5;
+        const sp = voidParkourTaggerSpawns[taggerSpawnIdx % voidParkourTaggerSpawns.length];
+        p.x = sp.x; p.y = sp.y; p.z = sp.z;
+        taggerSpawnIdx++;
       } else {
         const sp = voidParkourRunnerSpawns[runnerSpawnIdx % voidParkourRunnerSpawns.length];
         p.x = sp.x; p.y = sp.y; p.z = sp.z;
         runnerSpawnIdx++;
       }
     } else {
-      const sp = SPAWN_3D_POSITIONS[i % SPAWN_3D_POSITIONS.length];
-      p.x = sp.x;
-      p.y = sp.y;
-      p.z = sp.z;
+      if (p.role === "tagger") {
+        const sp = defaultTaggerSpawns[taggerSpawnIdx % defaultTaggerSpawns.length];
+        p.x = sp.x; p.y = sp.y; p.z = sp.z;
+        taggerSpawnIdx++;
+      } else {
+        const sp = SPAWN_3D_POSITIONS[runnerSpawnIdx % SPAWN_3D_POSITIONS.length];
+        p.x = sp.x; p.y = sp.y; p.z = sp.z;
+        runnerSpawnIdx++;
+      }
     }
   });
 
@@ -1721,7 +1796,9 @@ function check3DEndCondition(room: Active3DRoom) {
   room.players.forEach(p => {
     if (!p.isInGame) return;
     if (p.role === "tagger") {
-      taggersCount++;
+      if (p.hp === undefined || p.hp > 0) {
+        taggersCount++;
+      }
     } else if (p.role === "runner") {
       totalRunners++;
       if (!p.frozen) activeRunners++;

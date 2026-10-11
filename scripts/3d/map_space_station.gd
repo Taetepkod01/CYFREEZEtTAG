@@ -59,7 +59,9 @@ func _process(delta: float) -> void:
 			var pulse = (sin(time_passed * 2.5) + 1.0) * 0.5
 			mat.emission_energy_multiplier = 1.8 + pulse * 1.2
 
-func get_tagger_spawn() -> Vector3:
+func get_tagger_spawn(index: int = 0) -> Vector3:
+	if index < chaser_spawns.size():
+		return chaser_spawns[index]
 	return chaser_spawns.pick_random()
 
 func get_runner_spawn(index: int = 0) -> Vector3:

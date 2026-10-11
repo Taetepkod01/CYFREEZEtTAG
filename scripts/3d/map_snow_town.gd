@@ -15,7 +15,8 @@ func _ready() -> void:
 # Spawn positions for Snow Town (exact ground level Y ~ 0.5 - 0.8)
 var chaser_spawns: Array[Vector3] = [
 	Vector3(-14.0, 0.6, -14.0),
-	Vector3(-12.0, 0.6, -12.0)
+	Vector3(-11.0, 0.6, -14.0),
+	Vector3(-17.0, 0.6, -14.0)
 ]
 
 var runner_spawns: Array[Vector3] = [
@@ -37,7 +38,9 @@ var item_spawns: Array[Vector3] = [
 	Vector3(18.0, 0.5, -6.0)        # Northeast Avenue
 ]
 
-func get_tagger_spawn() -> Vector3:
+func get_tagger_spawn(index: int = 0) -> Vector3:
+	if index < chaser_spawns.size():
+		return chaser_spawns[index]
 	return chaser_spawns.pick_random()
 
 func get_runner_spawn(index: int = 0) -> Vector3:

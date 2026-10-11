@@ -496,13 +496,7 @@ func _spawn_match_players() -> void:
 	p1.item_used.connect(_on_player_item_used)
 	p1.item_picked_up.connect(_on_player_item_picked_up)
 	p1.item_changed.connect(_update_item_slot)
-	p1.player_damaged.connect(func(target, amt):
-		add_game_log(">> [color=#ff9800]%s tackled %s! (-%d HP)[/color]" % [p1.player_name, target.player_name, amt])
-		_update_hud()
-		if target.hp <= 0 and target.role == "tagger":
-			add_game_log("[color=#69f0ae]Tagger defeated! Runners Win![/color]")
-			_end_round("RUNNERS")
-	)
+	p1.player_damaged.connect(func(target, amt): _on_player_hit_damage(target, amt, p1))
 	
 	# If Void Parkour in solo/practice mode, don't spawn hostile tagger bots to interrupt parkour testing
 	if is_void_parkour:
@@ -529,13 +523,7 @@ func _spawn_match_players() -> void:
 		bot.tagged.connect(_on_player_tagged)
 		bot.rescued.connect(_on_player_rescued)
 		bot.item_used.connect(func(item): add_game_log("%s used [color=#ffe066]%s[/color]!" % [bot.player_name, item]))
-		bot.player_damaged.connect(func(target, amt):
-			add_game_log(">> [color=#ff9800]%s tackled %s! (-%d HP)[/color]" % [bot.player_name, target.player_name, amt])
-			_update_hud()
-			if target.hp <= 0 and target.role == "tagger":
-				add_game_log("[color=#69f0ae]Tagger defeated! Runners Win![/color]")
-				_end_round("RUNNERS")
-		)
+		bot.player_damaged.connect(func(target, amt): _on_player_hit_damage(target, amt, bot))
 	
 	_update_hud()
 
@@ -595,26 +583,14 @@ func _spawn_online_players() -> void:
 			p_node.item_changed.connect(_update_item_slot)
 			p_node.item_picked_up.connect(_on_player_item_picked_up)
 			p_node.item_used.connect(_on_player_item_used)
-			p_node.player_damaged.connect(func(target, amt):
-				add_game_log(">> [color=#ff9800]%s tackled %s! (-%d HP)[/color]" % [p_node.player_name, target.player_name, amt])
-				_update_hud()
-				if target.hp <= 0 and target.role == "tagger":
-					add_game_log("[color=#69f0ae]Tagger defeated! Runners Win![/color]")
-					_end_round("RUNNERS")
-			)
+			p_node.player_damaged.connect(func(target, amt): _on_player_hit_damage(target, amt, p_node))
 		elif is_bot and not p_node.is_remote:
 			# Bot simulated by local host
 			p_node.tagged.connect(_on_player_tagged)
 			p_node.rescued.connect(_on_player_rescued)
 			p_node.item_picked_up.connect(_on_player_item_picked_up)
 			p_node.item_used.connect(func(item): add_game_log("%s used [color=#ffe066]%s[/color]!" % [p_node.player_name, item]))
-			p_node.player_damaged.connect(func(target, amt):
-				add_game_log(">> [color=#ff9800]%s tackled %s! (-%d HP)[/color]" % [p_node.player_name, target.player_name, amt])
-				_update_hud()
-				if target.hp <= 0 and target.role == "tagger":
-					add_game_log("[color=#69f0ae]Tagger defeated! Runners Win![/color]")
-					_end_round("RUNNERS")
-			)
+			p_node.player_damaged.connect(func(target, amt): _on_player_hit_damage(target, amt, p_node))
 	
 	# Spawn initial server items (or local items if offline)
 	if Network and not Network.current_match_items.is_empty():
@@ -863,6 +839,23 @@ func _on_player_tagged(tagger: CharacterBody3D, victim: CharacterBody3D) -> void
 func _on_player_rescued(rescuer: CharacterBody3D, victim: CharacterBody3D) -> void:
 	add_game_log("[color=#69f0ae]%s[/color] rescued [color=#4fc3f7]%s[/color]!" % [rescuer.player_name, victim.player_name])
 	_update_hud()
+
+func _on_player_hit_damage(target: CharacterBody3D, amt: int, attacker: CharacterBody3D) -> void:
+	var atk_name = attacker.player_name if is_instance_valid(attacker) else "Player"
+	var tgt_name = target.player_name if is_instance_valid(target) else "Player"
+	add_game_log(">> [color=#ff9800]%s tackled %s! (-%d HP)[/color]" % [atk_name, tgt_name, amt])
+	_update_hud()
+	if is_instance_valid(target) and target.hp <= 0 and target.role == "tagger":
+		target.freeze()
+		var alive_taggers = 0
+		for p in player_nodes:
+			if is_instance_valid(p) and p.role == "tagger" and p.hp > 0:
+				alive_taggers += 1
+		if alive_taggers == 0:
+			add_game_log("[color=#69f0ae]All Taggers defeated! Runners Win![/color]")
+			_end_round("RUNNERS")
+		else:
+			add_game_log("[color=#ffe066]Tagger %s knocked out! (%d remaining)[/color]" % [tgt_name, alive_taggers])
 
 func _on_player_item_used(item: String) -> void:
 	add_game_log("You used [color=#ffe066]%s[/color]!" % item.to_upper())

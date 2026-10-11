@@ -291,7 +291,9 @@ func _process(delta: float) -> void:
 					break
 
 # ── Standard Map API Compatible with Arena3D ──────────────────────────────────
-func get_tagger_spawn() -> Vector3:
+func get_tagger_spawn(index: int = 0) -> Vector3:
+	if index < chaser_spawns.size():
+		return chaser_spawns[index]
 	return chaser_spawns.pick_random()
 
 func get_runner_spawn(index: int = 0) -> Vector3:

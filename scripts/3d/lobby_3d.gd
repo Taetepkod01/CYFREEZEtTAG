@@ -1128,10 +1128,32 @@ func _on_action_pressed() -> void:
 					"level": int(Network.current_user.get("level", 1)) if Network else 1
 				}]
 			
-			var match_list: Array = []
-			var tagger_idx = randi() % max(1, r_players.size())
+			var total_players = r_players.size()
+			var tagger_count = 1
+			if total_players >= 8:
+				tagger_count = 3
+			elif total_players >= 6:
+				tagger_count = 2
+			else:
+				tagger_count = 1
 			
-			var chaser_spawn_pos = Vector3(0, 0.5, -22)
+			if total_players > 1:
+				tagger_count = clampi(tagger_count, 1, total_players - 1)
+			
+			var player_indices: Array = []
+			for idx in range(total_players):
+				player_indices.append(idx)
+			player_indices.shuffle()
+			
+			var tagger_set: Dictionary = {}
+			for k in range(tagger_count):
+				tagger_set[player_indices[k]] = true
+			
+			var chaser_spawns = [
+				Vector3(0, 0.5, -22),
+				Vector3(-3.5, 0.5, -22),
+				Vector3(3.5, 0.5, -22)
+			]
 			var runner_spawns = [
 				Vector3(0, 0.5, 22),
 				Vector3(-22, 0.5, 0),
@@ -1145,8 +1167,10 @@ func _on_action_pressed() -> void:
 				Vector3(-12, 0.5, 0)
 			]
 			
+			var match_list: Array = []
+			var tagger_cursor = 0
 			var runner_cursor = 0
-			for i in range(r_players.size()):
+			for i in range(total_players):
 				var p_info = r_players[i]
 				var p_id = "p_%d" % i
 				var p_name = "Player %d" % (i + 1)
@@ -1163,9 +1187,13 @@ func _on_action_pressed() -> void:
 				else:
 					p_name = str(p_info)
 				
-				var p_role = "tagger" if (i == tagger_idx) else "runner"
-				var spawn_pos = chaser_spawn_pos if (p_role == "tagger") else runner_spawns[runner_cursor % runner_spawns.size()]
-				if p_role == "runner":
+				var p_role = "tagger" if tagger_set.has(i) else "runner"
+				var spawn_pos: Vector3
+				if p_role == "tagger":
+					spawn_pos = chaser_spawns[tagger_cursor % chaser_spawns.size()]
+					tagger_cursor += 1
+				else:
+					spawn_pos = runner_spawns[runner_cursor % runner_spawns.size()]
 					runner_cursor += 1
 				
 				match_list.append({

@@ -15,7 +15,8 @@ func _ready() -> void:
 # Calibrated spawns for Labyrinth Maze (Inside inner corridors)
 var chaser_spawns: Array[Vector3] = [
 	Vector3(-15.0, 5.6, -16.0),
-	Vector3(-17.0, 4.6, -7.0)
+	Vector3(-12.0, 5.6, -16.0),
+	Vector3(-18.0, 5.6, -16.0)
 ]
 
 var runner_spawns: Array[Vector3] = [
@@ -36,7 +37,9 @@ var item_spawns: Array[Vector3] = [
 	Vector3(5.0, 5.0, -12.0)
 ]
 
-func get_tagger_spawn() -> Vector3:
+func get_tagger_spawn(index: int = 0) -> Vector3:
+	if index < chaser_spawns.size():
+		return chaser_spawns[index]
 	return chaser_spawns.pick_random()
 
 func get_runner_spawn(index: int = 0) -> Vector3:
