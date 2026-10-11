@@ -109,10 +109,22 @@ func _ready() -> void:
 		Network.profile_updated.connect(func(_u): _update_profile_bar())
 		_update_profile_bar()
 	
-	# If player already logged in previously, allow immediate access
-	if FirebaseService and not FirebaseService.current_user.is_empty():
-		_show_main_menu()
-	elif Network and not Network.current_user.is_empty() and not bool(Network.current_user.get("isGuest", true)):
+	# If player already logged in previously, or chose to play as guest, allow immediate access
+	var is_logged_in_firebase = FirebaseService and not FirebaseService.current_user.is_empty()
+	var is_registered_network = Network and not Network.current_user.is_empty() and not bool(Network.current_user.get("isGuest", true))
+	var is_guest_chosen = Network and not Network.current_user.is_empty() and bool(Network.current_user.get("has_chosen_guest", false))
+	
+	# Migrate/Detect existing profiles that already played as guest previously
+	if Network and not Network.current_user.is_empty() and not is_logged_in_firebase and not is_registered_network and not is_guest_chosen:
+		if int(Network.current_user.get("level", 1)) > 1 \
+		or int(Network.current_user.get("exp", 0)) > 0 \
+		or int(Network.current_user.get("coins", 50)) != 50 \
+		or str(Network.current_user.get("uid", "")).begins_with("guest_"):
+			is_guest_chosen = true
+			Network.current_user["has_chosen_guest"] = true
+			Network.save_local_user()
+	
+	if is_logged_in_firebase or is_registered_network or is_guest_chosen:
 		_show_main_menu()
 
 # ── Dynamic Guest Play Button ─────────────────────────────────────────────────
@@ -260,9 +272,14 @@ func _on_auth_submit_pressed() -> void:
 
 func _on_guest_play_pressed() -> void:
 	if Network:
-		var d_name = Network.my_player_name
+		var d_name = str(Network.current_user.get("displayName", Network.my_player_name))
 		if d_name.is_empty() or d_name == "Player 1":
 			d_name = "Guest_" + str(randi() % 900 + 100)
+		Network.current_user["has_chosen_guest"] = true
+		Network.current_user["isGuest"] = true
+		Network.current_user["displayName"] = d_name
+		Network.my_player_name = d_name
+		Network.save_local_user()
 		Network.auth_guest(d_name)
 	_show_main_menu()
 	_update_profile_bar()
@@ -303,6 +320,7 @@ func _complete_authentication() -> void:
 		Network.current_user["maxExp"] = cur_max_exp
 		Network.current_user["coins"] = cur_coins
 		Network.current_user["isGuest"] = false
+		Network.current_user["has_chosen_guest"] = false
 		Network.my_player_name = d_name
 		Network.save_local_user()
 		Network.auth_sync_websocket()
@@ -344,6 +362,11 @@ func _show_auth_panel() -> void:
 	auth_submit_btn.text = "SIGN IN"
 	auth_toggle_btn.text = "New player? Create account"
 	quit_btn.text = "QUIT"
+	if guest_btn:
+		if Network and bool(Network.current_user.get("has_chosen_guest", false)):
+			guest_btn.text = "← BACK TO MENU (CONTINUE AS GUEST)"
+		else:
+			guest_btn.text = "⚡ PLAY AS GUEST (QUICK PLAY)"
 
 func _on_auth_toggle_pressed() -> void:
 	is_register_mode = not is_register_mode
@@ -435,10 +458,14 @@ func _on_how_to_play_pressed() -> void:
 func _on_quit_pressed() -> void:
 	if FirebaseService and not FirebaseService.current_user.is_empty():
 		FirebaseService.sign_out()
+		if Network:
+			Network.current_user["has_chosen_guest"] = false
+			Network.save_local_user()
 		_show_auth_panel()
 		return
 	if Network and not bool(Network.current_user.get("isGuest", true)):
 		Network.current_user = {}
+		Network.current_user["has_chosen_guest"] = false
 		Network.save_local_user()
 		_show_auth_panel()
 		return

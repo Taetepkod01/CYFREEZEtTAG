@@ -71,7 +71,8 @@ var current_user: Dictionary = {
 	"exp": 0,
 	"maxExp": 100,
 	"coins": 50,
-	"isGuest": true
+	"isGuest": true,
+	"has_chosen_guest": false
 }
 var current_room_code: String = ""
 var is_host: bool = false
@@ -614,11 +615,22 @@ func auth_login(email_str: String, pass_str: String) -> void:
 	auth_http.request(url, headers, HTTPClient.METHOD_POST, body)
 
 func auth_guest(name_str: String) -> void:
+	current_user["isGuest"] = true
+	current_user["has_chosen_guest"] = true
+	var clean_name = name_str.strip_edges()
+	if not clean_name.is_empty():
+		current_user["displayName"] = clean_name
+		my_player_name = clean_name
+	if not current_user.has("uid") or str(current_user["uid"]).is_empty():
+		current_user["uid"] = "guest_" + str(Time.get_ticks_msec())
+	save_local_user()
+	profile_updated.emit(current_user)
+	
 	if not auth_http:
 		return
 	var url = server_http_url + "/api/auth/guest"
 	var body = JSON.stringify({
-		"displayName": name_str.strip_edges(),
+		"displayName": my_player_name,
 		"uid": current_user.get("uid", "")
 	})
 	var headers = ["Content-Type: application/json"]
@@ -628,12 +640,15 @@ func _on_auth_http_completed(_result: int, response_code: int, _headers: PackedS
 	var json_str = body.get_string_from_utf8()
 	var parsed = JSON.parse_string(json_str)
 	if typeof(parsed) != TYPE_DICTIONARY:
-		auth_failed.emit("Invalid server response (Code %d)" % response_code)
+		if not bool(current_user.get("isGuest", true)):
+			auth_failed.emit("Invalid server response (Code %d)" % response_code)
 		return
 	
 	if response_code == 200 and parsed.get("success", false):
 		var user_data = parsed.get("user", {})
 		if typeof(user_data) == TYPE_DICTIONARY and not user_data.is_empty():
+			if current_user.get("has_chosen_guest", false):
+				user_data["has_chosen_guest"] = true
 			current_user = user_data
 			if current_user.has("displayName") and not str(current_user["displayName"]).is_empty():
 				my_player_name = str(current_user["displayName"])
@@ -642,8 +657,9 @@ func _on_auth_http_completed(_result: int, response_code: int, _headers: PackedS
 			auth_succeeded.emit(current_user)
 			profile_updated.emit(current_user)
 	else:
-		var err_msg = str(parsed.get("message", "Authentication failed"))
-		auth_failed.emit(err_msg)
+		if not bool(current_user.get("isGuest", true)):
+			var err_msg = str(parsed.get("message", "Authentication failed"))
+			auth_failed.emit(err_msg)
 
 func save_local_user() -> void:
 	var f = FileAccess.open(USER_PROFILE_FILE, FileAccess.WRITE)
@@ -664,7 +680,7 @@ func load_local_user() -> void:
 					my_player_name = str(current_user["displayName"])
 				return
 	
-	# Default guest initialization
+	# Default guest initialization (has_chosen_guest is false until player chooses guest)
 	var guest_uid = "guest_" + str(Time.get_ticks_msec())
 	current_user = {
 		"uid": guest_uid,
@@ -674,6 +690,7 @@ func load_local_user() -> void:
 		"exp": 0,
 		"maxExp": 100,
 		"coins": 50,
-		"isGuest": true
+		"isGuest": true,
+		"has_chosen_guest": false
 	}
 	save_local_user()
