@@ -522,6 +522,9 @@ func _spawn_match_players() -> void:
 	var my_name = Network.get_effective_player_name() if Network else "Player 1"
 	p1.player_name = my_name + " (You)"
 	p1.role = "tagger" if p1_is_tagger else "runner"
+	if p1_is_tagger:
+		var p1_type = Network.selected_tagger_type if (Network and not Network.selected_tagger_type.is_empty() and Network.selected_tagger_type != "random") else ["ponpon", "mafog", "mumu", "phoemphoon", "snowman"][randi() % 5]
+		p1.set_tagger_type(p1_type)
 	p1.is_bot = false
 	p1.position = chaser_spawn_pos if p1_is_tagger else runner_spawn_positions[0]
 	players_container.add_child(p1)
@@ -553,6 +556,8 @@ func _spawn_match_players() -> void:
 		bot.is_bot = true
 		if i == bot_tagger_idx:
 			bot.position = chaser_spawn_pos
+			var bot_types = ["ponpon", "mafog", "mumu", "phoemphoon", "snowman"]
+			bot.set_tagger_type(bot_types[randi() % bot_types.size()])
 		else:
 			bot.position = runner_spawn_positions[runner_cursor % runner_spawn_positions.size()]
 			runner_cursor += 1
@@ -602,6 +607,12 @@ func _spawn_online_players() -> void:
 		var p_node = player_3d_scene.instantiate()
 		p_node.network_id = p_id
 		p_node.role = str(p_data.get("role", "runner"))
+		if p_node.role == "tagger":
+			var t_type = str(p_data.get("taggerType", ""))
+			if t_type.is_empty():
+				var pool = ["ponpon", "mafog", "mumu", "phoemphoon", "snowman"]
+				t_type = pool[abs(p_id.hash()) % pool.size()]
+			p_node.set_tagger_type(t_type)
 		var p_name_str = str(p_data.get("name", "Player"))
 		if is_me and Network:
 			var eff = Network.get_effective_player_name()

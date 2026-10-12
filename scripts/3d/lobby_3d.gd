@@ -1199,8 +1199,11 @@ func _on_action_pressed() -> void:
 				
 				var p_role = "tagger" if tagger_set.has(i) else "runner"
 				var spawn_pos: Vector3
+				var tagger_type_str = ""
 				if p_role == "tagger":
 					spawn_pos = chaser_spawns[tagger_cursor % chaser_spawns.size()]
+					var tagger_pool = ["ponpon", "mafog", "mumu", "phoemphoon", "snowman"]
+					tagger_type_str = tagger_pool[tagger_cursor % tagger_pool.size()]
 					tagger_cursor += 1
 				else:
 					spawn_pos = runner_spawns[runner_cursor % runner_spawns.size()]
@@ -1210,6 +1213,7 @@ func _on_action_pressed() -> void:
 					"id": p_id,
 					"name": p_name,
 					"role": p_role,
+					"taggerType": tagger_type_str,
 					"isBot": is_b,
 					"isHost": is_h,
 					"level": p_lv,

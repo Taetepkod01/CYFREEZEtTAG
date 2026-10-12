@@ -83,6 +83,43 @@ var quack_bubble_timer: float = 0.0
 var snowman_anim: AnimationPlayer = null
 var penguin_anim: AnimationPlayer = null
 
+const TAGGER_MODEL_CONFIGS: Dictionary = {
+	"snowman": {
+		"name": "Snowman",
+		"name_th": "สโนว์แมน",
+		"path": "res://assets/snowman.glb",
+		"scale": Vector3(-0.58, 0.58, -0.58)
+	},
+	"ponpon": {
+		"name": "PonPon",
+		"name_th": "ป้อนป้อน",
+		"path": "res://assets/taggers/ป้อนป้อน.glb",
+		"scale": Vector3(-1.55, 1.55, -1.55)
+	},
+	"mafog": {
+		"name": "Mafog",
+		"name_th": "มาฟ้อก",
+		"path": "res://assets/taggers/มาฟ้อก.glb",
+		"scale": Vector3(-1.15, 1.15, -1.15)
+	},
+	"mumu": {
+		"name": "Mumu",
+		"name_th": "มุมุ",
+		"path": "res://assets/taggers/มุมุ.glb",
+		"scale": Vector3(-1.50, 1.50, -1.50)
+	},
+	"phoemphoon": {
+		"name": "PhoemPhoon",
+		"name_th": "เพิ่มพูน",
+		"path": "res://assets/taggers/เพิ่มพูน.glb",
+		"scale": Vector3(-0.62, 0.62, -0.62)
+	}
+}
+
+@export var tagger_type: String = "snowman"
+var tagger_nodes: Dictionary = {}
+var tagger_anims: Dictionary = {}
+
 # Bot AI Navigation & Anti-Stuck
 var bot_timer: float = 0.0
 var bot_dir: Vector3 = Vector3.FORWARD
@@ -108,8 +145,11 @@ func _release_all_movement_inputs() -> void:
 	is_rmb_down = false
 
 func _ready() -> void:
-	if snowman_model and snowman_model.has_node("AnimationPlayer"):
-		snowman_anim = snowman_model.get_node("AnimationPlayer")
+	if snowman_model:
+		tagger_nodes["snowman"] = snowman_model
+		if snowman_model.has_node("AnimationPlayer"):
+			snowman_anim = snowman_model.get_node("AnimationPlayer")
+			tagger_anims["snowman"] = snowman_anim
 	if penguin_model and penguin_model.has_node("AnimationPlayer"):
 		penguin_anim = penguin_model.get_node("AnimationPlayer")
 	
@@ -117,6 +157,65 @@ func _ready() -> void:
 	target_remote_pos = global_position
 	target_remote_rot_y = rotation.y
 	_update_role_visuals()
+
+func _normalize_tagger_type(t: String) -> String:
+	var s = t.to_lower().strip_edges()
+	if s.contains("ป้อน") or s.contains("pon"): return "ponpon"
+	if s.contains("ฟ้อก") or s.contains("mafog"): return "mafog"
+	if s.contains("มุมุ") or s.contains("mumu"): return "mumu"
+	if s.contains("เพิ่ม") or s.contains("phoem") or s.contains("phun"): return "phoemphoon"
+	if s == "snowman" or s.contains("สโนว์"): return "snowman"
+	if TAGGER_MODEL_CONFIGS.has(s): return s
+	return "snowman"
+
+func _setup_tagger_model(type_key: String) -> Node3D:
+	type_key = _normalize_tagger_type(type_key)
+	if tagger_nodes.has(type_key) and is_instance_valid(tagger_nodes[type_key]):
+		return tagger_nodes[type_key]
+	
+	if type_key == "snowman" and snowman_model:
+		tagger_nodes["snowman"] = snowman_model
+		if snowman_model.has_node("AnimationPlayer"):
+			tagger_anims["snowman"] = snowman_model.get_node("AnimationPlayer")
+		return snowman_model
+	
+	if not TAGGER_MODEL_CONFIGS.has(type_key):
+		type_key = "snowman"
+	
+	var cfg: Dictionary = TAGGER_MODEL_CONFIGS[type_key]
+	var path: String = str(cfg.get("path", ""))
+	if ResourceLoader.exists(path):
+		var res = load(path)
+		if res:
+			var node = res.instantiate()
+			node.name = "Tagger_" + type_key.capitalize()
+			var sc: Vector3 = cfg.get("scale", Vector3(1, 1, 1))
+			node.transform = Transform3D(
+				Vector3(sc.x, 0, 0),
+				Vector3(0, sc.y, 0),
+				Vector3(0, 0, sc.z),
+				Vector3.ZERO
+			)
+			node.visible = false
+			visuals.add_child(node)
+			tagger_nodes[type_key] = node
+			if node.has_node("AnimationPlayer"):
+				tagger_anims[type_key] = node.get_node("AnimationPlayer")
+			return node
+	return null
+
+func _get_active_tagger_anim() -> AnimationPlayer:
+	var norm_type = _normalize_tagger_type(tagger_type)
+	if tagger_anims.has(norm_type) and is_instance_valid(tagger_anims[norm_type]):
+		return tagger_anims[norm_type]
+	if snowman_anim:
+		return snowman_anim
+	return null
+
+func set_tagger_type(new_type: String) -> void:
+	tagger_type = _normalize_tagger_type(new_type)
+	if is_inside_tree() and role == "tagger":
+		_update_role_visuals()
 	
 	quack_bubble_label = Label3D.new()
 	quack_bubble_label.name = "QuackBubble"
@@ -209,7 +308,7 @@ func _physics_process(delta: float) -> void:
 		global_position = global_position.lerp(target_remote_pos, 16.0 * delta)
 		visuals.rotation.y = lerp_angle(visuals.rotation.y, target_remote_rot_y, 16.0 * delta)
 		
-		var r_anim: AnimationPlayer = snowman_anim if role == "tagger" else penguin_anim
+		var r_anim: AnimationPlayer = _get_active_tagger_anim() if role == "tagger" else penguin_anim
 		if r_anim:
 			if is_frozen:
 				if r_anim.is_playing():
@@ -241,7 +340,7 @@ func _physics_process(delta: float) -> void:
 		velocity.x = move_toward(velocity.x, 0, walk_speed)
 		velocity.z = move_toward(velocity.z, 0, walk_speed)
 		move_and_slide()
-		var frozen_anim: AnimationPlayer = snowman_anim if role == "tagger" else penguin_anim
+		var frozen_anim: AnimationPlayer = _get_active_tagger_anim() if role == "tagger" else penguin_anim
 		if frozen_anim and frozen_anim.is_playing():
 			frozen_anim.pause()
 		_send_network_position(delta)
@@ -296,7 +395,7 @@ func _physics_process(delta: float) -> void:
 	move_and_slide()
 	
 	# Update walk animation
-	var active_anim: AnimationPlayer = snowman_anim if role == "tagger" else penguin_anim
+	var active_anim: AnimationPlayer = _get_active_tagger_anim() if role == "tagger" else penguin_anim
 	if active_anim:
 		var horiz_vel = Vector2(velocity.x, velocity.z)
 		var current_ground_speed = horiz_vel.length()
@@ -558,7 +657,7 @@ func unfreeze() -> void:
 	is_dizzy = false
 	if dizzy_stars:
 		dizzy_stars.visible = false
-	var cur_anim: AnimationPlayer = snowman_anim if role == "tagger" else penguin_anim
+	var cur_anim: AnimationPlayer = _get_active_tagger_anim() if role == "tagger" else penguin_anim
 	if cur_anim and cur_anim.is_playing():
 		cur_anim.stop()
 	_update_role_visuals()
@@ -567,9 +666,21 @@ func _update_role_visuals() -> void:
 	if not is_inside_tree():
 		return
 	
-	if snowman_model and penguin_model:
-		snowman_model.visible = (role == "tagger")
-		penguin_model.visible = (role == "runner")
+	if role == "runner":
+		if penguin_model: penguin_model.visible = true
+		if snowman_model: snowman_model.visible = false
+		for k in tagger_nodes:
+			if is_instance_valid(tagger_nodes[k]):
+				tagger_nodes[k].visible = false
+	elif role == "tagger":
+		if penguin_model: penguin_model.visible = false
+		var norm_type = _normalize_tagger_type(tagger_type)
+		_setup_tagger_model(norm_type)
+		for k in tagger_nodes:
+			if is_instance_valid(tagger_nodes[k]):
+				tagger_nodes[k].visible = (k == norm_type)
+		if snowman_model:
+			snowman_model.visible = (norm_type == "snowman")
 	
 	ice_block.visible = is_frozen
 	if shield_domain:

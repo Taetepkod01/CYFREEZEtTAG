@@ -81,6 +81,7 @@ var is_solo_mode: bool = false
 var selected_practice_role: String = "random" # "random", "tagger", "runner"
 var selected_map: String = "SPACE STATION" # Default to SPACE STATION
 var selected_game_mode: String = "freezetag" # "freezetag" or "racing"
+var selected_tagger_type: String = "random" # "random", "ponpon", "mafog", "mumu", "phoemphoon", "snowman"
 var kicked_rooms: Array[String] = []
 var auto_create_test_lobby: bool = false
 

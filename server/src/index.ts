@@ -92,6 +92,7 @@ export interface ActivePlayer {
   z: number;
   rotY: number;
   role: "tagger" | "runner";
+  taggerType?: string;
   frozen: boolean;
   isRescuing: boolean;
   hasShield: boolean;
@@ -1621,7 +1622,10 @@ function start3DRound(room: Active3DRoom) {
   pKeys.forEach((id) => {
     const p = room.players.get(id)!;
     p.isInGame = true;
-    p.role = taggerSet.has(id) ? "tagger" : "runner";
+    const isTagger = taggerSet.has(id);
+    p.role = isTagger ? "tagger" : "runner";
+    const taggerPool = ["ponpon", "mafog", "mumu", "phoemphoon", "snowman"];
+    p.taggerType = isTagger ? taggerPool[taggerSpawnIdx % taggerPool.length] : "";
     p.frozen = false;
     p.isRescuing = false;
     p.hasShield = false;
@@ -1759,6 +1763,7 @@ function start3DRound(room: Active3DRoom) {
     id: p.id,
     name: p.name,
     role: p.role,
+    taggerType: p.taggerType || "",
     x: p.x,
     y: p.y,
     z: p.z,
