@@ -1,12 +1,21 @@
 [gd_scene format=3 uid="uid://b3dmenu00001"]
 
 [ext_resource type="Script" uid="uid://dtrl5k858xhrd" path="res://scripts/3d/main_menu_3d.gd" id="1_menu3d"]
-[ext_resource type="Texture2D" uid="uid://dt81ypwyhbkk8" path="res://assets/ui/ice_frame_border.png" id="2_ice_frame"]
+[ext_resource type="Texture2D" uid="uid://18e6kdlnkey5" path="res://assets/ui/menu/bg_winter_pixel.jpg" id="2_bg_winter"]
 [ext_resource type="FontFile" uid="uid://dnk82lv14wm8o" path="res://assets/fonts/Audiowide.ttf" id="3_font_audio"]
-[ext_resource type="Texture2D" uid="uid://cjfg7klsmanox" path="res://assets/ui/buttons/title_logo.png" id="4_title_logo"]
-[ext_resource type="Texture2D" uid="uid://1bvix25jg7lb" path="res://assets/ui/buttons/btn_start.png" id="5_btn_start"]
-[ext_resource type="Texture2D" uid="uid://dai41lyvrrbqn" path="res://assets/ui/buttons/btn_practice.png" id="6_btn_practice"]
-[ext_resource type="Texture2D" uid="uid://be6yq0noxmwma" path="res://assets/ui/buttons/btn_how_to_play.png" id="7_btn_settings"]
+[ext_resource type="Texture2D" uid="uid://i0c6trp15edp" path="res://assets/ui/menu/logo_cyfreezetag.png" id="4_title_logo"]
+[ext_resource type="Texture2D" uid="uid://dxgsa6kspkkbf" path="res://assets/ui/menu/btn_menu_start.png" id="5_btn_start"]
+[ext_resource type="Texture2D" uid="uid://ofkysl26c1tv" path="res://assets/ui/menu/btn_menu_start_hover.png" id="5_btn_start_h"]
+[ext_resource type="Texture2D" uid="uid://cfgs4yp3kck4o" path="res://assets/ui/menu/btn_menu_start_pressed.png" id="5_btn_start_p"]
+[ext_resource type="Texture2D" uid="uid://b8wg34t17fokv" path="res://assets/ui/menu/btn_menu_practice.png" id="6_btn_practice"]
+[ext_resource type="Texture2D" uid="uid://cspmy70q1hmb0" path="res://assets/ui/menu/btn_menu_practice_hover.png" id="6_btn_practice_h"]
+[ext_resource type="Texture2D" uid="uid://1ecy4qnof4in" path="res://assets/ui/menu/btn_menu_practice_pressed.png" id="6_btn_practice_p"]
+[ext_resource type="Texture2D" uid="uid://dqvfgpt47pywo" path="res://assets/ui/menu/btn_menu_howtoplay.png" id="7_btn_howtoplay"]
+[ext_resource type="Texture2D" uid="uid://tce66sslbe2s" path="res://assets/ui/menu/btn_menu_howtoplay_hover.png" id="7_btn_howtoplay_h"]
+[ext_resource type="Texture2D" uid="uid://c7eg0kapritwl" path="res://assets/ui/menu/btn_menu_howtoplay_pressed.png" id="7_btn_howtoplay_p"]
+[ext_resource type="Texture2D" uid="uid://23reomhdo4wn" path="res://assets/ui/menu/btn_menu_quit.png" id="8_btn_quit"]
+[ext_resource type="Texture2D" uid="uid://dcnixu6pmbkj8" path="res://assets/ui/menu/btn_menu_quit_hover.png" id="8_btn_quit_h"]
+[ext_resource type="Texture2D" uid="uid://c4qk0mxp4u5yi" path="res://assets/ui/menu/btn_menu_quit_pressed.png" id="8_btn_quit_p"]
 [ext_resource type="Texture2D" uid="uid://b174lmscwy0yd" path="res://assets/ui/buttons/btn_role_random_off.png" id="9_role_random_off"]
 [ext_resource type="Texture2D" uid="uid://ud2yuicnxke7" path="res://assets/ui/buttons/btn_role_tagger_off.png" id="10_role_tagger_off"]
 [ext_resource type="Texture2D" uid="uid://cf8qyh3h5a3c1" path="res://assets/ui/buttons/btn_role_runner_on.png" id="11_role_runner_on"]
@@ -155,22 +164,24 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_menu3d")
 
-[node name="Background" type="ColorRect" parent="." unique_id=153217506]
+[node name="Background" type="TextureRect" parent="." unique_id=153217506]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0.03, 0.07, 0.18, 1)
+texture = ExtResource("2_bg_winter")
+expand_mode = 1
+stretch_mode = 6
 
 [node name="Snowflakes" type="CPUParticles2D" parent="." unique_id=233906031]
-position = Vector2(576, -20)
+position = Vector2(640, -20)
 amount = 45
 lifetime = 8.0
 preprocess = 4.0
 emission_shape = 3
-emission_rect_extents = Vector2(600, 10)
+emission_rect_extents = Vector2(650, 10)
 direction = Vector2(0.2, 1)
 spread = 20.0
 gravity = Vector2(0, 15)
@@ -181,77 +192,69 @@ scale_amount_max = 4.0
 scale_amount_curve = SubResource("Curve_particles")
 color_ramp = SubResource("Gradient_particles")
 
-[node name="IceBorderOverlay" type="TextureRect" parent="." unique_id=949853337]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-texture = ExtResource("2_ice_frame")
-expand_mode = 1
-
 [node name="TitleLogo" type="TextureRect" parent="." unique_id=1434559025]
 layout_mode = 1
-anchors_preset = 5
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = -307.0
-offset_top = 40.0
-offset_right = 308.0
-offset_bottom = 165.0
-grow_horizontal = 2
-pivot_offset = Vector2(307, 62)
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -500.0
+offset_top = 62.0
+offset_right = -40.0
+offset_bottom = 278.0
+grow_horizontal = 0
+pivot_offset = Vector2(230, 108)
 texture = ExtResource("4_title_logo")
 expand_mode = 1
 stretch_mode = 5
 
 [node name="MenuButtons" type="VBoxContainer" parent="." unique_id=203857946]
 layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -115.0
-offset_top = -15.0
-offset_right = 115.0
-offset_bottom = 225.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_constants/separation = 10
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -425.0
+offset_top = 290.0
+offset_right = -115.0
+offset_bottom = 670.0
+grow_horizontal = 0
+theme_override_constants/separation = 12
 alignment = 1
 
 [node name="PlayOnlineBtn" type="TextureButton" parent="MenuButtons" unique_id=1077905476]
-custom_minimum_size = Vector2(250, 52)
+custom_minimum_size = Vector2(310, 82)
 layout_mode = 2
 texture_normal = ExtResource("5_btn_start")
+texture_pressed = ExtResource("5_btn_start_p")
+texture_hover = ExtResource("5_btn_start_h")
+ignore_texture_size = true
 stretch_mode = 5
 
 [node name="PracticeBtn" type="TextureButton" parent="MenuButtons" unique_id=57100972]
-custom_minimum_size = Vector2(225, 49)
+custom_minimum_size = Vector2(310, 82)
 layout_mode = 2
 texture_normal = ExtResource("6_btn_practice")
+texture_pressed = ExtResource("6_btn_practice_p")
+texture_hover = ExtResource("6_btn_practice_h")
+ignore_texture_size = true
 stretch_mode = 5
 
 [node name="HowToPlayBtn" type="TextureButton" parent="MenuButtons" unique_id=367308847]
-custom_minimum_size = Vector2(225, 49)
+custom_minimum_size = Vector2(310, 82)
 layout_mode = 2
-texture_normal = ExtResource("7_btn_settings")
+texture_normal = ExtResource("7_btn_howtoplay")
+texture_pressed = ExtResource("7_btn_howtoplay_p")
+texture_hover = ExtResource("7_btn_howtoplay_h")
+ignore_texture_size = true
 stretch_mode = 5
 
-[node name="QuitBtn" type="Button" parent="MenuButtons" unique_id=1997862845]
-custom_minimum_size = Vector2(225, 49)
+[node name="QuitBtn" type="TextureButton" parent="MenuButtons" unique_id=1997862845]
+custom_minimum_size = Vector2(310, 82)
 layout_mode = 2
-theme_override_colors/font_color = Color(0.85, 0.97, 1, 1)
-theme_override_fonts/font = ExtResource("3_font_audio")
-theme_override_font_sizes/font_size = 14
-theme_override_styles/normal = SubResource("StyleBoxFlat_quit_ice")
-theme_override_styles/hover = SubResource("StyleBoxFlat_quit_ice_hover")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_quit_ice_hover")
-theme_override_styles/focus = SubResource("StyleBoxFlat_quit_ice_hover")
-text = "QUIT"
+texture_normal = ExtResource("8_btn_quit")
+texture_pressed = ExtResource("8_btn_quit_p")
+texture_hover = ExtResource("8_btn_quit_h")
+ignore_texture_size = true
+stretch_mode = 5
 
 [node name="PracticeModal" type="Panel" parent="." unique_id=998048265]
 visible = false

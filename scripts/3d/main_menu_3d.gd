@@ -12,7 +12,7 @@ const TEX_ROLE_RUNNER_OFF = preload("res://assets/ui/buttons/btn_role_runner_off
 @onready var play_online_btn: TextureButton = $MenuButtons/PlayOnlineBtn
 @onready var practice_btn: TextureButton = $MenuButtons/PracticeBtn
 @onready var how_to_play_btn: TextureButton = $MenuButtons/HowToPlayBtn
-@onready var quit_btn: Button = $MenuButtons/QuitBtn
+@onready var quit_btn: TextureButton = $MenuButtons/QuitBtn
 @onready var rules_panel: Panel = $RulesPanel
 @onready var close_rules_btn: TextureButton = $RulesPanel/CloseBtn
 
@@ -76,6 +76,17 @@ func _ready() -> void:
 	practice_btn.pressed.connect(_on_practice_pressed)
 	how_to_play_btn.pressed.connect(_on_how_to_play_pressed)
 	quit_btn.pressed.connect(_on_quit_pressed)
+	
+	for btn in [play_online_btn, practice_btn, how_to_play_btn, quit_btn]:
+		btn.pivot_offset = Vector2(155, 41)
+		btn.mouse_entered.connect(func():
+			var tw = create_tween()
+			tw.tween_property(btn, "scale", Vector2(1.04, 1.04), 0.1).set_trans(Tween.TRANS_SINE)
+		)
+		btn.mouse_exited.connect(func():
+			var tw = create_tween()
+			tw.tween_property(btn, "scale", Vector2(1.0, 1.0), 0.1).set_trans(Tween.TRANS_SINE)
+		)
 	
 	if map_option_btn:
 		map_option_btn.clear()
@@ -163,10 +174,10 @@ func _setup_profile_bar() -> void:
 	profile_bar.anchors_preset = Control.PRESET_TOP_RIGHT
 	profile_bar.anchor_left = 1.0
 	profile_bar.anchor_right = 1.0
-	profile_bar.offset_left = -440.0
-	profile_bar.offset_top = 18.0
-	profile_bar.offset_right = -18.0
-	profile_bar.offset_bottom = 68.0
+	profile_bar.offset_left = -470.0
+	profile_bar.offset_top = 8.0
+	profile_bar.offset_right = -30.0
+	profile_bar.offset_bottom = 54.0
 	profile_bar.grow_horizontal = Control.GROW_DIRECTION_BEGIN
 	
 	var sb = StyleBoxFlat.new()
@@ -774,7 +785,6 @@ func _show_main_menu() -> void:
 	title_label.visible = true
 	if profile_bar:
 		profile_bar.visible = true
-	quit_btn.text = "LOG OUT" if (Network and not bool(Network.current_user.get("isGuest", true))) else "QUIT"
 
 func _show_auth_panel() -> void:
 	auth_panel.visible = true
@@ -792,7 +802,6 @@ func _show_auth_panel() -> void:
 	auth_title.text = "PLAYER LOGIN"
 	auth_submit_btn.text = "SIGN IN"
 	auth_toggle_btn.text = "New player? Create account"
-	quit_btn.text = "QUIT"
 	if guest_btn:
 		if Network and bool(Network.current_user.get("has_chosen_guest", false)):
 			guest_btn.text = "← BACK TO MENU (CONTINUE AS GUEST)"
