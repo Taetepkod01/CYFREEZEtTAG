@@ -589,7 +589,14 @@ func _spawn_online_players() -> void:
 	var online_list = Network.current_match_players
 	for p_data in online_list:
 		var p_id = str(p_data.get("id", ""))
-		var is_me = (Network and not Network.my_peer_id.is_empty() and p_id == Network.my_peer_id) or (not Network or not Network.is_online_game() and bool(p_data.get("isHost", false)))
+		var is_me = false
+		if Network and not Network.my_peer_id.is_empty() and p_id == Network.my_peer_id:
+			is_me = true
+		elif bool(p_data.get("isHost", false)) and Network and Network.is_host:
+			is_me = true
+		elif (not Network or not Network.is_online_game()) and bool(p_data.get("isHost", false)):
+			is_me = true
+		
 		var is_bot = bool(p_data.get("isBot", false))
 		
 		var p_node = player_3d_scene.instantiate()
@@ -636,6 +643,21 @@ func _spawn_online_players() -> void:
 			p_node.item_picked_up.connect(_on_player_item_picked_up)
 			p_node.item_used.connect(func(item): add_game_log("%s used [color=#ffe066]%s[/color]!" % [p_node.player_name, item]))
 			p_node.player_damaged.connect(func(target, amt): _on_player_hit_damage(target, amt, p_node))
+	
+	# Fallback: ensure a local camera is always active so viewport never stays grey
+	if not local_player and player_nodes.size() > 0:
+		for p_candidate in player_nodes:
+			if not p_candidate.is_bot:
+				local_player = p_candidate
+				break
+		if not local_player:
+			local_player = player_nodes[0]
+		local_player.is_remote = false
+		if "camera" in local_player and local_player.camera:
+			local_player.camera.current = true
+		if "spring_arm" in local_player and local_player.spring_arm:
+			local_player.spring_arm.visible = true
+		Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 	
 	# Spawn initial server items (or local items if offline)
 	if Network and not Network.current_match_items.is_empty():
@@ -893,7 +915,7 @@ func _check_round_end_condition() -> void:
 	
 	if total_runners > 0 and unfrozen_runners == 0:
 		_end_round("TAGGERS")
-	elif total_runners > 0 and alive_taggers == 0 and not is_online_match:
+	elif total_runners > 0 and alive_taggers == 0 and not (Network and Network.is_online_game()):
 		_end_round("RUNNERS")
 
 func _on_player_tagged(tagger: CharacterBody3D, victim: CharacterBody3D) -> void:
@@ -1282,17 +1304,21 @@ func _on_net_player_kicked(_reason: String) -> void:
 
 func _on_lobby_pressed() -> void:
 	var target_lobby = "res://scenes/3d/lobby_racing_3d.tscn" if (Network and Network.selected_game_mode == "racing") else "res://scenes/3d/lobby_3d.tscn"
+	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 	if Network and Network.is_online_game():
-		if Network.is_host:
-			Network.return_to_lobby()
-		else:
-			Network.return_to_lobby()
-			Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+		Network.return_to_lobby()
+		if not Network.is_host:
 			get_tree().change_scene_to_file(target_lobby)
+		else:
+			# Fallback: if server response is delayed, transition host after 0.8s anyway
+			var fallback_timer = get_tree().create_timer(0.8)
+			fallback_timer.timeout.connect(func():
+				if get_tree() and get_tree().current_scene == self:
+					get_tree().change_scene_to_file(target_lobby)
+			)
 		return
 	
 	# Practice mode: return to lobby/room selection
-	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 	get_tree().change_scene_to_file(target_lobby)
 
 func _on_next_round_pressed() -> void:
