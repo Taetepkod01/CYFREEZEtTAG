@@ -14,6 +14,8 @@ extends Control
 @onready var status_label: Label = $StatusLabel
 
 func _ready() -> void:
+	if BGMManager:
+		BGMManager.play_menu_bgm()
 	room_panel.visible = false
 	status_label.text = ""
 	name_input.text = Network.my_player_name

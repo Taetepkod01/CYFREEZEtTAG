@@ -21,11 +21,10 @@ const TEX_ROLE_RUNNER_OFF = preload("res://assets/ui/buttons/btn_role_runner_off
 @onready var random_role_btn: TextureButton = $PracticeModal/RoleButtons/RandomRoleBtn
 @onready var tagger_role_btn: TextureButton = $PracticeModal/RoleButtons/TaggerRoleBtn
 @onready var runner_role_btn: TextureButton = $PracticeModal/RoleButtons/RunnerRoleBtn
-@onready var map_option_btn: OptionButton = get_node_or_null("PracticeModal/MapContainer/MapOptionBtn")
 @onready var start_practice_btn: TextureButton = $PracticeModal/StartPracticeBtn
 @onready var close_practice_btn: TextureButton = $PracticeModal/ClosePracticeBtn
 
-var selected_practice_map: String = "VOID PARKOUR"
+var selected_practice_map: String = "SNOW TOWN"
 
 # Firebase Auth Panel
 @onready var auth_panel: Panel = $AuthPanel
@@ -65,7 +64,9 @@ const MAX_FALLING_SNOWFLAKES: int = 5
 
 # Audio SFX
 const AUDIO_BTN_HOVER = preload("res://assets/audio/sfx/btn_hover.mp3")
+const AUDIO_BTN_CLICK = preload("res://assets/audio/sfx/btn_click.wav")
 var sfx_hover_player: AudioStreamPlayer = null
+var sfx_click_player: AudioStreamPlayer = null
 
 @onready var snowflake_container: Control = get_node_or_null("SnowflakeContainer")
 
@@ -92,6 +93,15 @@ func _ready() -> void:
 	sfx_hover_player.volume_db = -3.0
 	add_child(sfx_hover_player)
 	
+	sfx_click_player = AudioStreamPlayer.new()
+	sfx_click_player.name = "ClickSFXPlayer"
+	sfx_click_player.stream = AUDIO_BTN_CLICK
+	sfx_click_player.volume_db = -2.0
+	add_child(sfx_click_player)
+	
+	if BGMManager:
+		BGMManager.play_menu_bgm()
+	
 	play_online_btn.pressed.connect(_on_play_online_pressed)
 	practice_btn.pressed.connect(_on_practice_pressed)
 	how_to_play_btn.pressed.connect(_on_how_to_play_pressed)
@@ -108,24 +118,16 @@ func _ready() -> void:
 			var tw = create_tween()
 			tw.tween_property(btn, "scale", Vector2(1.0, 1.0), 0.1).set_trans(Tween.TRANS_SINE)
 		)
+		btn.pressed.connect(_play_click_sfx)
 	
-	_connect_hover_sfx(close_rules_btn)
-	_connect_hover_sfx(close_practice_btn)
-	_connect_hover_sfx(random_role_btn)
-	_connect_hover_sfx(tagger_role_btn)
-	_connect_hover_sfx(runner_role_btn)
-	_connect_hover_sfx(start_practice_btn)
-	_connect_hover_sfx(auth_submit_btn)
-	_connect_hover_sfx(auth_toggle_btn)
-	
-	if map_option_btn:
-		map_option_btn.clear()
-		map_option_btn.add_item("SPACE STATION", 0)
-		map_option_btn.add_item("SNOW TOWN", 1)
-		map_option_btn.add_item("LABYRINTH", 2)
-		map_option_btn.add_item("VOID PARKOUR (NEW)", 3)
-		map_option_btn.select(3)
-		map_option_btn.item_selected.connect(_on_practice_map_selected)
+	_connect_button_sfx(close_rules_btn)
+	_connect_button_sfx(close_practice_btn)
+	_connect_button_sfx(random_role_btn)
+	_connect_button_sfx(tagger_role_btn)
+	_connect_button_sfx(runner_role_btn)
+	_connect_button_sfx(start_practice_btn)
+	_connect_button_sfx(auth_submit_btn)
+	_connect_button_sfx(auth_toggle_btn)
 	
 	close_rules_btn.pressed.connect(func():
 		rules_panel.visible = false
@@ -194,7 +196,7 @@ func _setup_guest_button() -> void:
 	guest_btn.modulate = Color(0.4, 0.85, 1.0)
 	guest_btn.add_theme_font_size_override("font_size", 11)
 	guest_btn.pressed.connect(_on_guest_play_pressed)
-	_connect_hover_sfx(guest_btn)
+	_connect_button_sfx(guest_btn)
 	auth_box.add_child(guest_btn)
 
 # ── Audio SFX Helpers ─────────────────────────────────────────────────────────
@@ -203,10 +205,24 @@ func _play_hover_sfx() -> void:
 		sfx_hover_player.stop()
 		sfx_hover_player.play()
 
+func _play_click_sfx() -> void:
+	if is_instance_valid(sfx_click_player) and sfx_click_player.stream:
+		sfx_click_player.stop()
+		sfx_click_player.play()
+	if BGMManager and not BGMManager.is_playing():
+		BGMManager.play_menu_bgm()
+
 func _connect_hover_sfx(btn: Control) -> void:
 	if not btn:
 		return
 	btn.mouse_entered.connect(_play_hover_sfx)
+
+func _connect_button_sfx(btn: Control) -> void:
+	if not btn:
+		return
+	btn.mouse_entered.connect(_play_hover_sfx)
+	if btn is BaseButton:
+		btn.pressed.connect(_play_click_sfx)
 
 # ── Top Profile Bar ───────────────────────────────────────────────────────────
 func _setup_profile_bar() -> void:
@@ -284,7 +300,7 @@ func _setup_profile_bar() -> void:
 	profile_account_btn.add_theme_stylebox_override("normal", btn_sb)
 	profile_account_btn.add_theme_font_size_override("font_size", 11)
 	profile_account_btn.pressed.connect(_on_profile_account_pressed)
-	_connect_hover_sfx(profile_account_btn)
+	_connect_button_sfx(profile_account_btn)
 	hbox.add_child(profile_account_btn)
 	
 	add_child(profile_bar)
@@ -386,7 +402,7 @@ func _setup_account_modal() -> void:
 	account_sign_out_btn.add_theme_font_size_override("font_size", 12)
 	account_sign_out_btn.modulate = Color(1.0, 0.85, 0.85)
 	account_sign_out_btn.pressed.connect(_on_account_sign_out_pressed)
-	_connect_hover_sfx(account_sign_out_btn)
+	_connect_button_sfx(account_sign_out_btn)
 	btn_hbox.add_child(account_sign_out_btn)
 	
 	account_close_btn = Button.new()
@@ -408,7 +424,7 @@ func _setup_account_modal() -> void:
 	account_close_btn.add_theme_font_size_override("font_size", 12)
 	account_close_btn.modulate = Color(0.85, 0.95, 1.0)
 	account_close_btn.pressed.connect(_on_account_close_pressed)
-	_connect_hover_sfx(account_close_btn)
+	_connect_button_sfx(account_close_btn)
 	btn_hbox.add_child(account_close_btn)
 	
 	add_child(account_modal)
@@ -629,7 +645,7 @@ func _setup_mode_selection_modal() -> void:
 	close_mode_select_btn.modulate = Color(0.5, 0.85, 1.0)
 	close_mode_select_btn.add_theme_font_size_override("font_size", 12)
 	close_mode_select_btn.pressed.connect(_on_close_mode_selection_pressed)
-	_connect_hover_sfx(close_mode_select_btn)
+	_connect_button_sfx(close_mode_select_btn)
 	center_vbox.add_child(close_mode_select_btn)
 	
 	# Connect Button Events
@@ -1030,23 +1046,27 @@ func _on_close_mode_selection_pressed() -> void:
 		profile_bar.visible = true
 
 func _on_freeze_tag_selected() -> void:
+	_play_click_sfx()
 	if freeze_tag_mode_btn:
 		freeze_tag_mode_btn.disabled = true
 	if Network:
 		Network.is_solo_mode = false
+		Network.selected_game_mode = "freezetag"
 		Network.selected_map = "SPACE STATION"
+	await get_tree().create_timer(0.18).timeout
 	get_tree().change_scene_to_file("res://scenes/3d/lobby_3d.tscn")
 
 func _on_racing_selected() -> void:
+	_play_click_sfx()
 	if racing_mode_btn:
 		racing_mode_btn.disabled = true
 	if Network:
-		Network.is_solo_mode = true
+		Network.is_solo_mode = false
+		Network.selected_game_mode = "racing"
 		Network.selected_practice_role = "runner"
 		Network.selected_map = "VOID PARKOUR"
-		Network.disconnect_from_server()
-	await get_tree().process_frame
-	get_tree().change_scene_to_file("res://scenes/3d/arena_3d.tscn")
+	await get_tree().create_timer(0.18).timeout
+	get_tree().change_scene_to_file("res://scenes/3d/lobby_racing_3d.tscn")
 
 func _on_practice_pressed() -> void:
 	if account_modal:
@@ -1056,14 +1076,8 @@ func _on_practice_pressed() -> void:
 	title_label.visible = false
 	if profile_bar: profile_bar.visible = false
 
-func _on_practice_map_selected(idx: int) -> void:
-	match idx:
-		0: selected_practice_map = "SPACE STATION"
-		1: selected_practice_map = "SNOW TOWN"
-		2: selected_practice_map = "LABYRINTH"
-		3, _: selected_practice_map = "VOID PARKOUR"
-
 func _start_practice(role: String) -> void:
+	_play_click_sfx()
 	start_practice_btn.disabled = true
 	random_role_btn.disabled = true
 	tagger_role_btn.disabled = true
@@ -1075,7 +1089,7 @@ func _start_practice(role: String) -> void:
 		Network.selected_map = selected_practice_map
 		Network.disconnect_from_server()
 	
-	await get_tree().process_frame
+	await get_tree().create_timer(0.18).timeout
 	get_tree().change_scene_to_file("res://scenes/3d/arena_3d.tscn")
 
 func _on_how_to_play_pressed() -> void:

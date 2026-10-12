@@ -119,6 +119,7 @@ export interface Active3DRoom {
   currentRound: number;
   map: string;
   selectedMapMode?: string;
+  gameMode?: "freezetag" | "racing";
   isPrivate: boolean;
   phase: "lobby" | "playing" | "ended";
   timeLeft: number;
@@ -208,6 +209,7 @@ app.get("/api/rooms", async (_req, res) => {
     map: string;
     rounds: number;
     hasStarted: boolean;
+    gameMode: string;
   }> = [];
 
   active3DRooms.forEach((r) => {
@@ -219,7 +221,8 @@ app.get("/api/rooms", async (_req, res) => {
       maxPlayers: r.maxPlayers,
       map: r.map,
       rounds: r.rounds,
-      hasStarted: r.phase !== "lobby"
+      hasStarted: r.phase !== "lobby",
+      gameMode: r.gameMode || (r.map?.toUpperCase().includes("VOID") ? "racing" : "freezetag")
     });
   });
 
@@ -236,7 +239,8 @@ app.get("/api/rooms", async (_req, res) => {
           maxPlayers: cr.maxClients,
           map: cr.metadata?.map || "CASTLE",
           rounds: cr.metadata?.rounds || 3,
-          hasStarted: cr.metadata?.hasStarted || false
+          hasStarted: cr.metadata?.hasStarted || false,
+          gameMode: cr.metadata?.gameMode || "freezetag"
         });
       }
     });
@@ -471,8 +475,10 @@ wss.on("connection", (ws: WebSocket, req: any) => {
           const pName = String(msg.playerName || "Host").slice(0, 16);
           const maxP = Math.max(4, Math.min(8, Number(msg.maxPlayers) || 8));
           const rounds = Math.max(1, Math.min(5, Number(msg.rounds) || 3));
-          const map = String(msg.map || "CASTLE");
+          const map = String(msg.map || "SPACE STATION");
           const isPrivate = Boolean(msg.isPrivate);
+          const rawGameMode = String(msg.gameMode || "").toLowerCase();
+          const gameMode: "freezetag" | "racing" = (rawGameMode === "racing" || map.toUpperCase().includes("VOID") || map.toUpperCase().includes("PARKOUR")) ? "racing" : "freezetag";
 
           const newRoom: Active3DRoom = {
             code,
@@ -483,6 +489,7 @@ wss.on("connection", (ws: WebSocket, req: any) => {
             currentRound: 1,
             map,
             selectedMapMode: map.toUpperCase().includes("RANDOM") ? "RANDOM" : "",
+            gameMode,
             isPrivate,
             phase: "lobby",
             timeLeft: 165,
@@ -543,6 +550,7 @@ wss.on("connection", (ws: WebSocket, req: any) => {
             maxPlayers: maxP,
             rounds,
             map,
+            gameMode,
             isPrivate,
             phase: "lobby",
             players: [{
@@ -556,7 +564,7 @@ wss.on("connection", (ws: WebSocket, req: any) => {
               coins: p.coins || 0
             }]
           });
-          console.log(`[WS Server] Room created: ${code} (${isPrivate ? "PRIVATE" : "PUBLIC"}) by ${pName}`);
+          console.log(`[WS Server] Room created: ${code} (${isPrivate ? "PRIVATE" : "PUBLIC"} - ${gameMode.toUpperCase()}) by ${pName}`);
           break;
         }
 
@@ -573,7 +581,8 @@ wss.on("connection", (ws: WebSocket, req: any) => {
               maxPlayers: r.maxPlayers,
               map: r.map,
               rounds: r.rounds,
-              hasStarted: r.phase !== "lobby"
+              hasStarted: r.phase !== "lobby",
+              gameMode: r.gameMode || (r.map?.toUpperCase().includes("VOID") ? "racing" : "freezetag")
             });
           });
           sendTo(ws, "public_rooms_updated", list);
@@ -679,6 +688,7 @@ wss.on("connection", (ws: WebSocket, req: any) => {
             maxPlayers: room.maxPlayers,
             rounds: room.rounds,
             map: room.map,
+            gameMode: room.gameMode || (room.map?.toUpperCase().includes("VOID") ? "racing" : "freezetag"),
             isPrivate: room.isPrivate,
             phase: room.phase,
             players: pList
@@ -1297,6 +1307,25 @@ wss.on("connection", (ws: WebSocket, req: any) => {
           break;
         }
 
+        // Runner Taunt / Quack skill
+        case "taunt": {
+          if (!currentRoom || currentRoom.phase !== "playing") return;
+          const p = currentRoom.players.get(myPlayerId);
+          if (!p || p.frozen) return;
+          const now = Date.now();
+          if ((p as any).lastTauntTime && now - (p as any).lastTauntTime < 2500) {
+            return;
+          }
+          (p as any).lastTauntTime = now;
+          const soundType = String(msg.soundType || "quack");
+          broadcastToRoom(currentRoom, "player_taunted", {
+            playerId: p.id,
+            playerName: p.name,
+            soundType
+          });
+          break;
+        }
+
         // 11. Tackle Player (Runner dashes into Tagger with Cooldown & Distance verification)
         case "tackle_player": {
           if (!currentRoom || currentRoom.phase !== "playing") return;
@@ -1482,16 +1511,25 @@ function start3DRound(room: Active3DRoom) {
   const taggerSet = new Set(shuffledKeys.slice(0, taggerCount));
 
   if (room.selectedMapMode === "RANDOM" || (room.map || "").toUpperCase().includes("RANDOM")) {
-    room.selectedMapMode = "RANDOM";
-    const mapsPool = ["SPACE STATION", "SNOW TOWN", "LABYRINTH", "VOID PARKOUR"];
-    room.map = mapsPool[Math.floor(Math.random() * mapsPool.length)];
+    if (room.gameMode === "racing") {
+      room.map = "VOID PARKOUR";
+    } else {
+      room.selectedMapMode = "RANDOM";
+      const mapsPool = ["SPACE STATION", "SNOW TOWN", "LABYRINTH"];
+      room.map = mapsPool[Math.floor(Math.random() * mapsPool.length)];
+    }
   }
 
   const mapUpper = (room.map || "").toUpperCase();
   const isSpaceStation = mapUpper.includes("SPACE");
   const isSnowTown = mapUpper.includes("SNOW") || mapUpper.includes("TOWN") || mapUpper.includes("หิมะ");
   const isLabyrinth = mapUpper.includes("LABYRINTH") || mapUpper.includes("MAZE") || mapUpper.includes("เขาวงกต");
-  const isVoidParkour = mapUpper.includes("PARKOUR") || mapUpper.includes("VOID") || mapUpper.includes("พาร์คัวร์");
+  const isVoidParkour = mapUpper.includes("PARKOUR") || mapUpper.includes("VOID") || mapUpper.includes("พาร์คัวร์") || room.gameMode === "racing";
+
+  if (room.gameMode === "racing" || isVoidParkour) {
+    taggerSet.clear();
+    room.timeLeft = 120;
+  }
 
   const spaceStationTaggerSpawns = [
     { x: 0, y: 0.5, z: -22 },

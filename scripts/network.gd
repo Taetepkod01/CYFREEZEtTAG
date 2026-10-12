@@ -34,6 +34,7 @@ signal vortex_spawned(pos: Vector3)
 signal round_ended(data: Dictionary)
 signal returned_to_lobby(data: Dictionary)
 signal chat_received(msg: String)
+signal player_taunted(player_id: String, player_name: String, sound_type: String)
 
 # Legacy signals for backwards-compatibility if referenced
 signal player_list_updated
@@ -79,6 +80,7 @@ var is_host: bool = false
 var is_solo_mode: bool = false
 var selected_practice_role: String = "random" # "random", "tagger", "runner"
 var selected_map: String = "SPACE STATION" # Default to SPACE STATION
+var selected_game_mode: String = "freezetag" # "freezetag" or "racing"
 var kicked_rooms: Array[String] = []
 var auto_create_test_lobby: bool = false
 
@@ -248,6 +250,10 @@ func _handle_server_message(raw_text: String) -> void:
 			is_host = true
 			is_solo_mode = false
 			room_data = data
+			if data.has("gameMode"):
+				selected_game_mode = str(data["gameMode"])
+			elif data.has("map") and str(data["map"]).to_upper().contains("VOID"):
+				selected_game_mode = "racing"
 			if data.has("map"):
 				selected_map = str(data["map"])
 			room_created.emit(data)
@@ -259,6 +265,10 @@ func _handle_server_message(raw_text: String) -> void:
 			is_host = bool(data.get("isHost", false))
 			is_solo_mode = false
 			room_data = data
+			if data.has("gameMode"):
+				selected_game_mode = str(data["gameMode"])
+			elif data.has("map") and str(data["map"]).to_upper().contains("VOID"):
+				selected_game_mode = "racing"
 			if data.has("map"):
 				selected_map = str(data["map"])
 			room_joined.emit(data)
@@ -402,6 +412,13 @@ func _handle_server_message(raw_text: String) -> void:
 			var pos = Vector3(float(data.get("x", 0)), float(data.get("y", 0.2)), float(data.get("z", 0)))
 			vortex_spawned.emit(pos)
 			
+		"player_taunted":
+			player_taunted.emit(
+				str(data.get("playerId", "")),
+				str(data.get("playerName", "")),
+				str(data.get("soundType", "quack"))
+			)
+			
 		"round_ended":
 			round_ended.emit(data)
 			
@@ -484,8 +501,10 @@ func set_player_name(new_name: String) -> void:
 	my_player_name = new_name
 	send_action("set_player_name", { "name": new_name })
 
-func create_room(r_name: String, max_p: int = 8, rounds: int = 3, map_name: String = "SPACE STATION", is_priv: bool = false) -> void:
+func create_room(r_name: String, max_p: int = 8, rounds: int = 3, map_name: String = "SPACE STATION", is_priv: bool = false, game_mode: String = "") -> void:
 	selected_map = map_name
+	var mode_to_send = game_mode if not game_mode.is_empty() else selected_game_mode
+	selected_game_mode = mode_to_send
 	send_action("create_room", {
 		"roomName": r_name,
 		"playerName": my_player_name,
@@ -493,7 +512,8 @@ func create_room(r_name: String, max_p: int = 8, rounds: int = 3, map_name: Stri
 		"maxPlayers": max_p,
 		"rounds": rounds,
 		"map": map_name,
-		"isPrivate": is_priv
+		"isPrivate": is_priv,
+		"gameMode": mode_to_send
 	})
 
 func join_room(code: String) -> void:
@@ -547,6 +567,9 @@ func send_use_item() -> void:
 
 func send_tackle(target_id: String) -> void:
 	send_action("tackle_player", { "targetId": target_id })
+
+func send_taunt(sound_type: String = "quack") -> void:
+	send_action("taunt", { "soundType": sound_type })
 
 func send_banana_placed(pos: Vector3) -> void:
 	send_action("place_banana", {

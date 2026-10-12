@@ -1,7 +1,6 @@
 [gd_scene format=3 uid="uid://b3dlobby00001"]
 
 [ext_resource type="Script" uid="uid://dxml4lar2ro4y" path="res://scripts/3d/lobby_3d.gd" id="1_lobby3d"]
-[ext_resource type="Texture2D" uid="uid://dt81ypwyhbkk8" path="res://assets/ui/ice_frame_border.png" id="2_ice_frame"]
 [ext_resource type="Texture2D" uid="uid://ympniwrf21n4" path="res://assets/maps/map_preview_snow_town.png" id="3_preview_snow"]
 [ext_resource type="Texture2D" uid="uid://bkjnumjqx1xom" path="res://assets/maps/map_snow_town.png" id="4_map_snow"]
 [ext_resource type="Texture2D" uid="uid://dygk4v6i84g82" path="res://assets/maps/map_space_station.png" id="5_map_space"]
@@ -14,6 +13,8 @@
 [ext_resource type="Texture2D" uid="uid://dubwh3orgcdo" path="res://assets/ui/buttons/btn_leave_room.png" id="12_btn_leave"]
 [ext_resource type="Texture2D" uid="uid://08ldbinr7c3x" path="res://assets/ui/buttons/btn_back_menu.png" id="13_btn_back"]
 [ext_resource type="Texture2D" uid="uid://ccy4ilwhdnu5d" path="res://assets/ui/buttons/btn_role_random.png" id="14_btn_random"]
+[ext_resource type="Texture2D" uid="uid://be4v80j478jdl" path="res://assets/ui/lobby/bg_lobby.jpg" id="15_bg_lobby"]
+[ext_resource type="Texture2D" path="res://assets/maps/map_training_ground.png" id="16_map_training"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_card"]
 bg_color = Color(0.03, 0.08, 0.18, 0.92)
@@ -78,16 +79,18 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_lobby3d")
 
-[node name="Background" type="ColorRect" parent="." unique_id=2039005685]
+[node name="Background" type="TextureRect" parent="." unique_id=2039005685]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0.03, 0.07, 0.18, 1)
+texture = ExtResource("15_bg_lobby")
+expand_mode = 1
+stretch_mode = 6
 
-[node name="IceBorderOverlay" type="TextureRect" parent="." unique_id=2026192685]
+[node name="DimOverlay" type="ColorRect" parent="." unique_id=987214981]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -95,8 +98,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-texture = ExtResource("2_ice_frame")
-expand_mode = 1
+color = Color(0.02, 0.05, 0.12, 0.35)
 
 [node name="BrowserView" type="Control" parent="." unique_id=62750203]
 layout_mode = 1
@@ -802,6 +804,17 @@ theme_override_font_sizes/font_size = 12
 theme_override_styles/normal = SubResource("StyleBoxFlat_map_btn")
 text = "VOID PARKOUR"
 icon = ExtResource("5_map_space")
+icon_alignment = 1
+vertical_icon_alignment = 0
+expand_icon = true
+
+[node name="TrainingGroundBtn" type="Button" parent="RoomView/HBox/MapSelectionCard/Grid" unique_id=1028374620]
+custom_minimum_size = Vector2(0, 68)
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+theme_override_styles/normal = SubResource("StyleBoxFlat_map_btn")
+text = "TRAINING GROUND"
+icon = ExtResource("16_map_training")
 icon_alignment = 1
 vertical_icon_alignment = 0
 expand_icon = true

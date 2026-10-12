@@ -10,6 +10,7 @@
 [ext_resource type="Texture2D" uid="uid://0dn25e7bteoo" path="res://assets/ui/buttons/btn_cancel.png" id="12_btn_cancel"]
 [ext_resource type="Texture2D" uid="uid://cntabkqg4t2dk" path="res://assets/ui/panels/panel_practice_modal.png" id="13_panel_practice"]
 [ext_resource type="Texture2D" path="res://assets/sky/space_stars.png" id="14_stars"]
+[ext_resource type="Texture2D" path="res://assets/ui/hud/btn_runner_quack.png" id="15_btn_quack"]
 
 [sub_resource type="PanoramaSkyMaterial" id="PanoramaSkyMaterial_sky"]
 panorama = ExtResource("14_stars")
@@ -155,6 +156,18 @@ corner_radius_bottom_right = 16
 corner_radius_bottom_left = 16
 shadow_color = Color(0, 0.6, 1, 0.4)
 shadow_size = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_quack_cd"]
+bg_color = Color(0.01, 0.04, 0.1, 0.78)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.3, 0.85, 1, 0.9)
+corner_radius_top_left = 44
+corner_radius_top_right = 44
+corner_radius_bottom_right = 44
+corner_radius_bottom_left = 44
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_practice"]
 
@@ -490,7 +503,7 @@ grow_horizontal = 2
 grow_vertical = 0
 theme_override_colors/font_color = Color(0.7, 0.85, 1, 0.65)
 theme_override_font_sizes/font_size = 11
-text = "[WASD] Move | [SPACE] Jump | [E] Use Item | [TAB] Players | [CLICK] Lock Camera | [ALT / ESC] Free Mouse"
+text = "[WASD] Move | [SPACE] Jump | [E] Use Item | [F] Quack | [TAB] Players | [CLICK] Lock Camera | [ALT / ESC] Free Mouse"
 horizontal_alignment = 1
 
 [node name="BottomInventoryPanel" type="Panel" parent="HUD" unique_id=396244817]
@@ -557,49 +570,76 @@ text = "NONE"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="BottomPlayerTag" type="Panel" parent="HUD" unique_id=1674439815]
+[node name="QuackSkillBtn" type="TextureButton" parent="HUD" unique_id=239482910]
 anchors_preset = 3
 anchor_left = 1.0
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = -220.0
-offset_top = -70.0
-offset_right = -20.0
-offset_bottom = -24.0
+offset_left = -118.0
+offset_top = -118.0
+offset_right = -30.0
+offset_bottom = -30.0
 grow_horizontal = 0
 grow_vertical = 0
-theme_override_styles/panel = SubResource("StyleBoxFlat_pill")
+focus_mode = 0
+texture_normal = ExtResource("15_btn_quack")
+ignore_texture_size = true
+stretch_mode = 5
 
-[node name="HBox" type="HBoxContainer" parent="HUD/BottomPlayerTag" unique_id=722024067]
+[node name="KeyBadge" type="Label" parent="HUD/QuackSkillBtn" unique_id=239482911]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -24.0
+offset_top = -20.0
+offset_right = 24.0
+offset_bottom = -2.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_colors/font_color = Color(1, 0.95, 0.4, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_font_sizes/font_size = 12
+text = "[F]"
+horizontal_alignment = 1
+
+[node name="CooldownOverlay" type="Panel" parent="HUD/QuackSkillBtn" unique_id=239482912]
+visible = false
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 12.0
-offset_right = -12.0
 grow_horizontal = 2
 grow_vertical = 2
-alignment = 1
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_quack_cd")
 
-[node name="Dot" type="Label" parent="HUD/BottomPlayerTag/HBox" unique_id=1630410924]
-visible = false
-layout_mode = 2
-theme_override_font_sizes/font_size = 14
-
-[node name="Name" type="Label" parent="HUD/BottomPlayerTag/HBox" unique_id=595165915]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 12
-text = "Player 1 (You)"
-text_overrun_behavior = 3
-
-[node name="RoleBadge" type="Label" parent="HUD/BottomPlayerTag/HBox" unique_id=1188709860]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.4, 0.95, 0.4, 1)
-theme_override_font_sizes/font_size = 11
-text = "RUNNER"
+[node name="CooldownLabel" type="Label" parent="HUD/QuackSkillBtn/CooldownOverlay" unique_id=239482913]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -35.0
+offset_top = -14.0
+offset_right = 35.0
+offset_bottom = 14.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(1, 0.95, 0.35, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.95)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_font_sizes/font_size = 20
+text = "3.0s"
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="GameOverPanel" type="Panel" parent="HUD" unique_id=827343321]
 visible = false

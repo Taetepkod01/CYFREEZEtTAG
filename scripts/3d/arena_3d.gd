@@ -37,9 +37,17 @@ var current_map_node: Node3D = null
 @onready var item_btn: Button = $HUD/BottomInventoryPanel/ItemButton
 @onready var item_name_lbl: Label = $HUD/BottomInventoryPanel/ItemButton/ItemName
 @onready var role_btn: Button = $HUD/PracticeRoleBtn
-@onready var player_tag_dot: Label = $HUD/BottomPlayerTag/HBox/Dot
-@onready var player_tag_name: Label = $HUD/BottomPlayerTag/HBox/Name
-@onready var player_tag_role: Label = $HUD/BottomPlayerTag/HBox/RoleBadge
+@onready var quack_skill_btn: TextureButton = $HUD/QuackSkillBtn
+@onready var quack_cd_overlay: Panel = $HUD/QuackSkillBtn/CooldownOverlay
+@onready var quack_cd_lbl: Label = $HUD/QuackSkillBtn/CooldownOverlay/CooldownLabel
+
+# Audio SFX
+const AUDIO_FREEZE_TAG = preload("res://assets/audio/sfx/freeze_tag.wav")
+const AUDIO_DUCK_QUACK = preload("res://assets/audio/sfx/duck_quack.mp3")
+var sfx_freeze_player: AudioStreamPlayer = null
+var sfx_quack_player: AudioStreamPlayer = null
+var quack_cooldown: float = 0.0
+const QUACK_COOLDOWN_MAX: float = 3.0
 
 const TEX_NEXT_ROUND = preload("res://assets/ui/buttons/btn_next_round.png")
 const TEX_PLAY_AGAIN = preload("res://assets/ui/buttons/btn_play_again.png")
@@ -94,7 +102,21 @@ var active_map_name: String = "SPACE STATION"
 var is_void_parkour: bool = false
 var is_space_station: bool = false
 
+func _play_freeze_sfx() -> void:
+	if sfx_freeze_player:
+		sfx_freeze_player.stop()
+		sfx_freeze_player.play()
+
 func _ready() -> void:
+	if BGMManager:
+		BGMManager.fade_out_bgm(0.6)
+	
+	sfx_freeze_player = AudioStreamPlayer.new()
+	sfx_freeze_player.name = "FreezeSFXPlayer"
+	sfx_freeze_player.stream = AUDIO_FREEZE_TAG
+	sfx_freeze_player.volume_db = 0.0
+	add_child(sfx_freeze_player)
+	
 	if status_panel:
 		status_panel.visible = false
 	game_over_panel.visible = false
@@ -130,6 +152,22 @@ func _ready() -> void:
 	cancel_exit_btn.pressed.connect(_cancel_exit_choices)
 	
 	item_btn.pressed.connect(_on_item_button_pressed)
+	
+	sfx_quack_player = AudioStreamPlayer.new()
+	sfx_quack_player.name = "DuckQuackSFXPlayer"
+	sfx_quack_player.stream = AUDIO_DUCK_QUACK
+	sfx_quack_player.volume_db = 1.0
+	add_child(sfx_quack_player)
+	
+	if quack_skill_btn:
+		quack_skill_btn.pressed.connect(_on_quack_skill_pressed)
+		quack_skill_btn.mouse_entered.connect(func():
+			if not quack_skill_btn.disabled:
+				quack_skill_btn.modulate = Color(1.15, 1.15, 1.15)
+		)
+		quack_skill_btn.mouse_exited.connect(func():
+			quack_skill_btn.modulate = Color(1.0, 1.0, 1.0)
+		)
 	
 	if Network and (Network.is_online_game() or Network.current_match_players.size() > 0):
 		# Match from lobby (online or offline test with bots)
@@ -197,7 +235,7 @@ func _load_arena_map() -> void:
 		chosen_map = str(Network.current_match_map).strip_edges()
 	
 	if chosen_map.to_upper().contains("RANDOM"):
-		var maps_pool = ["SPACE STATION", "SNOW TOWN", "LABYRINTH", "VOID PARKOUR"]
+		var maps_pool = ["SPACE STATION", "SNOW TOWN", "LABYRINTH", "VOID PARKOUR", "TRAINING GROUND"]
 		chosen_map = maps_pool[randi() % maps_pool.size()]
 	
 	print("[Arena3D] Loading map: ", chosen_map)
@@ -209,6 +247,9 @@ func _load_arena_map() -> void:
 	if upper.contains("SPACE"):
 		map_scene_path = "res://scenes/3d/maps/map_space_station.tscn"
 		map_display_name = "SPACE STATION (Alpha Sector)"
+	elif upper.contains("TRAINING") or upper.contains("GROUND"):
+		map_scene_path = "res://scenes/3d/maps/map_training_ground.tscn"
+		map_display_name = "TRAINING GROUND"
 	elif upper.contains("SNOW") or upper.contains("TOWN") or upper.contains("หิมะ"):
 		map_scene_path = "res://scenes/3d/maps/map_snow_town.tscn"
 		map_display_name = "SNOW TOWN"
@@ -307,11 +348,15 @@ func _connect_network_signals() -> void:
 		Network.player_kicked.connect(_on_net_player_kicked)
 	if not Network.chat_received.is_connected(func(msg): add_game_log(msg)):
 		Network.chat_received.connect(func(msg): add_game_log(msg))
+	if not Network.player_taunted.is_connected(_on_net_player_taunted):
+		Network.player_taunted.connect(_on_net_player_taunted)
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and not event.echo:
 		if event.keycode == KEY_ESCAPE and event.pressed:
 			_toggle_menu_modal()
+		elif event.keycode == KEY_F and event.pressed:
+			_on_quack_skill_pressed()
 		elif event.keycode == KEY_TAB:
 			if is_instance_valid(status_panel):
 				if event.pressed:
@@ -351,6 +396,7 @@ func _process(delta: float) -> void:
 			item_spawn_timer = randf_range(8.0, 14.0)
 			_spawn_random_item()
 	
+	_process_quack_cooldown(delta)
 	_update_hud()
 
 # -- Modal Controls & Role Selection -----------------------------------------
@@ -702,6 +748,7 @@ func _on_net_player_tagged(_tagger_id: String, tagger_name: String, victim_id: S
 		if p.network_id == victim_id:
 			p.freeze()
 			break
+	_play_freeze_sfx()
 	add_game_log("[color=#ff4c4c]%s[/color] tagged [color=#4fc3f7]%s[/color]" % [tagger_name, victim_name])
 	_update_hud()
 
@@ -825,6 +872,7 @@ func _show_rewards_display(text: String, leveled_up: bool) -> void:
 
 # -- Events & Log (Practice / Local) -----------------------------------------
 func _on_player_tagged(tagger: CharacterBody3D, victim: CharacterBody3D) -> void:
+	_play_freeze_sfx()
 	add_game_log("[color=#ff4c4c]%s[/color] tagged [color=#4fc3f7]%s[/color]" % [tagger.player_name, victim.player_name])
 	_update_hud()
 	
@@ -866,6 +914,62 @@ func _on_player_item_picked_up(item: String) -> void:
 func _on_item_button_pressed() -> void:
 	if local_player:
 		local_player.use_held_item()
+
+# -- Runner Quack Skill (Bottom Right HUD, Cooldown 3s) -----------------------
+func _process_quack_cooldown(delta: float) -> void:
+	if not quack_skill_btn:
+		return
+	var is_runner = (local_player != null and local_player.role == "runner")
+	quack_skill_btn.visible = is_runner
+	if not is_runner:
+		return
+	
+	if quack_cooldown > 0.0:
+		quack_cooldown -= delta
+		if quack_cooldown <= 0.0:
+			quack_cooldown = 0.0
+			quack_cd_overlay.visible = false
+			quack_skill_btn.disabled = (local_player != null and local_player.is_frozen)
+		else:
+			quack_cd_overlay.visible = true
+			quack_cd_lbl.text = "%.1fs" % quack_cooldown
+			quack_skill_btn.disabled = true
+	else:
+		quack_cd_overlay.visible = false
+		quack_skill_btn.disabled = (local_player != null and local_player.is_frozen)
+
+func _on_quack_skill_pressed() -> void:
+	if not is_game_active or game_over_panel.visible or menu_modal.visible:
+		return
+	if not local_player or local_player.role != "runner" or local_player.is_frozen:
+		return
+	if quack_cooldown > 0.0:
+		return
+	
+	quack_cooldown = QUACK_COOLDOWN_MAX
+	_play_duck_quack(local_player)
+	
+	if Network and Network.is_online_game():
+		Network.send_taunt("quack")
+
+func _play_duck_quack(player: CharacterBody3D = null) -> void:
+	if sfx_quack_player:
+		sfx_quack_player.stop()
+		sfx_quack_player.play()
+	if is_instance_valid(player) and player.has_method("trigger_quack"):
+		player.trigger_quack()
+	var p_name = player.player_name if is_instance_valid(player) else "Runner"
+	add_game_log("[color=#ffe066]🦆 %s: QUACK![/color]" % p_name)
+
+func _on_net_player_taunted(p_id: String, p_name: String, _sound_type: String) -> void:
+	if local_player and local_player.network_id == p_id:
+		return
+	var target_p: CharacterBody3D = null
+	for p in player_nodes:
+		if is_instance_valid(p) and p.network_id == p_id:
+			target_p = p
+			break
+	_play_duck_quack(target_p)
 
 func add_game_log(msg: String) -> void:
 	print("[GameLog] ", msg.replace("[color=#", "").replace("[/color]", "").replace(">> ", ""))
@@ -984,21 +1088,6 @@ func _update_hud() -> void:
 			row.add_child(name_lbl)
 			row.add_child(status_badge)
 			status_container.add_child(row)
-	
-	if local_player:
-		player_tag_name.text = local_player.player_name
-		if local_player.is_frozen:
-			player_tag_dot.visible = false
-			player_tag_role.text = "[FROZEN]"
-			player_tag_role.modulate = Color(0.3, 0.9, 1.0)
-		elif local_player.role == "tagger":
-			player_tag_dot.visible = false
-			player_tag_role.text = "[TAGGER]"
-			player_tag_role.modulate = Color(1.0, 0.35, 0.35)
-		else:
-			player_tag_dot.visible = false
-			player_tag_role.text = "[RUNNER]"
-			player_tag_role.modulate = Color(0.4, 0.95, 0.4)
 
 # -- Win / Loss & MVP Summary (Offline / Practice Mode) ----------------------
 func _end_round(winner: String) -> void:
@@ -1161,25 +1250,32 @@ func _on_net_round_started(data: Dictionary) -> void:
 
 func _on_net_returned_to_lobby(_data: Dictionary) -> void:
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
-	get_tree().change_scene_to_file("res://scenes/3d/lobby_3d.tscn")
+	if Network and Network.selected_game_mode == "racing":
+		get_tree().change_scene_to_file("res://scenes/3d/lobby_racing_3d.tscn")
+	else:
+		get_tree().change_scene_to_file("res://scenes/3d/lobby_3d.tscn")
 
 func _on_net_player_kicked(_reason: String) -> void:
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
-	get_tree().change_scene_to_file("res://scenes/3d/lobby_3d.tscn")
+	if Network and Network.selected_game_mode == "racing":
+		get_tree().change_scene_to_file("res://scenes/3d/lobby_racing_3d.tscn")
+	else:
+		get_tree().change_scene_to_file("res://scenes/3d/lobby_3d.tscn")
 
 func _on_lobby_pressed() -> void:
+	var target_lobby = "res://scenes/3d/lobby_racing_3d.tscn" if (Network and Network.selected_game_mode == "racing") else "res://scenes/3d/lobby_3d.tscn"
 	if Network and Network.is_online_game():
 		if Network.is_host:
 			Network.return_to_lobby()
 		else:
 			Network.return_to_lobby()
 			Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
-			get_tree().change_scene_to_file("res://scenes/3d/lobby_3d.tscn")
+			get_tree().change_scene_to_file(target_lobby)
 		return
 	
 	# Practice mode: return to lobby/room selection
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
-	get_tree().change_scene_to_file("res://scenes/3d/lobby_3d.tscn")
+	get_tree().change_scene_to_file(target_lobby)
 
 func _on_next_round_pressed() -> void:
 	if Network and Network.is_online_game():

@@ -69,7 +69,11 @@ func _ready() -> void:
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 	code_error_lbl.text = ""
 	
+	if BGMManager:
+		BGMManager.play_menu_bgm()
+	
 	if Network:
+		Network.selected_game_mode = "freezetag"
 		my_player_name = Network.my_player_name
 		if not Network.selected_map.is_empty():
 			selected_map = Network.selected_map
@@ -415,7 +419,7 @@ func _on_create_room_pressed() -> void:
 	var is_priv = create_private_check.button_pressed
 	if Network and Network.is_connected_to_server:
 		code_error_lbl.text = "Creating room on server..."
-		Network.create_room(r_name, 8, 3, selected_map, is_priv)
+		Network.create_room(r_name, 8, 3, selected_map, is_priv, "freezetag")
 	else:
 		code_error_lbl.text = "Connecting to server... Please wait a moment."
 		if Network:
@@ -657,6 +661,10 @@ func _on_network_public_rooms_updated(rooms: Array) -> void:
 	for r in rooms:
 		if bool(r.get("isPrivate", false)):
 			continue
+		var g_mode = str(r.get("gameMode", "")).to_lower()
+		var map_name_str = str(r.get("map", "")).to_upper()
+		if g_mode == "racing" or map_name_str.contains("VOID") or map_name_str.contains("PARKOUR"):
+			continue # Only show Freeze Tag rooms
 		var code = str(r.get("code", "")).to_upper()
 		new_dict[code] = {
 			"name": str(r.get("name", "Room")),
@@ -665,6 +673,7 @@ func _on_network_public_rooms_updated(rooms: Array) -> void:
 			"max_players": int(r.get("maxPlayers", 8)),
 			"rounds": int(r.get("rounds", 3)),
 			"map": str(r.get("map", "CASTLE")),
+			"gameMode": "freezetag",
 			"players": range(int(r.get("playersCount", 1))),
 			"has_started": bool(r.get("hasStarted", false))
 		}
@@ -1049,6 +1058,8 @@ func _update_map_preview_image(map_name: String) -> void:
 		map_preview_img.texture = load("res://assets/ui/buttons/btn_role_random.png")
 	elif upper.contains("SPACE"):
 		map_preview_img.texture = load("res://assets/maps/map_space_station.png")
+	elif upper.contains("TRAINING") or upper.contains("GROUND"):
+		map_preview_img.texture = load("res://assets/maps/map_training_ground.png")
 	elif upper.contains("LABYRINTH"):
 		map_preview_img.texture = load("res://assets/maps/map_labyrinth.png")
 	elif upper.contains("PARKOUR") or upper.contains("VOID"):
@@ -1214,7 +1225,7 @@ func _on_action_pressed() -> void:
 				Network.current_round = 1
 				Network.max_rounds = int(r.get("rounds", 3))
 				if selected_map.to_upper().contains("RANDOM"):
-					var maps_pool = ["SPACE STATION", "SNOW TOWN", "LABYRINTH", "VOID PARKOUR"]
+					var maps_pool = ["SPACE STATION", "SNOW TOWN", "LABYRINTH", "VOID PARKOUR", "TRAINING GROUND"]
 					Network.selected_map = maps_pool[randi() % maps_pool.size()]
 				else:
 					Network.selected_map = selected_map

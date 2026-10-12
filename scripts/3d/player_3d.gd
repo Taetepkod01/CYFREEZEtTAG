@@ -59,6 +59,10 @@ var target_remote_rot_y: float = 0.0
 var last_sent_pos: Vector3 = Vector3.ZERO
 var last_sent_rot_y: float = 0.0
 
+# Runner Quack / Taunt Skill
+var quack_bubble_label: Label3D = null
+var quack_bubble_timer: float = 0.0
+
 # Camera & Pivot
 @onready var spring_arm: SpringArm3D = $SpringArm3D
 @onready var camera: Camera3D = $SpringArm3D/Camera3D
@@ -109,6 +113,20 @@ func _ready() -> void:
 	target_remote_pos = global_position
 	target_remote_rot_y = rotation.y
 	_update_role_visuals()
+	
+	quack_bubble_label = Label3D.new()
+	quack_bubble_label.name = "QuackBubble"
+	quack_bubble_label.transform.origin = Vector3(0, 2.75, 0)
+	quack_bubble_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	quack_bubble_label.double_sided = false
+	quack_bubble_label.text = "QUACK! 🦆"
+	quack_bubble_label.font_size = 28
+	quack_bubble_label.outline_size = 5
+	quack_bubble_label.modulate = Color(1.0, 0.92, 0.2, 1.0)
+	quack_bubble_label.outline_modulate = Color(0.1, 0.1, 0.1, 1.0)
+	quack_bubble_label.visible = false
+	if visuals:
+		visuals.add_child(quack_bubble_label)
 	
 	if is_local_player():
 		Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
@@ -480,6 +498,22 @@ func _process_buffs(delta: float) -> void:
 				dizzy_stars.visible = false
 			if is_frozen:
 				unfreeze()
+	
+	if quack_bubble_timer > 0.0:
+		quack_bubble_timer -= delta
+		if quack_bubble_label:
+			quack_bubble_label.visible = true
+			quack_bubble_label.transform.origin.y = 2.75 + (1.2 - quack_bubble_timer) * 0.35
+			quack_bubble_label.modulate.a = clamp(quack_bubble_timer / 0.3, 0.0, 1.0)
+		if quack_bubble_timer <= 0.0 and quack_bubble_label:
+			quack_bubble_label.visible = false
+
+func trigger_quack() -> void:
+	quack_bubble_timer = 1.2
+	if quack_bubble_label:
+		quack_bubble_label.transform.origin.y = 2.75
+		quack_bubble_label.modulate.a = 1.0
+		quack_bubble_label.visible = true
 
 # -- Freeze & Tag Mechanics --------------------------------------------------
 func freeze() -> void:
