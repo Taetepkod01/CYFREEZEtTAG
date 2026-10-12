@@ -115,6 +115,7 @@ func _ready() -> void:
 	host_private_check.toggled.connect(_on_host_private_toggled)
 	copy_code_btn.pressed.connect(_on_copy_code_pressed)
 	action_btn.pressed.connect(_on_action_pressed)
+	leave_btn.pressed.connect(_on_leave_room_pressed)
 	# Adjust player_count_header and inject Add Bot button for room host
 	player_count_header.anchor_left = 0.0
 	player_count_header.anchor_right = 0.0
