@@ -1,4 +1,4 @@
-[gd_scene format=3 uid="uid://loadoutui0001"]
+[gd_scene format=3 uid="uid://dxgmiq0demaii"]
 
 [ext_resource type="Script" path="res://scripts/3d/loadout_ui_3d.gd" id="1_loadout"]
 
@@ -338,7 +338,7 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_role_badge")
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 14
-text = "HUNTER · สายพุ่งไล่"
+text = "HUNTER · HIGH SPEED CHASER"
 
 [node name="SkillCard" type="PanelContainer" parent="PreviewSection/DetailsVBox"]
 layout_mode = 2
@@ -372,20 +372,20 @@ theme_override_constants/separation = 3
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 17
-text = "Banana Gun · ขว้างกล้วย"
+text = "Banana Gun · Peel Throw"
 
 [node name="SkillDescLbl" type="Label" parent="PreviewSection/DetailsVBox/SkillCard/HBox/InfoVBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.839, 0.937, 1, 1)
 theme_override_font_sizes/font_size = 13
-text = "Shoot bananapeel to front line making runner confuse for 1.5 sec"
+text = "Shoot banana peel forward making runners slip for 1.5s"
 autowrap_mode = 3
 
 [node name="SkillCdLbl" type="Label" parent="PreviewSection/DetailsVBox/SkillCard/HBox/InfoVBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.498, 0.847, 1, 1)
 theme_override_font_sizes/font_size = 12
-text = "cooldown 10 sec"
+text = "cooldown 10s"
 
 [node name="SelectionPanel" type="PanelContainer" parent="."]
 layout_mode = 1
@@ -418,7 +418,7 @@ text = "SELECT TAGGER"
 layout_mode = 2
 theme_override_colors/font_color = Color(0.498, 0.847, 1, 1)
 theme_override_font_sizes/font_size = 13
-text = "5 ตัวละคร"
+text = "6 CHARACTERS"
 
 [node name="Scroll" type="ScrollContainer" parent="SelectionPanel/VBox"]
 layout_mode = 2

@@ -1200,13 +1200,22 @@ func _on_action_pressed() -> void:
 				var p_role = "tagger" if tagger_set.has(i) else "runner"
 				var spawn_pos: Vector3
 				var tagger_type_str = ""
+				var runner_type_str = "penguin"
+				var is_me_or_host = (Network and (p_id == Network.my_peer_id or is_h))
 				if p_role == "tagger":
 					spawn_pos = chaser_spawns[tagger_cursor % chaser_spawns.size()]
 					var tagger_pool = ["ponpon", "mafog", "mumu", "phoemphoon", "snowman"]
 					tagger_type_str = tagger_pool[tagger_cursor % tagger_pool.size()]
+					if is_me_or_host and Network and not Network.selected_tagger_type.is_empty() and Network.selected_tagger_type != "random":
+						tagger_type_str = Network.selected_tagger_type
 					tagger_cursor += 1
 				else:
 					spawn_pos = runner_spawns[runner_cursor % runner_spawns.size()]
+					if is_me_or_host and Network and not Network.selected_runner_type.is_empty() and Network.selected_runner_type != "random":
+						runner_type_str = Network.selected_runner_type
+					else:
+						var runner_pool = ["penguin", "snowman", "ponpon", "mafog", "mumu", "phoemphoon"]
+						runner_type_str = runner_pool[runner_cursor % runner_pool.size()]
 					runner_cursor += 1
 				
 				match_list.append({
@@ -1214,6 +1223,7 @@ func _on_action_pressed() -> void:
 					"name": p_name,
 					"role": p_role,
 					"taggerType": tagger_type_str,
+					"runnerType": runner_type_str,
 					"isBot": is_b,
 					"isHost": is_h,
 					"level": p_lv,

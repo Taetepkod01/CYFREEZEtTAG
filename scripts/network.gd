@@ -82,6 +82,7 @@ var selected_practice_role: String = "random" # "random", "tagger", "runner"
 var selected_map: String = "SPACE STATION" # Default to SPACE STATION
 var selected_game_mode: String = "freezetag" # "freezetag" or "racing"
 var selected_tagger_type: String = "random" # "random", "ponpon", "mafog", "mumu", "phoemphoon", "snowman"
+var selected_runner_type: String = "penguin" # "penguin", "snowman", "ponpon", "mafog", "mumu", "phoemphoon", "random"
 var kicked_rooms: Array[String] = []
 var auto_create_test_lobby: bool = false
 
@@ -735,6 +736,7 @@ func _on_auth_http_completed(_result: int, response_code: int, _headers: PackedS
 
 func save_local_user() -> void:
 	current_user["taggerType"] = selected_tagger_type
+	current_user["runnerType"] = selected_runner_type
 	var f = FileAccess.open(USER_PROFILE_FILE, FileAccess.WRITE)
 	if f:
 		f.store_string(JSON.stringify(current_user, "\t"))
@@ -753,6 +755,8 @@ func load_local_user() -> void:
 					my_player_name = str(current_user["displayName"])
 				if current_user.has("taggerType") and not str(current_user["taggerType"]).is_empty():
 					selected_tagger_type = str(current_user["taggerType"])
+				if current_user.has("runnerType") and not str(current_user["runnerType"]).is_empty():
+					selected_runner_type = str(current_user["runnerType"])
 				return
 	
 	# Default guest initialization (has_chosen_guest is false until player chooses guest)

@@ -525,6 +525,9 @@ func _spawn_match_players() -> void:
 	if p1_is_tagger:
 		var p1_type = Network.selected_tagger_type if (Network and not Network.selected_tagger_type.is_empty() and Network.selected_tagger_type != "random") else ["ponpon", "mafog", "mumu", "phoemphoon", "snowman"][randi() % 5]
 		p1.set_tagger_type(p1_type)
+	else:
+		var p1_run_type = Network.selected_runner_type if (Network and not Network.selected_runner_type.is_empty() and Network.selected_runner_type != "random") else "penguin"
+		p1.set_runner_type(p1_run_type)
 	p1.is_bot = false
 	p1.position = chaser_spawn_pos if p1_is_tagger else runner_spawn_positions[0]
 	players_container.add_child(p1)
@@ -561,6 +564,8 @@ func _spawn_match_players() -> void:
 		else:
 			bot.position = runner_spawn_positions[runner_cursor % runner_spawn_positions.size()]
 			runner_cursor += 1
+			var bot_run_pool = ["penguin", "snowman", "ponpon", "mafog", "mumu", "phoemphoon"]
+			bot.set_runner_type(bot_run_pool[randi() % bot_run_pool.size()])
 		players_container.add_child(bot)
 		player_nodes.append(bot)
 		_apply_map_physics_to_player(bot)
@@ -609,10 +614,19 @@ func _spawn_online_players() -> void:
 		p_node.role = str(p_data.get("role", "runner"))
 		if p_node.role == "tagger":
 			var t_type = str(p_data.get("taggerType", ""))
-			if t_type.is_empty():
+			if is_me and Network and not Network.selected_tagger_type.is_empty() and Network.selected_tagger_type != "random":
+				t_type = Network.selected_tagger_type
+			elif t_type.is_empty():
 				var pool = ["ponpon", "mafog", "mumu", "phoemphoon", "snowman"]
 				t_type = pool[abs(p_id.hash()) % pool.size()]
 			p_node.set_tagger_type(t_type)
+		else:
+			var r_type = str(p_data.get("runnerType", ""))
+			if is_me and Network and not Network.selected_runner_type.is_empty() and Network.selected_runner_type != "random":
+				r_type = Network.selected_runner_type
+			elif r_type.is_empty():
+				r_type = "penguin"
+			p_node.set_runner_type(r_type)
 		var p_name_str = str(p_data.get("name", "Player"))
 		if is_me and Network:
 			var eff = Network.get_effective_player_name()

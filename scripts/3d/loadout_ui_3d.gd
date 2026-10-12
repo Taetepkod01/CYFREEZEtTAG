@@ -10,8 +10,7 @@ const TAGGER_CHARACTERS: Array[Dictionary] = [
 	{
 		"id": "ponpon",
 		"name": "PonPon",
-		"thai_name": "ป้อนป้อน",
-		"role": "HUNTER · สายพุ่งไล่",
+		"role": "HUNTER · HIGH SPEED CHASER",
 		"class_name": "Hunter",
 		"model_path": "res://assets/taggers/ป้อนป้อน.glb",
 		"model_scale": Vector3(-1.3, 1.3, -1.3),
@@ -19,15 +18,14 @@ const TAGGER_CHARACTERS: Array[Dictionary] = [
 		"anim_name": "ArmatureAction",
 		"avatar_color": Color(0.65, 0.35, 0.16),
 		"skill_key": "E",
-		"skill_name": "Banana Gun · ขว้างกล้วย",
-		"skill_desc": "Shoot bananapeel to front line making runner confuse for 1.5 sec",
-		"skill_cd": "cooldown 10 sec",
+		"skill_name": "Banana Gun · Peel Throw",
+		"skill_desc": "Shoot banana peel forward making runners slip for 1.5s",
+		"skill_cd": "cooldown 10s",
 	},
 	{
 		"id": "mafog",
 		"name": "Mafog",
-		"thai_name": "มาฟ้อก",
-		"role": "INTIMIDATOR · สายข่มขวัญสปีด",
+		"role": "INTIMIDATOR · SPEED HOWL",
 		"class_name": "Intimidator",
 		"model_path": "res://assets/taggers/มาฟ้อก.glb",
 		"model_scale": Vector3(-1.0, 1.0, -1.0),
@@ -35,15 +33,14 @@ const TAGGER_CHARACTERS: Array[Dictionary] = [
 		"anim_name": "ArmatureAction",
 		"avatar_color": Color(0.93, 0.23, 0.23),
 		"skill_key": "E",
-		"skill_name": "Ice Roar · คำรามแช่แข็ง",
+		"skill_name": "Ice Roar · Frost Wave",
 		"skill_desc": "Emit a chilling frost wave slowing nearby runners by 40%",
-		"skill_cd": "cooldown 12 sec",
+		"skill_cd": "cooldown 12s",
 	},
 	{
 		"id": "phoemphoon",
 		"name": "PhoemPhoon",
-		"thai_name": "เพิ่มพูน",
-		"role": "TRICKSTER · ไททันพลังล้น",
+		"role": "TRICKSTER · FROST TITAN",
 		"class_name": "Trickster",
 		"model_path": "res://assets/taggers/เพิ่มพูน.glb",
 		"model_scale": Vector3(-0.55, 0.55, -0.55),
@@ -51,15 +48,14 @@ const TAGGER_CHARACTERS: Array[Dictionary] = [
 		"anim_name": "ArmatureAction",
 		"avatar_color": Color(1.0, 0.48, 0.10),
 		"skill_key": "E",
-		"skill_name": "Vortex Pull · หลุมดำน้ำแข็ง",
-		"skill_desc": "Cast a vortex drawing runners toward you for 2.5 sec",
-		"skill_cd": "cooldown 15 sec",
+		"skill_name": "Vortex Pull · Black Hole",
+		"skill_desc": "Cast an icy vortex drawing runners toward you for 2.5s",
+		"skill_cd": "cooldown 15s",
 	},
 	{
 		"id": "mumu",
 		"name": "Mumu",
-		"thai_name": "มุมุ",
-		"role": "CONTROLLER · สายคุมพื้นที่",
+		"role": "CONTROLLER · ZONE HAZARD",
 		"class_name": "Controller",
 		"model_path": "res://assets/taggers/มุมุ.glb",
 		"model_scale": Vector3(-1.3, 1.3, -1.3),
@@ -67,15 +63,14 @@ const TAGGER_CHARACTERS: Array[Dictionary] = [
 		"anim_name": "ArmatureAction",
 		"avatar_color": Color(0.13, 0.71, 0.69),
 		"skill_key": "E",
-		"skill_name": "Frost Slam · ทุบพื้นน้ำแข็ง",
+		"skill_name": "Frost Slam · Shockwave",
 		"skill_desc": "Slam ground to create an icy shockwave that traps runners",
-		"skill_cd": "cooldown 14 sec",
+		"skill_cd": "cooldown 14s",
 	},
 	{
 		"id": "snowman",
 		"name": "Snowman",
-		"thai_name": "สโนว์แมน",
-		"role": "CLASSIC · มนุษย์หิมะดั้งเดิม",
+		"role": "CLASSIC · FROST THROWER",
 		"class_name": "Classic",
 		"model_path": "res://assets/snowman.glb",
 		"model_scale": Vector3(-0.55, 0.55, -0.55),
@@ -83,15 +78,14 @@ const TAGGER_CHARACTERS: Array[Dictionary] = [
 		"anim_name": "",
 		"avatar_color": Color(0.35, 0.75, 1.0),
 		"skill_key": "E",
-		"skill_name": "Snowball Toss · ปาบอลหิมะ",
+		"skill_name": "Snowball Toss · Ice Stun",
 		"skill_desc": "Hurl an icy snowball to stun and freeze runner from range",
-		"skill_cd": "cooldown 8 sec",
+		"skill_cd": "cooldown 8s",
 	},
 	{
 		"id": "random",
 		"name": "Random",
-		"thai_name": "สุ่ม",
-		"role": "ADAPTIVE · สุ่มโมเดลทุกรอบ",
+		"role": "ADAPTIVE · MYSTERY TAGGER",
 		"class_name": "Random",
 		"model_path": "",
 		"model_scale": Vector3(1, 1, 1),
@@ -99,7 +93,7 @@ const TAGGER_CHARACTERS: Array[Dictionary] = [
 		"anim_name": "",
 		"avatar_color": Color(1.0, 0.82, 0.25),
 		"skill_key": "🎲",
-		"skill_name": "Surprise Pick · สุ่มตัวละคร",
+		"skill_name": "Surprise Pick · Mystery Role",
 		"skill_desc": "Randomly selects one of the Tagger models each match",
 		"skill_cd": "Passive",
 	}
@@ -109,18 +103,107 @@ const RUNNER_CHARACTERS: Array[Dictionary] = [
 	{
 		"id": "penguin",
 		"name": "Penguin",
-		"thai_name": "แพนกวิน",
-		"role": "SURVIVOR · นักวิ่งแดนหิมะ",
-		"class_name": "Runner",
+		"role": "SURVIVOR · SNOW RUNNER",
+		"class_name": "Survivor",
 		"model_path": "res://assets/penguin.glb",
 		"model_scale": Vector3(-1.4, 1.4, -1.4),
 		"model_offset": Vector3(0, 0, 0),
 		"anim_name": "",
 		"avatar_color": Color(0.16, 0.56, 0.88),
 		"skill_key": "SPACE",
-		"skill_name": "Ice Slide · สไลด์หลบหลีก",
-		"skill_desc": "Dash and slide forward with immunity to dodge taggers",
-		"skill_cd": "cooldown 6 sec",
+		"skill_name": "Ice Slide · Dash Dodge",
+		"skill_desc": "Dash and slide forward with invulnerability to dodge taggers",
+		"skill_cd": "cooldown 6s",
+	},
+	{
+		"id": "snowman",
+		"name": "Snowman",
+		"role": "SURVIVOR · FROST SPRINTER",
+		"class_name": "Sprinter",
+		"model_path": "res://assets/snowman.glb",
+		"model_scale": Vector3(-0.55, 0.55, -0.55),
+		"model_offset": Vector3(0, 0, 0),
+		"anim_name": "",
+		"avatar_color": Color(0.35, 0.75, 1.0),
+		"skill_key": "SPACE",
+		"skill_name": "Snow Drift · Slippery Dash",
+		"skill_desc": "Slip forward quickly leaving a trail of loose powder snow",
+		"skill_cd": "cooldown 6s",
+	},
+	{
+		"id": "ponpon",
+		"name": "PonPon",
+		"role": "SURVIVOR · SWIFT DODGER",
+		"class_name": "Acrobat",
+		"model_path": "res://assets/taggers/ป้อนป้อน.glb",
+		"model_scale": Vector3(-1.3, 1.3, -1.3),
+		"model_offset": Vector3(0, -0.05, 0),
+		"anim_name": "ArmatureAction",
+		"avatar_color": Color(0.65, 0.35, 0.16),
+		"skill_key": "SPACE",
+		"skill_name": "Acrobatic Leap · Quick Escape",
+		"skill_desc": "Vault forward swiftly to escape incoming chasers",
+		"skill_cd": "cooldown 6s",
+	},
+	{
+		"id": "mafog",
+		"name": "Mafog",
+		"role": "SURVIVOR · FROST WOLF",
+		"class_name": "Scout",
+		"model_path": "res://assets/taggers/มาฟ้อก.glb",
+		"model_scale": Vector3(-1.0, 1.0, -1.0),
+		"model_offset": Vector3(0, -0.05, 0),
+		"anim_name": "ArmatureAction",
+		"avatar_color": Color(0.93, 0.23, 0.23),
+		"skill_key": "SPACE",
+		"skill_name": "Wolf Dash · Speed Burst",
+		"skill_desc": "Burst sprint forward with extra momentum",
+		"skill_cd": "cooldown 6s",
+	},
+	{
+		"id": "mumu",
+		"name": "Mumu",
+		"role": "SURVIVOR · AGILE ESCAPIST",
+		"class_name": "Infiltrator",
+		"model_path": "res://assets/taggers/มุมุ.glb",
+		"model_scale": Vector3(-1.3, 1.3, -1.3),
+		"model_offset": Vector3(0, -0.05, 0),
+		"anim_name": "ArmatureAction",
+		"avatar_color": Color(0.13, 0.71, 0.69),
+		"skill_key": "SPACE",
+		"skill_name": "Shadow Slip · Ghost Step",
+		"skill_desc": "Quick phantom dodge avoiding freeze tags effortlessly",
+		"skill_cd": "cooldown 6s",
+	},
+	{
+		"id": "phoemphoon",
+		"name": "PhoemPhoon",
+		"role": "SURVIVOR · TITAN DEFENDER",
+		"class_name": "Guardian",
+		"model_path": "res://assets/taggers/เพิ่มพูน.glb",
+		"model_scale": Vector3(-0.55, 0.55, -0.55),
+		"model_offset": Vector3(0, -0.05, 0),
+		"anim_name": "ArmatureAction",
+		"avatar_color": Color(1.0, 0.48, 0.10),
+		"skill_key": "SPACE",
+		"skill_name": "Heavy Charge · Rescue Tackle",
+		"skill_desc": "Charge forward with immense force to knock away taggers",
+		"skill_cd": "cooldown 6s",
+	},
+	{
+		"id": "random",
+		"name": "Random",
+		"role": "ADAPTIVE · MYSTERY RUNNER",
+		"class_name": "Random",
+		"model_path": "",
+		"model_scale": Vector3(1, 1, 1),
+		"model_offset": Vector3(0, 0, 0),
+		"anim_name": "",
+		"avatar_color": Color(1.0, 0.82, 0.25),
+		"skill_key": "🎲",
+		"skill_name": "Surprise Pick · Mystery Runner",
+		"skill_desc": "Randomly selects one of the Runner models each match",
+		"skill_cd": "Passive",
 	}
 ]
 
@@ -164,16 +247,19 @@ func _ready() -> void:
 	
 	sfx_hover = AudioStreamPlayer.new()
 	sfx_hover.stream = AUDIO_BTN_HOVER
-	sfx_hover.volume_db = -4.0
+	sfx_volume_setup(sfx_hover, -4.0)
 	add_child(sfx_hover)
 	
 	sfx_click = AudioStreamPlayer.new()
 	sfx_click.stream = AUDIO_BTN_CLICK
-	sfx_click.volume_db = -2.0
+	sfx_volume_setup(sfx_click, -2.0)
 	add_child(sfx_click)
 	
 	_setup_3d_preview()
 	_connect_events()
+
+func sfx_volume_setup(p: AudioStreamPlayer, vol: float) -> void:
+	p.volume_db = vol
 
 func _setup_3d_preview() -> void:
 	var vp_container = get_node_or_null("PreviewSection/PreviewPanel/SubViewportContainer")
@@ -213,14 +299,6 @@ func _connect_sfx(btn: Control) -> void:
 func open() -> void:
 	visible = true
 	_update_profile_display()
-	
-	# Determine currently equipped tagger
-	var net = get_node_or_null("/root/Network")
-	var equipped_id = "ponpon"
-	if net and not net.selected_tagger_type.is_empty():
-		equipped_id = net.selected_tagger_type
-	selected_char_id = equipped_id
-	
 	_switch_tab("tagger")
 
 func close() -> void:
@@ -233,6 +311,17 @@ func _process(delta: float) -> void:
 	if is_instance_valid(model_holder):
 		model_holder.rotation.y += delta * 0.75
 
+func _get_equipped_id_for_tab(tab: String) -> String:
+	var net = get_node_or_null("/root/Network")
+	if tab == "tagger":
+		if net and not net.selected_tagger_type.is_empty():
+			return net.selected_tagger_type
+		return "ponpon"
+	else:
+		if net and not net.selected_runner_type.is_empty():
+			return net.selected_runner_type
+		return "penguin"
+
 func _switch_tab(tab: String) -> void:
 	current_tab = tab
 	_update_tab_button_styles()
@@ -241,7 +330,10 @@ func _switch_tab(tab: String) -> void:
 	if select_title_lbl:
 		select_title_lbl.text = "SELECT TAGGER" if current_tab == "tagger" else "SELECT RUNNER"
 	if char_count_lbl:
-		char_count_lbl.text = "%d ตัวละคร" % char_list.size()
+		char_count_lbl.text = "%d CHARACTERS" % char_list.size()
+	
+	var equipped_id = _get_equipped_id_for_tab(current_tab)
+	selected_char_id = equipped_id
 	
 	# Verify selected_char_id exists in this tab
 	var found = false
@@ -298,10 +390,7 @@ func _build_cards(char_list: Array[Dictionary]) -> void:
 		child.queue_free()
 	card_nodes.clear()
 	
-	var net = get_node_or_null("/root/Network")
-	var equipped_id = "ponpon"
-	if net and not net.selected_tagger_type.is_empty():
-		equipped_id = net.selected_tagger_type
+	var equipped_id = _get_equipped_id_for_tab(current_tab)
 	
 	for c_data in char_list:
 		var cid = str(c_data["id"])
@@ -382,7 +471,7 @@ func _build_cards(char_list: Array[Dictionary]) -> void:
 		b_lbl.add_theme_font_size_override("font_size", 9)
 		b_lbl.add_theme_color_override("font_color", Color(1.0, 1.0, 1.0))
 		eq_badge.add_child(b_lbl)
-		eq_badge.visible = (cid == equipped_id and current_tab == "tagger")
+		eq_badge.visible = (cid == equipped_id)
 		card_btn.add_child(eq_badge)
 		
 		card_btn.pressed.connect(func(): _select_character(cid))
@@ -398,10 +487,7 @@ func _build_cards(char_list: Array[Dictionary]) -> void:
 	_refresh_card_visuals()
 
 func _refresh_card_visuals() -> void:
-	var net = get_node_or_null("/root/Network")
-	var equipped_id = "ponpon"
-	if net and not net.selected_tagger_type.is_empty():
-		equipped_id = net.selected_tagger_type
+	var equipped_id = _get_equipped_id_for_tab(current_tab)
 	
 	for cid in card_nodes:
 		var c = card_nodes[cid]
@@ -409,7 +495,7 @@ func _refresh_card_visuals() -> void:
 		var sb: StyleBoxFlat = c["sb"]
 		var eq_badge: PanelContainer = c["equipped_badge"]
 		var is_selected = (cid == selected_char_id)
-		var is_equipped = (cid == equipped_id and current_tab == "tagger")
+		var is_equipped = (cid == equipped_id)
 		
 		eq_badge.visible = is_equipped
 		
@@ -467,18 +553,15 @@ func _display_character(cid: String) -> void:
 	_load_preview_model(data)
 	
 	# Update Equip Button text
-	var net = get_node_or_null("/root/Network")
-	var equipped_id = "ponpon"
-	if net and not net.selected_tagger_type.is_empty():
-		equipped_id = net.selected_tagger_type
+	var equipped_id = _get_equipped_id_for_tab(current_tab)
 	
 	if equip_btn:
-		if current_tab == "tagger" and cid == equipped_id:
+		if cid == equipped_id:
 			equip_btn.text = "✓ EQUIPPED"
 			equip_btn.disabled = true
 			equip_btn.modulate = Color(0.8, 0.95, 0.85)
 		else:
-			equip_btn.text = "EQUIP"
+			equip_btn.text = "EQUIP TAGGER" if current_tab == "tagger" else "EQUIP RUNNER"
 			equip_btn.disabled = false
 			equip_btn.modulate = Color(1.0, 1.0, 1.0)
 
@@ -537,14 +620,17 @@ func _load_preview_model(data: Dictionary) -> void:
 			anim_player.play(anim_name)
 
 func _on_equip_pressed() -> void:
-	if current_tab != "tagger":
-		return
-	
 	var net = get_node_or_null("/root/Network")
-	if net:
-		net.selected_tagger_type = selected_char_id
-		net.current_user["taggerType"] = selected_char_id
-		net.save_local_user()
+	if current_tab == "tagger":
+		if net:
+			net.selected_tagger_type = selected_char_id
+			net.current_user["taggerType"] = selected_char_id
+			net.save_local_user()
+	elif current_tab == "runner":
+		if net:
+			net.selected_runner_type = selected_char_id
+			net.current_user["runnerType"] = selected_char_id
+			net.save_local_user()
 	
 	_refresh_card_visuals()
 	_display_character(selected_char_id)
