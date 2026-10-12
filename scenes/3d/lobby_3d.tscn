@@ -762,12 +762,12 @@ offset_right = -20.0
 offset_bottom = -16.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/separation = 6
+theme_override_constants/separation = 10
 
 [node name="SpaceStationBtn" type="Button" parent="RoomView/HBox/MapSelectionCard/Grid" unique_id=1019781662]
-custom_minimum_size = Vector2(0, 68)
+custom_minimum_size = Vector2(0, 80)
 layout_mode = 2
-theme_override_font_sizes/font_size = 12
+theme_override_font_sizes/font_size = 13
 theme_override_styles/normal = SubResource("StyleBoxFlat_map_btn")
 text = "SPACE STATION"
 icon = ExtResource("5_map_space")
@@ -776,9 +776,9 @@ vertical_icon_alignment = 0
 expand_icon = true
 
 [node name="SnowTownBtn" type="Button" parent="RoomView/HBox/MapSelectionCard/Grid" unique_id=1724146943]
-custom_minimum_size = Vector2(0, 68)
+custom_minimum_size = Vector2(0, 80)
 layout_mode = 2
-theme_override_font_sizes/font_size = 12
+theme_override_font_sizes/font_size = 13
 theme_override_styles/normal = SubResource("StyleBoxFlat_map_btn")
 text = "SNOW TOWN"
 icon = ExtResource("4_map_snow")
@@ -787,9 +787,9 @@ vertical_icon_alignment = 0
 expand_icon = true
 
 [node name="TrainingGroundBtn" type="Button" parent="RoomView/HBox/MapSelectionCard/Grid" unique_id=1016726323]
-custom_minimum_size = Vector2(0, 68)
+custom_minimum_size = Vector2(0, 80)
 layout_mode = 2
-theme_override_font_sizes/font_size = 12
+theme_override_font_sizes/font_size = 13
 theme_override_styles/normal = SubResource("StyleBoxFlat_map_btn")
 text = "TRAINING GROUND"
 icon = ExtResource("16_map_training")
@@ -797,21 +797,10 @@ icon_alignment = 1
 vertical_icon_alignment = 0
 expand_icon = true
 
-[node name="VoidParkourBtn" type="Button" parent="RoomView/HBox/MapSelectionCard/Grid" unique_id=1028374619]
-custom_minimum_size = Vector2(0, 68)
-layout_mode = 2
-theme_override_font_sizes/font_size = 12
-theme_override_styles/normal = SubResource("StyleBoxFlat_map_btn")
-text = "VOID PARKOUR"
-icon = ExtResource("5_map_space")
-icon_alignment = 1
-vertical_icon_alignment = 0
-expand_icon = true
-
 [node name="RandomMapBtn" type="Button" parent="RoomView/HBox/MapSelectionCard/Grid" unique_id=1039485721]
-custom_minimum_size = Vector2(0, 68)
+custom_minimum_size = Vector2(0, 80)
 layout_mode = 2
-theme_override_font_sizes/font_size = 12
+theme_override_font_sizes/font_size = 13
 theme_override_styles/normal = SubResource("StyleBoxFlat_map_btn")
 text = "RANDOM MAP"
 icon = ExtResource("14_btn_random")

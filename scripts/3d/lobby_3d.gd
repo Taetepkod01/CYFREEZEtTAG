@@ -1223,7 +1223,7 @@ func _on_action_pressed() -> void:
 				Network.current_round = 1
 				Network.max_rounds = int(r.get("rounds", 3))
 				if selected_map.to_upper().contains("RANDOM"):
-					var maps_pool = ["SPACE STATION", "SNOW TOWN", "TRAINING GROUND", "VOID PARKOUR"]
+					var maps_pool = ["SPACE STATION", "SNOW TOWN", "TRAINING GROUND"]
 					Network.selected_map = maps_pool[randi() % maps_pool.size()]
 				else:
 					Network.selected_map = selected_map
