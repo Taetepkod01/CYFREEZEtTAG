@@ -59,6 +59,16 @@ var freeze_tag_mode_btn: Button = null
 var racing_mode_btn: Button = null
 var close_mode_select_btn: Button = null
 
+# Falling Snowflake Particle System
+const TEX_SNOWFLAKE_PARTICLE = preload("res://assets/ui/menu/snowflake_particle.png")
+const MAX_FALLING_SNOWFLAKES: int = 5
+
+@onready var snowflake_container: Control = get_node_or_null("SnowflakeContainer")
+
+var snowflake_spawn_timer: float = 0.0
+var next_snowflake_spawn_delay: float = 2.0
+var active_snowflakes: Array[Dictionary] = []
+
 var selected_practice_role: String = "runner"
 var time_passed: float = 0.0
 var is_register_mode: bool = false
@@ -846,6 +856,90 @@ func _process(delta: float) -> void:
 	time_passed += delta
 	var s = 1.0 + sin(time_passed * 2.5) * 0.02
 	title_label.scale = Vector2(s, s)
+	
+	_update_snowflakes(delta)
+
+func _update_snowflakes(delta: float) -> void:
+	var vp_size = get_viewport_rect().size
+	if vp_size.x <= 0 or vp_size.y <= 0:
+		vp_size = Vector2(1280, 720)
+	
+	# Update existing snowflakes
+	var i = active_snowflakes.size() - 1
+	while i >= 0:
+		var flake = active_snowflakes[i]
+		var rect: TextureRect = flake.get("node")
+		if not is_instance_valid(rect):
+			active_snowflakes.remove_at(i)
+			i -= 1
+			continue
+		
+		flake["time"] += delta
+		flake["pos_y"] += flake["speed_y"] * delta
+		var sway = sin(flake["time"] * flake["sway_speed"] + flake["sway_phase"]) * flake["sway_amp"]
+		rect.position = Vector2(flake["pos_x"] + sway, flake["pos_y"])
+		rect.rotation += flake["rot_speed"] * delta
+		
+		# Fade in at top, fade out near bottom
+		if flake["pos_y"] < 50.0:
+			var alpha_in = clampf((flake["pos_y"] + 70.0) / 120.0, 0.0, 1.0)
+			rect.modulate.a = flake["base_alpha"] * alpha_in
+		elif flake["pos_y"] > vp_size.y - 70.0:
+			var alpha_out = clampf((vp_size.y + 70.0 - flake["pos_y"]) / 140.0, 0.0, 1.0)
+			rect.modulate.a = flake["base_alpha"] * alpha_out
+		else:
+			rect.modulate.a = flake["base_alpha"]
+		
+		# Check if reached bottom of screen
+		if flake["pos_y"] > vp_size.y + 75.0:
+			rect.queue_free()
+			active_snowflakes.remove_at(i)
+		i -= 1
+	
+	# Spawn new snowflake: interval between 3 and 5 seconds, max 5 active
+	if active_snowflakes.size() < MAX_FALLING_SNOWFLAKES:
+		snowflake_spawn_timer += delta
+		if snowflake_spawn_timer >= next_snowflake_spawn_delay:
+			snowflake_spawn_timer = 0.0
+			next_snowflake_spawn_delay = randf_range(3.0, 5.0)
+			_spawn_snowflake(vp_size)
+
+func _spawn_snowflake(vp_size: Vector2) -> void:
+	if not snowflake_container or active_snowflakes.size() >= MAX_FALLING_SNOWFLAKES:
+		return
+	
+	var rect = TextureRect.new()
+	rect.texture = TEX_SNOWFLAKE_PARTICLE
+	rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	
+	var sf_size = randf_range(42.0, 68.0)
+	rect.custom_minimum_size = Vector2(sf_size, sf_size)
+	rect.size = Vector2(sf_size, sf_size)
+	rect.pivot_offset = Vector2(sf_size * 0.5, sf_size * 0.5)
+	
+	var start_x = randf_range(40.0, vp_size.x - 40.0)
+	var start_y = -70.0
+	rect.position = Vector2(start_x, start_y)
+	
+	var base_alpha = randf_range(0.70, 0.95)
+	rect.modulate = Color(1.0, 1.0, 1.0, 0.0)
+	
+	snowflake_container.add_child(rect)
+	
+	active_snowflakes.append({
+		"node": rect,
+		"pos_x": start_x,
+		"pos_y": start_y,
+		"speed_y": randf_range(45.0, 75.0),
+		"sway_amp": randf_range(16.0, 36.0),
+		"sway_speed": randf_range(1.2, 2.2),
+		"sway_phase": randf_range(0.0, TAU),
+		"rot_speed": randf_range(-0.35, 0.35),
+		"base_alpha": base_alpha,
+		"time": 0.0
+	})
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):

@@ -175,22 +175,14 @@ texture = ExtResource("2_bg_winter")
 expand_mode = 1
 stretch_mode = 6
 
-[node name="Snowflakes" type="CPUParticles2D" parent="." unique_id=233906031]
-position = Vector2(640, -20)
-amount = 45
-lifetime = 8.0
-preprocess = 4.0
-emission_shape = 3
-emission_rect_extents = Vector2(650, 10)
-direction = Vector2(0.2, 1)
-spread = 20.0
-gravity = Vector2(0, 15)
-initial_velocity_min = 20.0
-initial_velocity_max = 50.0
-scale_amount_min = 2.0
-scale_amount_max = 4.0
-scale_amount_curve = SubResource("Curve_particles")
-color_ramp = SubResource("Gradient_particles")
+[node name="SnowflakeContainer" type="Control" parent="." unique_id=233906031]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
 
 [node name="TitleLogo" type="TextureRect" parent="." unique_id=1434559025]
 layout_mode = 1
