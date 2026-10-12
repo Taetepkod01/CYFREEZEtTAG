@@ -528,17 +528,17 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -540.0
+offset_left = -420.0
 offset_top = -230.0
-offset_right = 540.0
+offset_right = 420.0
 offset_bottom = 220.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/separation = 16
+theme_override_constants/separation = 24
 alignment = 1
 
 [node name="PlayerListCard" type="Panel" parent="RoomView/HBox" unique_id=1664863703]
-custom_minimum_size = Vector2(320, 450)
+custom_minimum_size = Vector2(360, 450)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_card")
 
@@ -575,7 +575,7 @@ size_flags_horizontal = 3
 theme_override_constants/separation = 8
 
 [node name="HostSettingsCard" type="Panel" parent="RoomView/HBox" unique_id=1244960994]
-custom_minimum_size = Vector2(380, 450)
+custom_minimum_size = Vector2(440, 450)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_card")
 
@@ -730,95 +730,8 @@ theme_override_colors/font_color = Color(1, 0.88, 0.4, 1)
 theme_override_font_sizes/font_size = 12
 text = "Private Room (Hidden from Browser)"
 
-[node name="MapSelectionCard" type="Panel" parent="RoomView/HBox" unique_id=1792894662]
-custom_minimum_size = Vector2(360, 450)
-layout_mode = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_card")
-
-[node name="Header" type="Label" parent="RoomView/HBox/MapSelectionCard" unique_id=1986797038]
-layout_mode = 1
-anchors_preset = 5
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = -150.0
-offset_top = 16.0
-offset_right = 150.0
-offset_bottom = 40.0
-grow_horizontal = 2
-theme_override_colors/font_color = Color(0.4, 0.85, 1, 1)
-theme_override_font_sizes/font_size = 15
-text = "TRACK SELECTION"
-horizontal_alignment = 1
-
-[node name="Grid" type="VBoxContainer" parent="RoomView/HBox/MapSelectionCard" unique_id=1687873957]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = 20.0
-offset_top = 46.0
-offset_right = -20.0
-offset_bottom = -16.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_constants/separation = 6
-
-[node name="SpaceStationBtn" type="Button" parent="RoomView/HBox/MapSelectionCard/Grid" unique_id=1019781662]
-custom_minimum_size = Vector2(0, 68)
-layout_mode = 2
-theme_override_font_sizes/font_size = 12
-theme_override_styles/normal = SubResource("StyleBoxFlat_map_btn")
-text = "SPACE STATION"
-icon = ExtResource("5_map_space")
-icon_alignment = 1
-vertical_icon_alignment = 0
-expand_icon = true
-
-[node name="SnowTownBtn" type="Button" parent="RoomView/HBox/MapSelectionCard/Grid" unique_id=1724146943]
-custom_minimum_size = Vector2(0, 68)
-layout_mode = 2
-theme_override_font_sizes/font_size = 12
-theme_override_styles/normal = SubResource("StyleBoxFlat_map_btn")
-text = "SNOW TOWN"
-icon = ExtResource("4_map_snow")
-icon_alignment = 1
-vertical_icon_alignment = 0
-expand_icon = true
-
-[node name="LabyrinthBtn" type="Button" parent="RoomView/HBox/MapSelectionCard/Grid" unique_id=1016726323]
-custom_minimum_size = Vector2(0, 68)
-layout_mode = 2
-theme_override_font_sizes/font_size = 12
-theme_override_styles/normal = SubResource("StyleBoxFlat_map_btn")
-text = "LABYRINTH"
-icon = ExtResource("6_map_laby")
-icon_alignment = 1
-vertical_icon_alignment = 0
-expand_icon = true
-
-[node name="VoidParkourBtn" type="Button" parent="RoomView/HBox/MapSelectionCard/Grid" unique_id=1028374619]
-custom_minimum_size = Vector2(0, 68)
-layout_mode = 2
-theme_override_font_sizes/font_size = 12
-theme_override_styles/normal = SubResource("StyleBoxFlat_map_btn")
-text = "VOID PARKOUR"
-icon = ExtResource("5_map_space")
-icon_alignment = 1
-vertical_icon_alignment = 0
-expand_icon = true
-
-[node name="RandomMapBtn" type="Button" parent="RoomView/HBox/MapSelectionCard/Grid" unique_id=1039485721]
-custom_minimum_size = Vector2(0, 68)
-layout_mode = 2
-theme_override_font_sizes/font_size = 12
-theme_override_styles/normal = SubResource("StyleBoxFlat_map_btn")
-text = "RANDOM MAP"
-icon = ExtResource("14_btn_random")
-icon_alignment = 1
-vertical_icon_alignment = 0
-expand_icon = true
-
 [node name="BottomBar" type="HBoxContainer" parent="RoomView" unique_id=933071598]
+z_index = 10
 layout_mode = 1
 anchors_preset = 7
 anchor_left = 0.5

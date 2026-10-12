@@ -397,6 +397,8 @@ func _process(delta: float) -> void:
 			_spawn_random_item()
 	
 	_process_quack_cooldown(delta)
+	if is_game_active and not is_void_parkour:
+		_check_round_end_condition()
 	_update_hud()
 
 # -- Modal Controls & Role Selection -----------------------------------------
@@ -520,12 +522,7 @@ func _spawn_match_players() -> void:
 	
 	# Player 1 (You)
 	var p1 = player_3d_scene.instantiate()
-	var my_name = "Player 1"
-	if Network:
-		if Network.current_user and not str(Network.current_user.get("displayName", "")).strip_edges().is_empty():
-			my_name = str(Network.current_user.get("displayName", "")).strip_edges()
-		elif not str(Network.my_player_name).strip_edges().is_empty():
-			my_name = str(Network.my_player_name).strip_edges()
+	var my_name = Network.get_effective_player_name() if Network else "Player 1"
 	p1.player_name = my_name + " (You)"
 	p1.role = "tagger" if p1_is_tagger else "runner"
 	p1.is_bot = false
@@ -601,7 +598,12 @@ func _spawn_online_players() -> void:
 		var p_node = player_3d_scene.instantiate()
 		p_node.network_id = p_id
 		p_node.role = str(p_data.get("role", "runner"))
-		p_node.player_name = str(p_data.get("name", "Player")) + (" (You)" if is_me else "")
+		var p_name_str = str(p_data.get("name", "Player"))
+		if is_me and Network:
+			var eff = Network.get_effective_player_name()
+			if not eff.is_empty() and eff != "Player 1":
+				p_name_str = eff
+		p_node.player_name = p_name_str + (" (You)" if is_me else "")
 		
 		if is_bot:
 			if not Network or not Network.is_online_game() or Network.is_host:
@@ -745,12 +747,13 @@ func _on_net_player_moved(id: String, pos: Vector3, rot_y: float) -> void:
 
 func _on_net_player_tagged(_tagger_id: String, tagger_name: String, victim_id: String, victim_name: String) -> void:
 	for p in player_nodes:
-		if p.network_id == victim_id:
+		if is_instance_valid(p) and p.network_id == victim_id:
 			p.freeze()
 			break
 	_play_freeze_sfx()
 	add_game_log("[color=#ff4c4c]%s[/color] tagged [color=#4fc3f7]%s[/color]" % [tagger_name, victim_name])
 	_update_hud()
+	_check_round_end_condition()
 
 func _on_net_player_rescued(_rescuer_id: String, rescuer_name: String, victim_id: String, victim_name: String) -> void:
 	for p in player_nodes:
@@ -871,18 +874,36 @@ func _show_rewards_display(text: String, leveled_up: bool) -> void:
 		rewards_lbl.modulate = Color(0.4, 0.9, 1.0)
 
 # -- Events & Log (Practice / Local) -----------------------------------------
+func _check_round_end_condition() -> void:
+	if not is_game_active or is_void_parkour:
+		return
+	if player_nodes.size() < 2:
+		return
+	
+	var total_runners = 0
+	var unfrozen_runners = 0
+	var alive_taggers = 0
+	for p in player_nodes:
+		if not is_instance_valid(p):
+			continue
+		if p.role == "runner":
+			total_runners += 1
+			if not p.is_frozen:
+				unfrozen_runners += 1
+		elif p.role == "tagger":
+			if p.hp > 0 and not p.is_frozen:
+				alive_taggers += 1
+	
+	if total_runners > 0 and unfrozen_runners == 0:
+		_end_round("TAGGERS")
+	elif total_runners > 0 and alive_taggers == 0 and not is_online_match:
+		_end_round("RUNNERS")
+
 func _on_player_tagged(tagger: CharacterBody3D, victim: CharacterBody3D) -> void:
 	_play_freeze_sfx()
 	add_game_log("[color=#ff4c4c]%s[/color] tagged [color=#4fc3f7]%s[/color]" % [tagger.player_name, victim.player_name])
 	_update_hud()
-	
-	var unfrozen_runners = 0
-	for p in player_nodes:
-		if p.role == "runner" and not p.is_frozen:
-			unfrozen_runners += 1
-	
-	if unfrozen_runners == 0:
-		_end_round("TAGGERS")
+	_check_round_end_condition()
 
 func _on_player_rescued(rescuer: CharacterBody3D, victim: CharacterBody3D) -> void:
 	add_game_log("[color=#69f0ae]%s[/color] rescued [color=#4fc3f7]%s[/color]!" % [rescuer.player_name, victim.player_name])
@@ -1318,6 +1339,13 @@ func _on_next_round_pressed() -> void:
 		trap.queue_free()
 	for i in range(4):
 		_spawn_random_item()
+	
+	if not is_void_parkour and (not Network or not Network.is_online_game()):
+		if Network and Network.current_match_players.size() > 1:
+			var total_p = Network.current_match_players.size()
+			var tagger_idx = randi() % total_p
+			for i in range(total_p):
+				Network.current_match_players[i]["role"] = "tagger" if i == tagger_idx else "runner"
 		
 	_spawn_match_players()
 	_update_hud()

@@ -777,6 +777,7 @@ func _on_guest_play_pressed() -> void:
 		Network.current_user["displayName"] = d_name
 		Network.my_player_name = d_name
 		Network.save_local_user()
+		Network.set_player_name(d_name)
 		Network.auth_guest(d_name)
 	_show_main_menu()
 	_update_profile_bar()
@@ -820,6 +821,7 @@ func _complete_authentication() -> void:
 		Network.current_user["has_chosen_guest"] = false
 		Network.my_player_name = d_name
 		Network.save_local_user()
+		Network.set_player_name(d_name)
 		Network.auth_sync_websocket()
 		Network.profile_updated.emit(Network.current_user)
 	

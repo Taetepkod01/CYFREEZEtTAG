@@ -38,7 +38,6 @@ const TEX_WAITING = preload("res://assets/ui/buttons/btn_waiting.png")
 @onready var host_private_check: CheckBox = $RoomView/HBox/HostSettingsCard/PrivateRow/PrivateCheck
 @onready var map_preview_lbl: Label = $RoomView/HBox/HostSettingsCard/MapPreview/MapName
 @onready var map_preview_img: TextureRect = $RoomView/HBox/HostSettingsCard/MapPreview/MapImg
-@onready var map_grid: VBoxContainer = $RoomView/HBox/MapSelectionCard/Grid
 
 # Action Buttons
 @onready var action_btn: TextureButton = $RoomView/BottomBar/ActionBtn
@@ -75,7 +74,7 @@ func _ready() -> void:
 	if Network:
 		Network.selected_game_mode = "racing"
 		Network.selected_map = "VOID PARKOUR"
-		my_player_name = Network.my_player_name
+		my_player_name = Network.get_effective_player_name()
 	selected_map = "VOID PARKOUR"
 
 	player_name_input.text = my_player_name
@@ -163,7 +162,6 @@ func _ready() -> void:
 	add_bot_btn.pressed.connect(_on_add_bot_pressed)
 	$RoomView/HBox/PlayerListCard.add_child(add_bot_btn)
 	
-	_setup_map_grid_buttons()
 	_connect_network_signals()
 	
 	# Connect to backend WebSocket server if not connected
@@ -763,11 +761,6 @@ func _update_room_lobby_ui() -> void:
 	max_players_val_lbl.text = "%d Players" % r["max_players"]
 	map_preview_lbl.text = "TRACK: VOID PARKOUR"
 	_update_map_preview_image("VOID PARKOUR")
-	_update_map_selection_highlight("VOID PARKOUR")
-	
-	for child in map_grid.get_children():
-		if child is Button:
-			child.disabled = not is_host
 	
 	max_players_slider.editable = is_host
 	rounds_opt.disabled = not is_host
@@ -1030,23 +1023,6 @@ func _on_host_private_toggled(toggled_on: bool) -> void:
 	if Network and Network.is_connected_to_server:
 		Network.update_room_settings(r["max_players"], r["rounds"], "VOID PARKOUR", toggled_on)
 
-func _setup_map_grid_buttons() -> void:
-	for child in map_grid.get_children():
-		if child is Button:
-			child.pressed.connect(func():
-				selected_map = "VOID PARKOUR"
-				if Network:
-					Network.selected_map = "VOID PARKOUR"
-				if active_rooms.has(current_room_code):
-					active_rooms[current_room_code]["map"] = "VOID PARKOUR"
-				
-				map_preview_lbl.text = "TRACK: VOID PARKOUR"
-				_update_map_preview_image("VOID PARKOUR")
-				_update_map_selection_highlight("VOID PARKOUR")
-				if is_host and active_rooms.has(current_room_code) and Network and Network.is_connected_to_server:
-					Network.update_room_settings(active_rooms[current_room_code]["max_players"], active_rooms[current_room_code]["rounds"], "VOID PARKOUR", bool(active_rooms[current_room_code].get("is_private", false)))
-			)
-
 func _update_map_preview_image(_map_name: String) -> void:
 	if not map_preview_img:
 		return
@@ -1054,11 +1030,6 @@ func _update_map_preview_image(_map_name: String) -> void:
 		map_preview_img.texture = load("res://assets/ui/mode_selection/mode_racing_art.png")
 	elif ResourceLoader.exists("res://assets/maps/map_space_station.png"):
 		map_preview_img.texture = load("res://assets/maps/map_space_station.png")
-
-func _update_map_selection_highlight(_map_name: String) -> void:
-	for child in map_grid.get_children():
-		if child is Button:
-			child.modulate = Color(1.3, 1.3, 1.3)
 
 func _on_copy_code_pressed() -> void:
 	if not current_room_code.is_empty():
@@ -1196,7 +1167,7 @@ func _on_leave_room_pressed() -> void:
 	current_room_code = ""
 	is_host = false
 	is_ready = false
-	_show_browser_view()
+	get_tree().change_scene_to_file("res://scenes/3d/main_menu_3d.tscn")
 
 func _on_back_to_menu_pressed() -> void:
 	if Network and Network.is_connected_to_server:

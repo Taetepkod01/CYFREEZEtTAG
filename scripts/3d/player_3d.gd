@@ -7,7 +7,11 @@ signal item_picked_up(item_name: String)
 signal item_changed(item_name: String)
 signal player_damaged(target: CharacterBody3D, amount: int)
 
-@export var player_name: String = "Player"
+@export var player_name: String = "Player":
+	set(val):
+		player_name = val
+		if is_instance_valid(name_tag):
+			_update_role_visuals()
 @export var role: String = "runner" # "tagger" or "runner"
 @export var is_frozen: bool = false
 @export var is_rescuing: bool = false

@@ -74,7 +74,7 @@ func _ready() -> void:
 	
 	if Network:
 		Network.selected_game_mode = "freezetag"
-		my_player_name = Network.my_player_name
+		my_player_name = Network.get_effective_player_name()
 		if not Network.selected_map.is_empty():
 			selected_map = Network.selected_map
 	player_name_input.text = my_player_name

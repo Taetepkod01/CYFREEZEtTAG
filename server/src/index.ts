@@ -838,17 +838,22 @@ wss.on("connection", (ws: WebSocket, req: any) => {
           const hostPlayer = room.players.get(room.hostId);
           if (hostPlayer) hostPlayer.isReady = true;
 
-          // Check if all other human players are ready!
-          let unreadyCount = 0;
-          room.players.forEach(p => {
-            if (p.id !== room.hostId && !p.isBot && !p.isReady) {
-              unreadyCount++;
-            }
-          });
+          // Check if all other human players are ready (only in initial lobby phase)
+          if (room.phase === "lobby") {
+            let unreadyCount = 0;
+            room.players.forEach(p => {
+              if (p.id !== room.hostId && !p.isBot && !p.isReady) {
+                unreadyCount++;
+              }
+            });
 
-          if (unreadyCount > 0) {
-            sendTo(ws, "error", { message: `Cannot start! Waiting for ${unreadyCount} player(s) to press READY.` });
-            return;
+            if (unreadyCount > 0) {
+              sendTo(ws, "error", { message: `Cannot start! Waiting for ${unreadyCount} player(s) to press READY.` });
+              return;
+            }
+          } else {
+            // Next round or rematch initiated by host: mark active players ready
+            room.players.forEach(p => { p.isReady = true; });
           }
 
           start3DRound(room);
@@ -1145,8 +1150,8 @@ wss.on("connection", (ws: WebSocket, req: any) => {
 
           // Anti-Cheat: Validate Euclidean distance between Tagger and Victim
           const dist = Math.hypot(tagger.x - victim.x, tagger.z - victim.z);
-          const MAX_TAG_DIST = 5.0; // Max reach (1.5m collision radius + latency/speed buffer)
-          if (dist > MAX_TAG_DIST) {
+          const maxAllowed = (tagger.isBot || victim.isBot) ? 12.0 : 8.5; // Collision radius + network latency/tick buffer
+          if (dist > maxAllowed) {
             console.warn(`[AntiCheat] Blocked distant tag attempt by ${tagger.name} on ${victim.name} (${dist.toFixed(2)}m)`);
             return;
           }
@@ -1487,6 +1492,13 @@ function start3DRound(room: Active3DRoom) {
 
   room.phase = "playing";
   room.timeLeft = 165; // 02:45
+
+  // Purge any human players with closed/dead WebSocket
+  Array.from(room.players.entries()).forEach(([id, p]) => {
+    if (!p.isBot && (!p.ws || p.ws.readyState !== 1)) {
+      room.players.delete(id);
+    }
+  });
 
   // Assign roles based on player count (including bots):
   // <= 5 players: 1 tagger
@@ -1861,7 +1873,7 @@ function check3DEndCondition(room: Active3DRoom) {
   }
 
   // 3. If all remaining runners are frozen, taggers win
-  if (activeRunners === 0) {
+  if (totalRunners > 0 && activeRunners === 0) {
     end3DRound(room, "TAGGERS", "All Runners Frozen");
   }
 }

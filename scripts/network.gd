@@ -488,6 +488,15 @@ func _handle_server_message(raw_text: String) -> void:
 			pass
 
 # ── Outbound Action Helpers ───────────────────────────────────────────────────
+func get_effective_player_name() -> String:
+	if current_user and current_user.has("displayName") and not str(current_user["displayName"]).strip_edges().is_empty() and str(current_user["displayName"]).strip_edges() != "Player 1":
+		return str(current_user["displayName"]).strip_edges()
+	if not my_player_name.strip_edges().is_empty() and my_player_name.strip_edges() != "Player 1":
+		return my_player_name.strip_edges()
+	if current_user and current_user.has("displayName") and not str(current_user["displayName"]).strip_edges().is_empty():
+		return str(current_user["displayName"]).strip_edges()
+	return my_player_name
+
 func kick_player(target_id: String) -> void:
 	send_action("kick_player", { "targetId": target_id })
 
@@ -495,19 +504,28 @@ func set_ready(ready: bool) -> void:
 	send_action("set_ready", { "isReady": ready })
 
 func leave_room() -> void:
-	send_action("leave_room", { "playerName": my_player_name })
+	send_action("leave_room", { "playerName": get_effective_player_name() })
 
 func set_player_name(new_name: String) -> void:
-	my_player_name = new_name
-	send_action("set_player_name", { "name": new_name })
+	var clean = new_name.strip_edges()
+	if clean.is_empty():
+		clean = "Player"
+	my_player_name = clean
+	if current_user is Dictionary:
+		current_user["displayName"] = clean
+	save_local_user()
+	send_action("set_player_name", { "name": clean })
+	auth_sync_websocket()
+	profile_updated.emit(current_user)
 
 func create_room(r_name: String, max_p: int = 8, rounds: int = 3, map_name: String = "SPACE STATION", is_priv: bool = false, game_mode: String = "") -> void:
 	selected_map = map_name
 	var mode_to_send = game_mode if not game_mode.is_empty() else selected_game_mode
 	selected_game_mode = mode_to_send
+	var eff_name = get_effective_player_name()
 	send_action("create_room", {
 		"roomName": r_name,
-		"playerName": my_player_name,
+		"playerName": eff_name,
 		"uid": current_user.get("uid", ""),
 		"maxPlayers": max_p,
 		"rounds": rounds,
@@ -521,9 +539,10 @@ func join_room(code: String) -> void:
 	if kicked_rooms.has(clean):
 		connection_error.emit("You were kicked from room \"%s\" and cannot rejoin." % clean)
 		return
+	var eff_name = get_effective_player_name()
 	send_action("join_room", {
 		"roomCode": clean,
-		"playerName": my_player_name,
+		"playerName": eff_name,
 		"uid": current_user.get("uid", "")
 	})
 
