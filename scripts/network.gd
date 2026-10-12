@@ -734,6 +734,7 @@ func _on_auth_http_completed(_result: int, response_code: int, _headers: PackedS
 			auth_failed.emit(err_msg)
 
 func save_local_user() -> void:
+	current_user["taggerType"] = selected_tagger_type
 	var f = FileAccess.open(USER_PROFILE_FILE, FileAccess.WRITE)
 	if f:
 		f.store_string(JSON.stringify(current_user, "\t"))
@@ -750,6 +751,8 @@ func load_local_user() -> void:
 				current_user = parsed
 				if current_user.has("displayName") and not str(current_user["displayName"]).is_empty():
 					my_player_name = str(current_user["displayName"])
+				if current_user.has("taggerType") and not str(current_user["taggerType"]).is_empty():
+					selected_tagger_type = str(current_user["taggerType"])
 				return
 	
 	# Default guest initialization (has_chosen_guest is false until player chooses guest)
