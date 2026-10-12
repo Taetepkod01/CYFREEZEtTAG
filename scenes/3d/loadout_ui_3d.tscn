@@ -1,0 +1,466 @@
+[gd_scene format=3 uid="uid://loadoutui0001"]
+
+[ext_resource type="Script" path="res://scripts/3d/loadout_ui_3d.gd" id="1_loadout"]
+
+[ext_resource type="FontFile" uid="uid://dnk82lv14wm8o" path="res://assets/fonts/Audiowide.ttf" id="2_font_audio"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bg_sky"]
+bg_color = Color(0.11, 0.5, 0.88, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ground"]
+bg_color = Color(0.957, 0.984, 1, 1)
+border_width_top = 6
+border_color = Color(0.749, 0.902, 0.984, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_profile"]
+bg_color = Color(0.039, 0.157, 0.353, 0.85)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.498, 0.847, 1, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_preview_box"]
+bg_color = Color(0.039, 0.196, 0.431, 0.35)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.749, 0.914, 1, 1)
+corner_radius_top_left = 20
+corner_radius_top_right = 20
+corner_radius_bottom_right = 20
+corner_radius_bottom_left = 20
+
+[sub_resource type="Environment" id="Environment_preview"]
+ambient_light_source = 2
+ambient_light_color = Color(0.45, 0.65, 0.85, 1)
+ambient_light_energy = 0.8
+
+[sub_resource type="World3D" id="World3D_preview"]
+environment = SubResource("Environment_preview")
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_role_badge"]
+content_margin_left = 14.0
+content_margin_top = 2.0
+content_margin_right = 14.0
+content_margin_bottom = 2.0
+bg_color = Color(1, 0.478, 0.102, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 1, 1, 1)
+corner_radius_top_left = 999
+corner_radius_top_right = 999
+corner_radius_bottom_right = 999
+corner_radius_bottom_left = 999
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_skill_card"]
+content_margin_left = 16.0
+content_margin_top = 14.0
+content_margin_right = 16.0
+content_margin_bottom = 14.0
+bg_color = Color(0.039, 0.196, 0.431, 0.65)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.749, 0.914, 1, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_key_box"]
+bg_color = Color(1, 0.824, 0.247, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_selection_panel"]
+content_margin_left = 20.0
+content_margin_top = 20.0
+content_margin_right = 20.0
+content_margin_bottom = 20.0
+bg_color = Color(0.031, 0.157, 0.373, 0.92)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.749, 0.914, 1, 1)
+corner_radius_top_left = 22
+corner_radius_top_right = 22
+corner_radius_bottom_right = 22
+corner_radius_bottom_left = 22
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_equip_btn"]
+bg_color = Color(1, 0.62, 0.15, 1)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(1, 1, 1, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(0.65, 0.29, 0, 1)
+shadow_size = 5
+shadow_offset = Vector2(0, 4)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_back_btn"]
+bg_color = Color(0.039, 0.196, 0.431, 0.88)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.498, 0.847, 1, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[node name="LoadoutUI3D" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_loadout")
+
+[node name="SkyBackground" type="Panel" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_bg_sky")
+
+[node name="GroundFooter" type="Panel" parent="."]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -170.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_styles/panel = SubResource("StyleBoxFlat_ground")
+
+[node name="HeaderContainer" type="VBoxContainer" parent="."]
+layout_mode = 0
+offset_left = 40.0
+offset_top = 28.0
+offset_right = 400.0
+offset_bottom = 140.0
+theme_override_constants/separation = 12
+
+[node name="TitleLabel" type="Label" parent="HeaderContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_shadow_color = Color(0.059, 0.298, 0.592, 1)
+theme_override_constants/shadow_outline_size = 8
+theme_override_constants/shadow_offset_y = 4
+theme_override_fonts/font = ExtResource("2_font_audio")
+theme_override_font_sizes/font_size = 42
+text = "CHARACTER"
+
+[node name="TabsHBox" type="HBoxContainer" parent="HeaderContainer"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="TaggerTabBtn" type="Button" parent="HeaderContainer/TabsHBox"]
+custom_minimum_size = Vector2(140, 48)
+layout_mode = 2
+focus_mode = 0
+theme_override_fonts/font = ExtResource("2_font_audio")
+theme_override_font_sizes/font_size = 18
+text = "TAGGER"
+
+[node name="RunnerTabBtn" type="Button" parent="HeaderContainer/TabsHBox"]
+custom_minimum_size = Vector2(140, 48)
+layout_mode = 2
+focus_mode = 0
+theme_override_fonts/font = ExtResource("2_font_audio")
+theme_override_font_sizes/font_size = 18
+text = "RUNNER"
+
+[node name="ProfilePill" type="PanelContainer" parent="."]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -400.0
+offset_top = 22.0
+offset_right = -30.0
+offset_bottom = 66.0
+grow_horizontal = 0
+theme_override_styles/panel = SubResource("StyleBoxFlat_profile")
+
+[node name="Margin" type="MarginContainer" parent="ProfilePill"]
+layout_mode = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 2
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 2
+
+[node name="HBox" type="HBoxContainer" parent="ProfilePill/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 14
+alignment = 1
+
+[node name="LevelLbl" type="Label" parent="ProfilePill/Margin/HBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.824, 0.247, 1)
+theme_override_fonts/font = ExtResource("2_font_audio")
+theme_override_font_sizes/font_size = 14
+text = "Lv. 1"
+
+[node name="NameLbl" type="Label" parent="ProfilePill/Margin/HBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_fonts/font = ExtResource("2_font_audio")
+theme_override_font_sizes/font_size = 14
+text = "Player 1"
+
+[node name="ExpLbl" type="Label" parent="ProfilePill/Margin/HBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.498, 0.847, 1, 1)
+theme_override_fonts/font = ExtResource("2_font_audio")
+theme_override_font_sizes/font_size = 13
+text = "EXP: 0/100"
+
+[node name="CoinsLbl" type="Label" parent="ProfilePill/Margin/HBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.824, 0.247, 1)
+theme_override_fonts/font = ExtResource("2_font_audio")
+theme_override_font_sizes/font_size = 14
+text = "🪙 50"
+
+[node name="PreviewSection" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 0
+offset_left = 41.0
+offset_top = 161.0
+offset_right = 741.0
+offset_bottom = 631.0
+
+[node name="PreviewPanel" type="Panel" parent="PreviewSection"]
+layout_mode = 0
+offset_right = 320.0
+offset_bottom = 470.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_preview_box")
+
+[node name="SubViewportContainer" type="SubViewportContainer" parent="PreviewSection/PreviewPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+stretch = true
+
+[node name="SubViewport" type="SubViewport" parent="PreviewSection/PreviewPanel/SubViewportContainer"]
+own_world_3d = true
+world_3d = SubResource("World3D_preview")
+transparent_bg = true
+handle_input_locally = false
+size = Vector2i(320, 470)
+render_target_update_mode = 4
+
+[node name="Camera3D" type="Camera3D" parent="PreviewSection/PreviewPanel/SubViewportContainer/SubViewport"]
+transform = Transform3D(1, 0, 0, 0, 0.984808, 0.173648, 0, -0.173648, 0.984808, 0, 1.25, 2.35)
+fov = 42.0
+
+[node name="KeyLight" type="DirectionalLight3D" parent="PreviewSection/PreviewPanel/SubViewportContainer/SubViewport"]
+transform = Transform3D(0.766044, -0.321394, 0.55667, 0, 0.866025, 0.5, -0.642788, -0.383022, 0.663414, 0, 3, 2)
+light_color = Color(1, 0.96, 0.9, 1)
+light_energy = 1.4
+
+[node name="FillLight" type="DirectionalLight3D" parent="PreviewSection/PreviewPanel/SubViewportContainer/SubViewport"]
+transform = Transform3D(-0.707107, 0.258819, -0.658012, 0, 0.93068, 0.365831, 0.707107, 0.258819, -0.658012, 0, 2, -2)
+light_color = Color(0.45, 0.75, 1, 1)
+light_energy = 0.7
+
+[node name="ModelHolder" type="Node3D" parent="PreviewSection/PreviewPanel/SubViewportContainer/SubViewport"]
+
+[node name="PreviewTagLbl" type="Label" parent="PreviewSection/PreviewPanel"]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -90.0
+offset_top = -32.0
+offset_right = 90.0
+offset_bottom = -12.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_colors/font_color = Color(0.839, 0.937, 1, 1)
+theme_override_fonts/font = ExtResource("2_font_audio")
+theme_override_font_sizes/font_size = 11
+text = "[ 3D MODEL PREVIEW ]"
+horizontal_alignment = 1
+
+[node name="DetailsVBox" type="VBoxContainer" parent="PreviewSection"]
+layout_mode = 0
+offset_left = 348.0
+offset_top = 10.0
+offset_right = 690.0
+offset_bottom = 460.0
+theme_override_constants/separation = 14
+
+[node name="CharNameLbl" type="Label" parent="PreviewSection/DetailsVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_shadow_color = Color(0.059, 0.298, 0.592, 1)
+theme_override_constants/shadow_outline_size = 6
+theme_override_constants/shadow_offset_y = 3
+theme_override_fonts/font = ExtResource("2_font_audio")
+theme_override_font_sizes/font_size = 36
+text = "PonPon"
+
+[node name="RoleBadge" type="PanelContainer" parent="PreviewSection/DetailsVBox"]
+layout_mode = 2
+size_flags_horizontal = 0
+theme_override_styles/panel = SubResource("StyleBoxFlat_role_badge")
+
+[node name="RoleLabel" type="Label" parent="PreviewSection/DetailsVBox/RoleBadge"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 14
+text = "HUNTER · สายพุ่งไล่"
+
+[node name="SkillCard" type="PanelContainer" parent="PreviewSection/DetailsVBox"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_skill_card")
+
+[node name="HBox" type="HBoxContainer" parent="PreviewSection/DetailsVBox/SkillCard"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="KeyBox" type="PanelContainer" parent="PreviewSection/DetailsVBox/SkillCard/HBox"]
+custom_minimum_size = Vector2(44, 44)
+layout_mode = 2
+size_flags_vertical = 0
+theme_override_styles/panel = SubResource("StyleBoxFlat_key_box")
+
+[node name="KeyLbl" type="Label" parent="PreviewSection/DetailsVBox/SkillCard/HBox/KeyBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.059, 0.184, 0.4, 1)
+theme_override_fonts/font = ExtResource("2_font_audio")
+theme_override_font_sizes/font_size = 22
+text = "E"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="InfoVBox" type="VBoxContainer" parent="PreviewSection/DetailsVBox/SkillCard/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 3
+
+[node name="SkillTitleLbl" type="Label" parent="PreviewSection/DetailsVBox/SkillCard/HBox/InfoVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 17
+text = "Banana Gun · ขว้างกล้วย"
+
+[node name="SkillDescLbl" type="Label" parent="PreviewSection/DetailsVBox/SkillCard/HBox/InfoVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.839, 0.937, 1, 1)
+theme_override_font_sizes/font_size = 13
+text = "Shoot bananapeel to front line making runner confuse for 1.5 sec"
+autowrap_mode = 3
+
+[node name="SkillCdLbl" type="Label" parent="PreviewSection/DetailsVBox/SkillCard/HBox/InfoVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.498, 0.847, 1, 1)
+theme_override_font_sizes/font_size = 12
+text = "cooldown 10 sec"
+
+[node name="SelectionPanel" type="PanelContainer" parent="."]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -470.0
+offset_top = 95.0
+offset_right = -30.0
+offset_bottom = 655.0
+grow_horizontal = 0
+theme_override_styles/panel = SubResource("StyleBoxFlat_selection_panel")
+
+[node name="VBox" type="VBoxContainer" parent="SelectionPanel"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="HeaderHBox" type="HBoxContainer" parent="SelectionPanel/VBox"]
+layout_mode = 2
+
+[node name="SelectTitleLbl" type="Label" parent="SelectionPanel/VBox/HeaderHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_fonts/font = ExtResource("2_font_audio")
+theme_override_font_sizes/font_size = 20
+text = "SELECT TAGGER"
+
+[node name="CountLbl" type="Label" parent="SelectionPanel/VBox/HeaderHBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.498, 0.847, 1, 1)
+theme_override_font_sizes/font_size = 13
+text = "5 ตัวละคร"
+
+[node name="Scroll" type="ScrollContainer" parent="SelectionPanel/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="CardsGrid" type="GridContainer" parent="SelectionPanel/VBox/Scroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/h_separation = 12
+theme_override_constants/v_separation = 12
+columns = 2
+
+[node name="EquipBtn" type="Button" parent="SelectionPanel/VBox"]
+custom_minimum_size = Vector2(0, 60)
+layout_mode = 2
+focus_mode = 0
+theme_override_colors/font_color = Color(0.29, 0.12, 0, 1)
+theme_override_fonts/font = ExtResource("2_font_audio")
+theme_override_font_sizes/font_size = 24
+theme_override_styles/normal = SubResource("StyleBoxFlat_equip_btn")
+theme_override_styles/hover = SubResource("StyleBoxFlat_equip_btn")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_equip_btn")
+theme_override_styles/disabled = SubResource("StyleBoxFlat_equip_btn")
+text = "EQUIP"
+
+[node name="BackButton" type="Button" parent="."]
+custom_minimum_size = Vector2(160, 52)
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 40.0
+offset_top = -80.0
+offset_right = 200.0
+offset_bottom = -28.0
+grow_vertical = 0
+focus_mode = 0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_fonts/font = ExtResource("2_font_audio")
+theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = SubResource("StyleBoxFlat_back_btn")
+theme_override_styles/hover = SubResource("StyleBoxFlat_back_btn")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_back_btn")
+text = "← BACK"

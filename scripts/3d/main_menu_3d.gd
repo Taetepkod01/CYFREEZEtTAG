@@ -58,50 +58,9 @@ var freeze_tag_mode_btn: Button = null
 var racing_mode_btn: Button = null
 var close_mode_select_btn: Button = null
 
-# Loadout Button & Modal Nodes
+# Loadout Button & Screen Nodes
 @onready var loadout_btn: TextureButton = get_node_or_null("LoadoutBtn")
-var loadout_modal: Panel = null
-var loadout_cards: Dictionary = {}
-var close_loadout_btn: Button = null
-
-const TAGGER_LOADOUT_OPTIONS = [
-	{
-		"id": "random",
-		"name": "🎲 RANDOM (สุ่ม)",
-		"subtitle": "Random Tagger each round",
-		"desc": "สุ่มโมเดล Tagger อัตโนมัติทุกรอบ"
-	},
-	{
-		"id": "snowman",
-		"name": "⛄ SNOWMAN",
-		"subtitle": "Classic Snow Tagger",
-		"desc": "สโนว์แมนคลาสสิก ดั้งเดิม"
-	},
-	{
-		"id": "ponpon",
-		"name": "🐾 ป้อนป้อน (PonPon)",
-		"subtitle": "Playful Frost Beast",
-		"desc": "สปีดคล่องแคล่ว นักล่าแดนหิมะ"
-	},
-	{
-		"id": "mafog",
-		"name": "🦊 มาฟ้อก (Mafog)",
-		"subtitle": "Arctic Ice Wolf",
-		"desc": "จิ้งจอกหิมะปราดเปรียว ว่องไว"
-	},
-	{
-		"id": "mumu",
-		"name": "🐻 มุมุ (Mumu)",
-		"subtitle": "Polar Powerhouse",
-		"desc": "หมีขาวจอมพลัง สายแช่แข็งแน่นหนา"
-	},
-	{
-		"id": "phoemphoon",
-		"name": "🌟 เพิ่มพูน (PhoemPhoon)",
-		"subtitle": "Mystic Ice Titan",
-		"desc": "ไททันเยือกแข็ง พลังมหาศาล"
-	}
-]
+@onready var loadout_ui: Control = get_node_or_null("LoadoutUI3D")
 
 
 # Falling Snowflake Particle System
@@ -219,8 +178,11 @@ func _ready() -> void:
 	_setup_profile_bar()
 	_setup_account_modal()
 	_setup_mode_selection_modal()
-	_setup_loadout_modal()
+	if loadout_ui:
+		loadout_ui.visible = false
+		loadout_ui.closed.connect(_on_loadout_closed)
 	_select_role("runner")
+
 	
 	if Network:
 		Network.auth_succeeded.connect(_on_network_auth_succeeded)
@@ -914,8 +876,8 @@ func _show_main_menu() -> void:
 		account_modal.visible = false
 	if mode_select_modal:
 		mode_select_modal.visible = false
-	if loadout_modal:
-		loadout_modal.visible = false
+	if loadout_ui:
+		loadout_ui.visible = false
 	menu_buttons.visible = true
 	title_label.visible = true
 	if profile_bar:
@@ -929,8 +891,8 @@ func _show_auth_panel() -> void:
 		account_modal.visible = false
 	if mode_select_modal:
 		mode_select_modal.visible = false
-	if loadout_modal:
-		loadout_modal.visible = false
+	if loadout_ui:
+		loadout_ui.visible = false
 	menu_buttons.visible = false
 	title_label.visible = false
 	if profile_bar:
@@ -1077,8 +1039,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		if mode_select_modal and mode_select_modal.visible:
 			_on_close_mode_selection_pressed()
 			get_viewport().set_input_as_handled()
-		elif loadout_modal and loadout_modal.visible:
-			_on_close_loadout_pressed()
+		elif loadout_ui and loadout_ui.visible:
+			loadout_ui.close()
 			get_viewport().set_input_as_handled()
 		elif account_modal and account_modal.visible:
 			_on_account_close_pressed()
@@ -1110,8 +1072,8 @@ func _show_mode_selection_modal() -> void:
 		rules_panel.visible = false
 	if practice_modal:
 		practice_modal.visible = false
-	if loadout_modal:
-		loadout_modal.visible = false
+	if loadout_ui:
+		loadout_ui.visible = false
 	if freeze_tag_mode_btn:
 		freeze_tag_mode_btn.disabled = false
 	if racing_mode_btn:
@@ -1160,8 +1122,8 @@ func _on_racing_selected() -> void:
 func _on_practice_pressed() -> void:
 	if account_modal:
 		account_modal.visible = false
-	if loadout_modal:
-		loadout_modal.visible = false
+	if loadout_ui:
+		loadout_ui.visible = false
 	practice_modal.visible = true
 	menu_buttons.visible = false
 	title_label.visible = false
@@ -1187,8 +1149,8 @@ func _start_practice(role: String) -> void:
 func _on_how_to_play_pressed() -> void:
 	if account_modal:
 		account_modal.visible = false
-	if loadout_modal:
-		loadout_modal.visible = false
+	if loadout_ui:
+		loadout_ui.visible = false
 	rules_panel.visible = true
 	menu_buttons.visible = false
 	title_label.visible = false
@@ -1207,258 +1169,22 @@ func _on_quit_pressed() -> void:
 		return
 	get_tree().quit()
 
-# ── Loadout Modal (Tagger Model & Gear Selection) ─────────────────────────────
-func _setup_loadout_modal() -> void:
-	loadout_modal = Panel.new()
-	loadout_modal.name = "LoadoutModal"
-	loadout_modal.visible = false
-	loadout_modal.anchors_preset = Control.PRESET_CENTER
-	loadout_modal.anchor_left = 0.5
-	loadout_modal.anchor_top = 0.5
-	loadout_modal.anchor_right = 0.5
-	loadout_modal.anchor_bottom = 0.5
-	loadout_modal.offset_left = -460.0
-	loadout_modal.offset_top = -270.0
-	loadout_modal.offset_right = 460.0
-	loadout_modal.offset_bottom = 270.0
-	loadout_modal.grow_horizontal = Control.GROW_DIRECTION_BOTH
-	loadout_modal.grow_vertical = Control.GROW_DIRECTION_BOTH
-	
-	var sb = StyleBoxFlat.new()
-	sb.bg_color = Color(0.02, 0.07, 0.16, 0.96)
-	sb.border_width_left = 2
-	sb.border_width_top = 2
-	sb.border_width_right = 2
-	sb.border_width_bottom = 2
-	sb.border_color = Color(0.2, 0.82, 1.0, 0.95)
-	sb.set_corner_radius_all(16)
-	sb.shadow_color = Color(0.0, 0.5, 0.95, 0.35)
-	sb.shadow_size = 18
-	loadout_modal.add_theme_stylebox_override("panel", sb)
-	
-	var margin = MarginContainer.new()
-	margin.anchors_preset = Control.PRESET_FULL_RECT
-	margin.add_theme_constant_override("margin_left", 24)
-	margin.add_theme_constant_override("margin_right", 24)
-	margin.add_theme_constant_override("margin_top", 18)
-	margin.add_theme_constant_override("margin_bottom", 16)
-	loadout_modal.add_child(margin)
-	
-	var main_vbox = VBoxContainer.new()
-	main_vbox.alignment = BoxContainer.ALIGNMENT_BEGIN
-	main_vbox.add_theme_constant_override("separation", 10)
-	margin.add_child(main_vbox)
-	
-	# Header
-	var header_vbox = VBoxContainer.new()
-	header_vbox.add_theme_constant_override("separation", 2)
-	main_vbox.add_child(header_vbox)
-	
-	var title = Label.new()
-	title.text = "🎒 LOADOUT & CUSTOMIZATION"
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title.add_theme_font_override("font", preload("res://assets/fonts/Audiowide.ttf"))
-	title.add_theme_font_size_override("font_size", 22)
-	title.add_theme_color_override("font_color", Color(0.55, 0.92, 1.0))
-	title.add_theme_color_override("font_shadow_color", Color(0.0, 0.45, 0.9, 0.8))
-	title.add_theme_constant_override("shadow_outline_size", 4)
-	header_vbox.add_child(title)
-	
-	var subtitle = Label.new()
-	subtitle.text = "Select your default Tagger model when hunting in Freeze Tag"
-	subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	subtitle.add_theme_font_override("font", preload("res://assets/fonts/Audiowide.ttf"))
-	subtitle.add_theme_font_size_override("font_size", 11)
-	subtitle.add_theme_color_override("font_color", Color(0.45, 0.85, 1.0))
-	header_vbox.add_child(subtitle)
-	
-	# Section title
-	var sec_lbl = Label.new()
-	sec_lbl.text = "❄ TAGGER CHARACTER MODEL"
-	sec_lbl.add_theme_font_override("font", preload("res://assets/fonts/Audiowide.ttf"))
-	sec_lbl.add_theme_font_size_override("font_size", 13)
-	sec_lbl.add_theme_color_override("font_color", Color(1.0, 0.88, 0.35))
-	main_vbox.add_child(sec_lbl)
-	
-	# Cards Grid
-	var grid = GridContainer.new()
-	grid.columns = 3
-	grid.add_theme_constant_override("h_separation", 14)
-	grid.add_theme_constant_override("v_separation", 12)
-	grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	grid.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	main_vbox.add_child(grid)
-	
-	loadout_cards.clear()
-	
-	for opt in TAGGER_LOADOUT_OPTIONS:
-		var opt_id = str(opt["id"])
-		var card_btn = Button.new()
-		card_btn.custom_minimum_size = Vector2(275, 105)
-		card_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		card_btn.focus_mode = Control.FOCUS_NONE
-		
-		var sb_norm = StyleBoxFlat.new()
-		sb_norm.bg_color = Color(0.04, 0.11, 0.22, 0.9)
-		sb_norm.border_width_left = 1
-		sb_norm.border_width_top = 1
-		sb_norm.border_width_right = 1
-		sb_norm.border_width_bottom = 1
-		sb_norm.border_color = Color(0.18, 0.50, 0.72, 0.7)
-		sb_norm.set_corner_radius_all(10)
-		card_btn.add_theme_stylebox_override("normal", sb_norm)
-		
-		var sb_hov = StyleBoxFlat.new()
-		sb_hov.bg_color = Color(0.06, 0.18, 0.34, 0.95)
-		sb_hov.border_width_left = 2
-		sb_hov.border_width_top = 2
-		sb_hov.border_width_right = 2
-		sb_hov.border_width_bottom = 2
-		sb_hov.border_color = Color(0.35, 0.9, 1.0, 1.0)
-		sb_hov.set_corner_radius_all(10)
-		card_btn.add_theme_stylebox_override("hover", sb_hov)
-		
-		var card_vbox = VBoxContainer.new()
-		card_vbox.anchors_preset = Control.PRESET_FULL_RECT
-		card_vbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		card_vbox.alignment = BoxContainer.ALIGNMENT_CENTER
-		card_vbox.add_theme_constant_override("separation", 3)
-		card_vbox.offset_left = 12.0
-		card_vbox.offset_top = 8.0
-		card_vbox.offset_right = -12.0
-		card_vbox.offset_bottom = -8.0
-		card_btn.add_child(card_vbox)
-		
-		var name_lbl = Label.new()
-		name_lbl.text = str(opt["name"])
-		name_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		name_lbl.add_theme_font_override("font", preload("res://assets/fonts/Audiowide.ttf"))
-		name_lbl.add_theme_font_size_override("font_size", 14)
-		name_lbl.add_theme_color_override("font_color", Color(0.92, 0.97, 1.0))
-		name_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		card_vbox.add_child(name_lbl)
-		
-		var sub_lbl = Label.new()
-		sub_lbl.text = str(opt["subtitle"])
-		sub_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		sub_lbl.add_theme_font_size_override("font_size", 10)
-		sub_lbl.add_theme_color_override("font_color", Color(0.55, 0.80, 0.95))
-		sub_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		card_vbox.add_child(sub_lbl)
-		
-		var desc_lbl = Label.new()
-		desc_lbl.text = str(opt["desc"])
-		desc_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		desc_lbl.add_theme_font_size_override("font_size", 10)
-		desc_lbl.add_theme_color_override("font_color", Color(0.75, 0.85, 0.92, 0.85))
-		desc_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		card_vbox.add_child(desc_lbl)
-		
-		var badge_lbl = Label.new()
-		badge_lbl.text = "[ EQUIP ]"
-		badge_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		badge_lbl.add_theme_font_override("font", preload("res://assets/fonts/Audiowide.ttf"))
-		badge_lbl.add_theme_font_size_override("font_size", 11)
-		badge_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		card_vbox.add_child(badge_lbl)
-		
-		card_btn.pressed.connect(func(): _select_tagger_loadout(opt_id))
-		_connect_button_sfx(card_btn)
-		
-		grid.add_child(card_btn)
-		
-		loadout_cards[opt_id] = {
-			"button": card_btn,
-			"badge": badge_lbl,
-			"sb_normal": sb_norm,
-			"name_lbl": name_lbl
-		}
-	
-	# Close button
-	close_loadout_btn = Button.new()
-	close_loadout_btn.text = "← BACK TO MAIN MENU"
-	close_loadout_btn.custom_minimum_size = Vector2(240, 36)
-	close_loadout_btn.flat = true
-	close_loadout_btn.modulate = Color(0.5, 0.85, 1.0)
-	close_loadout_btn.add_theme_font_size_override("font_size", 12)
-	close_loadout_btn.pressed.connect(_on_close_loadout_pressed)
-	_connect_button_sfx(close_loadout_btn)
-	main_vbox.add_child(close_loadout_btn)
-	
-	add_child(loadout_modal)
-	_update_loadout_cards()
-
-func _update_loadout_cards() -> void:
-	var current_t = Network.selected_tagger_type if Network else "random"
-	if current_t.is_empty():
-		current_t = "random"
-	
-	for opt_id in loadout_cards:
-		var c = loadout_cards[opt_id]
-		var is_selected = (opt_id == current_t)
-		var badge: Label = c["badge"]
-		var sb_norm: StyleBoxFlat = c["sb_normal"]
-		var name_lbl: Label = c["name_lbl"]
-		
-		if is_selected:
-			sb_norm.bg_color = Color(0.06, 0.25, 0.44, 0.96)
-			sb_norm.border_color = Color(0.3, 1.0, 0.8, 1.0)
-			sb_norm.border_width_left = 2
-			sb_norm.border_width_top = 2
-			sb_norm.border_width_right = 2
-			sb_norm.border_width_bottom = 2
-			badge.text = "[ ✓ EQUIPPED ]"
-			badge.add_theme_color_override("font_color", Color(0.3, 1.0, 0.75))
-			name_lbl.add_theme_color_override("font_color", Color(1.0, 0.95, 0.5))
-		else:
-			sb_norm.bg_color = Color(0.03, 0.09, 0.18, 0.88)
-			sb_norm.border_color = Color(0.16, 0.45, 0.65, 0.65)
-			sb_norm.border_width_left = 1
-			sb_norm.border_width_top = 1
-			sb_norm.border_width_right = 1
-			sb_norm.border_width_bottom = 1
-			badge.text = "[ EQUIP ]"
-			badge.add_theme_color_override("font_color", Color(0.5, 0.78, 0.95))
-			name_lbl.add_theme_color_override("font_color", Color(0.92, 0.97, 1.0))
-
-func _select_tagger_loadout(tagger_id: String) -> void:
-	_play_click_sfx()
-	if Network:
-		Network.selected_tagger_type = tagger_id
-		Network.current_user["taggerType"] = tagger_id
-		Network.save_local_user()
-	_update_loadout_cards()
-	for opt in TAGGER_LOADOUT_OPTIONS:
-		if opt["id"] == tagger_id:
-			_show_service_status("Equipped Tagger: %s" % opt["name"], false)
-			break
-
 func _on_loadout_pressed() -> void:
 	_play_click_sfx()
-	if account_modal:
-		account_modal.visible = false
-	if rules_panel:
-		rules_panel.visible = false
-	if practice_modal:
-		practice_modal.visible = false
-	if mode_select_modal:
-		mode_select_modal.visible = false
+	if account_modal: account_modal.visible = false
+	if rules_panel: rules_panel.visible = false
+	if practice_modal: practice_modal.visible = false
+	if mode_select_modal: mode_select_modal.visible = false
 	menu_buttons.visible = false
 	title_label.visible = false
-	if loadout_btn:
-		loadout_btn.visible = false
-	_update_loadout_cards()
-	if loadout_modal:
-		loadout_modal.visible = true
+	if profile_bar: profile_bar.visible = false
+	if loadout_btn: loadout_btn.visible = false
+	if loadout_ui: loadout_ui.open()
 
-func _on_close_loadout_pressed() -> void:
-	_play_click_sfx()
-	if loadout_modal:
-		loadout_modal.visible = false
+func _on_loadout_closed() -> void:
 	menu_buttons.visible = true
 	title_label.visible = true
-	if profile_bar:
-		profile_bar.visible = true
-	if loadout_btn:
-		loadout_btn.visible = true
+	if profile_bar: profile_bar.visible = true
+	if loadout_btn: loadout_btn.visible = true
+
 

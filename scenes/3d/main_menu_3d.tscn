@@ -24,6 +24,9 @@
 [ext_resource type="Texture2D" uid="uid://yipdldjg6ll5" path="res://assets/ui/buttons/btn_close.png" id="14_btn_close"]
 [ext_resource type="Texture2D" uid="uid://cntabkqg4t2dk" path="res://assets/ui/panels/panel_practice_modal.png" id="15_panel_practice"]
 [ext_resource type="Texture2D" uid="uid://bq8q7i38t83k" path="res://assets/ui/btn_loadout.png" id="16_btn_loadout"]
+[ext_resource type="PackedScene" path="res://scenes/3d/loadout_ui_3d.tscn" id="17_loadout_ui"]
+
+
 
 [sub_resource type="Curve" id="Curve_particles"]
 _data = [Vector2(0, 0.4), 0.0, 0.0, 0, 0, Vector2(0.5, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
@@ -531,4 +534,8 @@ pivot_offset = Vector2(130, 37.5)
 texture_normal = ExtResource("16_btn_loadout")
 ignore_texture_size = true
 stretch_mode = 5
+
+[node name="LoadoutUI3D" parent="." instance=ExtResource("17_loadout_ui")]
+visible = false
+
 
