@@ -345,6 +345,21 @@ func _recover_from_void() -> void:
 		if Network and Network.is_online_game():
 			Network.send_move(global_position, rotation.y)
 
+func teleport_to(new_pos: Vector3, new_rot_y: float = 0.0) -> void:
+	global_position = new_pos
+	rotation.y = new_rot_y
+	if visuals:
+		visuals.rotation.y = 0.0
+	velocity = Vector3.ZERO
+	last_sent_pos = global_position
+	last_sent_rot_y = rotation.y
+	if is_local_player():
+		if Network and Network.is_online_game():
+			Network.send_move(global_position, rotation.y)
+	elif is_bot and Network and Network.is_host:
+		if Network.is_online_game():
+			Network.send_bot_move(network_id, global_position, rotation.y)
+
 func _send_network_position(delta: float) -> void:
 	if not Network or not Network.is_online_game():
 		return
