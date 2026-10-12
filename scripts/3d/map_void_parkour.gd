@@ -41,17 +41,18 @@ var ball_hit_cooldown: Dictionary = {} # player -> timestamp
 const RAMP_TOP_POS := Vector3(0.0, 19.9, -139.0)
 const RAMP_BOTTOM_POS := Vector3(0.0, 10.9, -99.5)
 const SKY_SPAWN_HEIGHT := 34.0
-const FALL_DURATION := 0.7
-const ROLL_DURATION := 3.5
-const CYCLE_DURATION := 6.0 # 3 balls * 2.0s interval = 6.0s cycle
+const SPAWN_INTERVAL := 1.0 # 1.0s interval between ball spawns
+const FALL_DURATION := 0.5
+const ROLL_DURATION := 2.8
+var cycle_duration: float = 4.0 # (number of balls * SPAWN_INTERVAL)
 
 @onready var hazard_ball_1: Area3D = get_node_or_null("ParkourCourse/HazardBall1")
 @onready var hazard_ball_2: Area3D = get_node_or_null("ParkourCourse/HazardBall2")
 @onready var hazard_ball_3: Area3D = get_node_or_null("ParkourCourse/HazardBall3")
 
 var hazard_balls: Array[Area3D] = []
-var ball_timers: Array[float] = [0.0, -2.0, -4.0] # 2-second interval between spawns
-var ball_lanes: Array[float] = [-2.0, 2.0, 0.0]
+var ball_timers: Array[float] = [0.0, -1.0, -2.0, -3.0] # 1-second interval between spawns
+var ball_lanes: Array[float] = [-2.2, 2.2, 0.0, -2.2]
 var time_passed: float = 0.0
 
 const CP1_POS := Vector3(0.0, 5.8, -56.0)
@@ -60,7 +61,21 @@ const FINISH_POS := Vector3(0.0, 20.0, -147.0)
 
 func _ready() -> void:
 	hazard_balls = [hazard_ball_1, hazard_ball_2, hazard_ball_3]
-	for ball in hazard_balls:
+	# Dynamically instantiate a 4th ball to maintain continuous 1-second cadence without interrupting rolling balls
+	if hazard_ball_1 and is_instance_valid(hazard_ball_1.get_parent()):
+		var hazard_ball_4 = hazard_ball_1.duplicate()
+		hazard_ball_4.name = "HazardBall4"
+		hazard_ball_1.get_parent().add_child(hazard_ball_4)
+		hazard_balls.append(hazard_ball_4)
+	
+	cycle_duration = float(hazard_balls.size()) * SPAWN_INTERVAL # 4 * 1.0 = 4.0s
+	ball_timers.clear()
+	ball_lanes.clear()
+	var initial_lanes: Array[float] = [-2.2, 2.2, 0.0, -2.2]
+	for i in range(hazard_balls.size()):
+		ball_timers.append(-float(i) * SPAWN_INTERVAL)
+		ball_lanes.append(initial_lanes[i % initial_lanes.size()])
+		var ball = hazard_balls[i]
 		if ball:
 			ball.collision_layer = 4
 			ball.collision_mask = 3
@@ -202,7 +217,7 @@ func _get_all_players() -> Array[CharacterBody3D]:
 func _process(delta: float) -> void:
 	time_passed += delta
 	
-	# Animate Rolling Hazard Balls dropping from sky and rolling down ramp (2s interval)
+	# Animate Rolling Hazard Balls dropping from sky and rolling down ramp (1s interval)
 	for i in range(hazard_balls.size()):
 		var ball = hazard_balls[i]
 		if not is_instance_valid(ball):
@@ -225,7 +240,7 @@ func _process(delta: float) -> void:
 			ball.position = Vector3(ball_lanes[i], fall_y, RAMP_TOP_POS.z)
 			var sphere_mesh = ball.get_node_or_null("SphereMesh") as Node3D
 			if sphere_mesh:
-				sphere_mesh.rotate_y(3.0 * delta)
+				sphere_mesh.rotate_y(4.0 * delta)
 		elif t < (FALL_DURATION + ROLL_DURATION):
 			# Phase 2: Rolling down the inclined ramp
 			ball.visible = true
@@ -237,17 +252,17 @@ func _process(delta: float) -> void:
 			
 			var sphere_mesh = ball.get_node_or_null("SphereMesh") as Node3D
 			if sphere_mesh:
-				sphere_mesh.rotate_x(12.0 * delta)
-		elif t < CYCLE_DURATION:
+				sphere_mesh.rotate_x(14.0 * delta)
+		elif t < cycle_duration:
 			# Phase 3: Reached bottom near Checkpoint 2 -> disappears until next cycle
 			ball.visible = false
 			ball.monitoring = false
 			ball.position = Vector3(0.0, -100.0, 0.0)
 		else:
-			# Reset cycle (spawns from sky again 2s after previous ball)
-			ball_timers[i] -= CYCLE_DURATION
+			# Reset cycle (spawns from sky again 1s after previous ball)
+			ball_timers[i] -= cycle_duration
 			var lane_choices: Array[float] = [-2.2, 0.0, 2.2]
-			ball_lanes[i] = lane_choices[(i + int(time_passed * 1.7)) % lane_choices.size()]
+			ball_lanes[i] = lane_choices[(i + int(time_passed * 2.5) + randi() % 3) % lane_choices.size()]
 	
 	# Rotating Victory Trophy at Finish Line
 	if is_instance_valid(finish_trophy):
