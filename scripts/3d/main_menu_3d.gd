@@ -53,6 +53,12 @@ var account_stats_lbl: Label = null
 var account_sign_out_btn: Button = null
 var account_close_btn: Button = null
 
+# Mode Selection Modal Nodes
+var mode_select_modal: Panel = null
+var freeze_tag_mode_btn: Button = null
+var racing_mode_btn: Button = null
+var close_mode_select_btn: Button = null
+
 var selected_practice_role: String = "runner"
 var time_passed: float = 0.0
 var is_register_mode: bool = false
@@ -107,6 +113,7 @@ func _ready() -> void:
 	_setup_guest_button()
 	_setup_profile_bar()
 	_setup_account_modal()
+	_setup_mode_selection_modal()
 	_select_role("runner")
 	
 	if Network:
@@ -350,6 +357,229 @@ func _setup_account_modal() -> void:
 	
 	add_child(account_modal)
 
+# ── Mode Selection Modal (FreezeTag & Racing) ─────────────────────────────────
+func _setup_mode_selection_modal() -> void:
+	mode_select_modal = Panel.new()
+	mode_select_modal.name = "ModeSelectModal"
+	mode_select_modal.visible = false
+	mode_select_modal.anchors_preset = Control.PRESET_FULL_RECT
+	mode_select_modal.anchor_left = 0.0
+	mode_select_modal.anchor_top = 0.0
+	mode_select_modal.anchor_right = 1.0
+	mode_select_modal.anchor_bottom = 1.0
+	
+	var overlay_sb = StyleBoxFlat.new()
+	overlay_sb.bg_color = Color(0.02, 0.06, 0.15, 0.90)
+	mode_select_modal.add_theme_stylebox_override("panel", overlay_sb)
+	
+	var center_vbox = VBoxContainer.new()
+	center_vbox.anchors_preset = Control.PRESET_CENTER
+	center_vbox.anchor_left = 0.5
+	center_vbox.anchor_top = 0.5
+	center_vbox.anchor_right = 0.5
+	center_vbox.anchor_bottom = 0.5
+	center_vbox.offset_left = -460.0
+	center_vbox.offset_top = -285.0
+	center_vbox.offset_right = 460.0
+	center_vbox.offset_bottom = 285.0
+	center_vbox.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	center_vbox.grow_vertical = Control.GROW_DIRECTION_BOTH
+	center_vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	center_vbox.add_theme_constant_override("separation", 18)
+	mode_select_modal.add_child(center_vbox)
+	
+	# Header
+	var title_lbl = Label.new()
+	title_lbl.text = "SELECT GAME MODE"
+	title_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title_lbl.add_theme_font_override("font", preload("res://assets/fonts/Audiowide.ttf"))
+	title_lbl.add_theme_font_size_override("font_size", 28)
+	title_lbl.modulate = Color(0.92, 0.96, 1.0)
+	center_vbox.add_child(title_lbl)
+	
+	var subtitle_lbl = Label.new()
+	subtitle_lbl.text = "CHOOSE YOUR CHALLENGE"
+	subtitle_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	subtitle_lbl.add_theme_font_size_override("font_size", 12)
+	subtitle_lbl.modulate = Color(0.4, 0.85, 1.0, 0.9)
+	center_vbox.add_child(subtitle_lbl)
+	
+	# 9-slice StyleBox with UI_Flat_Frame02a.png
+	var frame_tex = preload("res://assets/ui/mode_selection/UI_Flat_Frame02a.png")
+	
+	var card_sb_normal = StyleBoxTexture.new()
+	card_sb_normal.texture = frame_tex
+	card_sb_normal.texture_margin_left = 16.0
+	card_sb_normal.texture_margin_top = 16.0
+	card_sb_normal.texture_margin_right = 16.0
+	card_sb_normal.texture_margin_bottom = 16.0
+	card_sb_normal.region_rect = Rect2(0, 0, 96, 64)
+	
+	var card_sb_hover = card_sb_normal.duplicate()
+	card_sb_hover.modulate_color = Color(1.22, 1.22, 1.30)
+	
+	var card_sb_pressed = card_sb_normal.duplicate()
+	card_sb_pressed.modulate_color = Color(0.85, 0.9, 0.95)
+	
+	# Cards HBox
+	var cards_hbox = HBoxContainer.new()
+	cards_hbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	cards_hbox.add_theme_constant_override("separation", 36)
+	center_vbox.add_child(cards_hbox)
+	
+	# ── Left Button: FREEZE TAG ───────────────────────────────────────────────
+	freeze_tag_mode_btn = Button.new()
+	freeze_tag_mode_btn.name = "FreezeTagBtn"
+	freeze_tag_mode_btn.custom_minimum_size = Vector2(360, 360)
+	freeze_tag_mode_btn.pivot_offset = Vector2(180, 180)
+	freeze_tag_mode_btn.focus_mode = Control.FOCUS_NONE
+	freeze_tag_mode_btn.add_theme_stylebox_override("normal", card_sb_normal)
+	freeze_tag_mode_btn.add_theme_stylebox_override("hover", card_sb_hover)
+	freeze_tag_mode_btn.add_theme_stylebox_override("pressed", card_sb_pressed)
+	freeze_tag_mode_btn.add_theme_stylebox_override("focus", card_sb_hover)
+	
+	var ft_vbox = VBoxContainer.new()
+	ft_vbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	ft_vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	ft_vbox.add_theme_constant_override("separation", 8)
+	ft_vbox.anchors_preset = Control.PRESET_FULL_RECT
+	ft_vbox.offset_left = 18.0
+	ft_vbox.offset_top = 18.0
+	ft_vbox.offset_right = -18.0
+	ft_vbox.offset_bottom = -18.0
+	freeze_tag_mode_btn.add_child(ft_vbox)
+	
+	var ft_art = TextureRect.new()
+	ft_art.texture = preload("res://assets/ui/mode_selection/mode_freezetag_art.png")
+	ft_art.custom_minimum_size = Vector2(320, 185)
+	ft_art.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	ft_art.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	ft_art.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	ft_vbox.add_child(ft_art)
+	
+	var ft_title = Label.new()
+	ft_title.text = "FREEZE TAG"
+	ft_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	ft_title.add_theme_font_override("font", preload("res://assets/fonts/Audiowide.ttf"))
+	ft_title.add_theme_font_size_override("font_size", 22)
+	ft_title.modulate = Color(1.0, 0.9, 0.35)
+	ft_title.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	ft_vbox.add_child(ft_title)
+	
+	var ft_desc = Label.new()
+	ft_desc.text = "❄ Tag, Freeze & Rescue Teammates\nOnline Multiplayer Arena"
+	ft_desc.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	ft_desc.add_theme_font_size_override("font_size", 12)
+	ft_desc.modulate = Color(0.85, 0.95, 1.0, 0.9)
+	ft_desc.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	ft_vbox.add_child(ft_desc)
+	
+	var ft_badge = Label.new()
+	ft_badge.text = "▶ PLAY FREEZETAG"
+	ft_badge.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	ft_badge.add_theme_font_size_override("font_size", 13)
+	ft_badge.modulate = Color(1.0, 1.0, 1.0)
+	var ft_badge_sb = StyleBoxFlat.new()
+	ft_badge_sb.bg_color = Color(0.12, 0.40, 0.75, 0.95)
+	ft_badge_sb.set_corner_radius_all(6)
+	ft_badge_sb.content_margin_top = 4.0
+	ft_badge_sb.content_margin_bottom = 4.0
+	ft_badge.add_theme_stylebox_override("normal", ft_badge_sb)
+	ft_badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	ft_vbox.add_child(ft_badge)
+	
+	cards_hbox.add_child(freeze_tag_mode_btn)
+	
+	# ── Right Button: RACING ──────────────────────────────────────────────────
+	racing_mode_btn = Button.new()
+	racing_mode_btn.name = "RacingBtn"
+	racing_mode_btn.custom_minimum_size = Vector2(360, 360)
+	racing_mode_btn.pivot_offset = Vector2(180, 180)
+	racing_mode_btn.focus_mode = Control.FOCUS_NONE
+	racing_mode_btn.add_theme_stylebox_override("normal", card_sb_normal)
+	racing_mode_btn.add_theme_stylebox_override("hover", card_sb_hover)
+	racing_mode_btn.add_theme_stylebox_override("pressed", card_sb_pressed)
+	racing_mode_btn.add_theme_stylebox_override("focus", card_sb_hover)
+	
+	var rc_vbox = VBoxContainer.new()
+	rc_vbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	rc_vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	rc_vbox.add_theme_constant_override("separation", 8)
+	rc_vbox.anchors_preset = Control.PRESET_FULL_RECT
+	rc_vbox.offset_left = 18.0
+	rc_vbox.offset_top = 18.0
+	rc_vbox.offset_right = -18.0
+	rc_vbox.offset_bottom = -18.0
+	racing_mode_btn.add_child(rc_vbox)
+	
+	var rc_art = TextureRect.new()
+	rc_art.texture = preload("res://assets/ui/mode_selection/mode_racing_art.png")
+	rc_art.custom_minimum_size = Vector2(320, 185)
+	rc_art.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	rc_art.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	rc_art.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	rc_vbox.add_child(rc_art)
+	
+	var rc_title = Label.new()
+	rc_title.text = "RACING"
+	rc_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	rc_title.add_theme_font_override("font", preload("res://assets/fonts/Audiowide.ttf"))
+	rc_title.add_theme_font_size_override("font_size", 22)
+	rc_title.modulate = Color(0.2, 1.0, 0.75)
+	rc_title.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	rc_vbox.add_child(rc_title)
+	
+	var rc_desc = Label.new()
+	rc_desc.text = "⚡ Dash Through Void Obstacles\nCheckpoints & Finish Line"
+	rc_desc.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	rc_desc.add_theme_font_size_override("font_size", 12)
+	rc_desc.modulate = Color(0.85, 0.95, 1.0, 0.9)
+	rc_desc.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	rc_vbox.add_child(rc_desc)
+	
+	var rc_badge = Label.new()
+	rc_badge.text = "▶ RACE NOW"
+	rc_badge.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	rc_badge.add_theme_font_size_override("font_size", 13)
+	rc_badge.modulate = Color(1.0, 1.0, 1.0)
+	var rc_badge_sb = StyleBoxFlat.new()
+	rc_badge_sb.bg_color = Color(0.06, 0.52, 0.48, 0.95)
+	rc_badge_sb.set_corner_radius_all(6)
+	rc_badge_sb.content_margin_top = 4.0
+	rc_badge_sb.content_margin_bottom = 4.0
+	rc_badge.add_theme_stylebox_override("normal", rc_badge_sb)
+	rc_badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	rc_vbox.add_child(rc_badge)
+	
+	cards_hbox.add_child(racing_mode_btn)
+	
+	# Hover Animations
+	for btn in [freeze_tag_mode_btn, racing_mode_btn]:
+		btn.mouse_entered.connect(func():
+			var tw = create_tween()
+			tw.tween_property(btn, "scale", Vector2(1.03, 1.03), 0.12).set_trans(Tween.TRANS_SINE)
+		)
+		btn.mouse_exited.connect(func():
+			var tw = create_tween()
+			tw.tween_property(btn, "scale", Vector2(1.0, 1.0), 0.12).set_trans(Tween.TRANS_SINE)
+		)
+	
+	# Bottom Close / Back Button
+	close_mode_select_btn = Button.new()
+	close_mode_select_btn.text = "← BACK TO MAIN MENU"
+	close_mode_select_btn.custom_minimum_size = Vector2(240, 38)
+	close_mode_select_btn.flat = true
+	close_mode_select_btn.modulate = Color(0.5, 0.85, 1.0)
+	close_mode_select_btn.add_theme_font_size_override("font_size", 12)
+	close_mode_select_btn.pressed.connect(_on_close_mode_selection_pressed)
+	center_vbox.add_child(close_mode_select_btn)
+	
+	# Connect Button Events
+	freeze_tag_mode_btn.pressed.connect(_on_freeze_tag_selected)
+	racing_mode_btn.pressed.connect(_on_racing_selected)
+	
+	add_child(mode_select_modal)
+
 func _on_profile_account_pressed() -> void:
 	var is_logged_in = false
 	if FirebaseService and not FirebaseService.current_user.is_empty():
@@ -538,6 +768,8 @@ func _show_main_menu() -> void:
 	auth_panel.visible = false
 	if account_modal:
 		account_modal.visible = false
+	if mode_select_modal:
+		mode_select_modal.visible = false
 	menu_buttons.visible = true
 	title_label.visible = true
 	if profile_bar:
@@ -548,6 +780,8 @@ func _show_auth_panel() -> void:
 	auth_panel.visible = true
 	if account_modal:
 		account_modal.visible = false
+	if mode_select_modal:
+		mode_select_modal.visible = false
 	menu_buttons.visible = false
 	title_label.visible = false
 	if profile_bar:
@@ -604,8 +838,75 @@ func _process(delta: float) -> void:
 	var s = 1.0 + sin(time_passed * 2.5) * 0.02
 	title_label.scale = Vector2(s, s)
 
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("ui_cancel"):
+		if mode_select_modal and mode_select_modal.visible:
+			_on_close_mode_selection_pressed()
+			get_viewport().set_input_as_handled()
+		elif account_modal and account_modal.visible:
+			_on_account_close_pressed()
+			get_viewport().set_input_as_handled()
+		elif rules_panel and rules_panel.visible:
+			rules_panel.visible = false
+			menu_buttons.visible = true
+			title_label.visible = true
+			if profile_bar: profile_bar.visible = true
+			get_viewport().set_input_as_handled()
+		elif practice_modal and practice_modal.visible:
+			practice_modal.visible = false
+			menu_buttons.visible = true
+			title_label.visible = true
+			if profile_bar: profile_bar.visible = true
+			get_viewport().set_input_as_handled()
+
 func _on_play_online_pressed() -> void:
+	_show_mode_selection_modal()
+
+func _show_mode_selection_modal() -> void:
+	if not mode_select_modal:
+		return
+	if account_modal:
+		account_modal.visible = false
+	if rules_panel:
+		rules_panel.visible = false
+	if practice_modal:
+		practice_modal.visible = false
+	if freeze_tag_mode_btn:
+		freeze_tag_mode_btn.disabled = false
+	if racing_mode_btn:
+		racing_mode_btn.disabled = false
+	menu_buttons.visible = false
+	title_label.visible = false
+	if profile_bar:
+		profile_bar.visible = false
+	mode_select_modal.visible = true
+
+func _on_close_mode_selection_pressed() -> void:
+	if mode_select_modal:
+		mode_select_modal.visible = false
+	menu_buttons.visible = true
+	title_label.visible = true
+	if profile_bar:
+		profile_bar.visible = true
+
+func _on_freeze_tag_selected() -> void:
+	if freeze_tag_mode_btn:
+		freeze_tag_mode_btn.disabled = true
+	if Network:
+		Network.is_solo_mode = false
+		Network.selected_map = "SPACE STATION"
 	get_tree().change_scene_to_file("res://scenes/3d/lobby_3d.tscn")
+
+func _on_racing_selected() -> void:
+	if racing_mode_btn:
+		racing_mode_btn.disabled = true
+	if Network:
+		Network.is_solo_mode = true
+		Network.selected_practice_role = "runner"
+		Network.selected_map = "VOID PARKOUR"
+		Network.disconnect_from_server()
+	await get_tree().process_frame
+	get_tree().change_scene_to_file("res://scenes/3d/arena_3d.tscn")
 
 func _on_practice_pressed() -> void:
 	if account_modal:
