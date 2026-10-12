@@ -235,7 +235,7 @@ func _load_arena_map() -> void:
 		chosen_map = str(Network.current_match_map).strip_edges()
 	
 	if chosen_map.to_upper().contains("RANDOM"):
-		var maps_pool = ["SPACE STATION", "SNOW TOWN", "LABYRINTH", "VOID PARKOUR", "TRAINING GROUND"]
+		var maps_pool = ["SPACE STATION", "SNOW TOWN", "TRAINING GROUND", "VOID PARKOUR"]
 		chosen_map = maps_pool[randi() % maps_pool.size()]
 	
 	print("[Arena3D] Loading map: ", chosen_map)
@@ -247,15 +247,12 @@ func _load_arena_map() -> void:
 	if upper.contains("SPACE"):
 		map_scene_path = "res://scenes/3d/maps/map_space_station.tscn"
 		map_display_name = "SPACE STATION (Alpha Sector)"
-	elif upper.contains("TRAINING") or upper.contains("GROUND"):
+	elif upper.contains("TRAINING") or upper.contains("GROUND") or upper.contains("LABYRINTH") or upper.contains("MAZE") or upper.contains("เขาวงกต"):
 		map_scene_path = "res://scenes/3d/maps/map_training_ground.tscn"
 		map_display_name = "TRAINING GROUND"
 	elif upper.contains("SNOW") or upper.contains("TOWN") or upper.contains("หิมะ"):
 		map_scene_path = "res://scenes/3d/maps/map_snow_town.tscn"
 		map_display_name = "SNOW TOWN"
-	elif upper.contains("LABYRINTH") or upper.contains("MAZE") or upper.contains("เขาวงกต"):
-		map_scene_path = "res://scenes/3d/maps/map_labyrinth.tscn"
-		map_display_name = "LABYRINTH"
 	elif upper.contains("PARKOUR") or upper.contains("VOID") or upper.contains("พาร์คัวร์"):
 		map_scene_path = "res://scenes/3d/maps/map_void_parkour.tscn"
 		map_display_name = "VOID PARKOUR"

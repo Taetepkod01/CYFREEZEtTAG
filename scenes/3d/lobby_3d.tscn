@@ -786,13 +786,13 @@ icon_alignment = 1
 vertical_icon_alignment = 0
 expand_icon = true
 
-[node name="LabyrinthBtn" type="Button" parent="RoomView/HBox/MapSelectionCard/Grid" unique_id=1016726323]
+[node name="TrainingGroundBtn" type="Button" parent="RoomView/HBox/MapSelectionCard/Grid" unique_id=1016726323]
 custom_minimum_size = Vector2(0, 68)
 layout_mode = 2
 theme_override_font_sizes/font_size = 12
 theme_override_styles/normal = SubResource("StyleBoxFlat_map_btn")
-text = "LABYRINTH"
-icon = ExtResource("6_map_laby")
+text = "TRAINING GROUND"
+icon = ExtResource("16_map_training")
 icon_alignment = 1
 vertical_icon_alignment = 0
 expand_icon = true
@@ -804,17 +804,6 @@ theme_override_font_sizes/font_size = 12
 theme_override_styles/normal = SubResource("StyleBoxFlat_map_btn")
 text = "VOID PARKOUR"
 icon = ExtResource("5_map_space")
-icon_alignment = 1
-vertical_icon_alignment = 0
-expand_icon = true
-
-[node name="TrainingGroundBtn" type="Button" parent="RoomView/HBox/MapSelectionCard/Grid" unique_id=1028374620]
-custom_minimum_size = Vector2(0, 68)
-layout_mode = 2
-theme_override_font_sizes/font_size = 12
-theme_override_styles/normal = SubResource("StyleBoxFlat_map_btn")
-text = "TRAINING GROUND"
-icon = ExtResource("16_map_training")
 icon_alignment = 1
 vertical_icon_alignment = 0
 expand_icon = true

@@ -1527,7 +1527,7 @@ function start3DRound(room: Active3DRoom) {
       room.map = "VOID PARKOUR";
     } else {
       room.selectedMapMode = "RANDOM";
-      const mapsPool = ["SPACE STATION", "SNOW TOWN", "LABYRINTH"];
+      const mapsPool = ["SPACE STATION", "SNOW TOWN", "TRAINING GROUND"];
       room.map = mapsPool[Math.floor(Math.random() * mapsPool.length)];
     }
   }
@@ -1535,7 +1535,7 @@ function start3DRound(room: Active3DRoom) {
   const mapUpper = (room.map || "").toUpperCase();
   const isSpaceStation = mapUpper.includes("SPACE");
   const isSnowTown = mapUpper.includes("SNOW") || mapUpper.includes("TOWN") || mapUpper.includes("หิมะ");
-  const isLabyrinth = mapUpper.includes("LABYRINTH") || mapUpper.includes("MAZE") || mapUpper.includes("เขาวงกต");
+  const isTrainingGround = mapUpper.includes("TRAINING") || mapUpper.includes("GROUND") || mapUpper.includes("LABYRINTH") || mapUpper.includes("MAZE") || mapUpper.includes("เขาวงกต");
   const isVoidParkour = mapUpper.includes("PARKOUR") || mapUpper.includes("VOID") || mapUpper.includes("พาร์คัวร์") || room.gameMode === "racing";
 
   if (room.gameMode === "racing" || isVoidParkour) {
@@ -1577,20 +1577,20 @@ function start3DRound(room: Active3DRoom) {
     { x: 10.0, y: 0.6, z: 10.0 }
   ];
 
-  const labyrinthTaggerSpawns = [
-    { x: -15.0, y: 5.6, z: -16.0 },
-    { x: -12.0, y: 5.6, z: -16.0 },
-    { x: -18.0, y: 5.6, z: -16.0 }
+  const trainingGroundTaggerSpawns = [
+    { x: 0.0, y: 5.5, z: 0.0 },
+    { x: 0.0, y: 0.6, z: 0.0 },
+    { x: -4.0, y: 0.6, z: -4.0 }
   ];
-  const labyrinthRunnerSpawns = [
-    { x: -15.0, y: 6.0, z: 12.0 },
-    { x: 16.0, y: 5.3, z: 14.0 },
-    { x: 7.0, y: 5.1, z: 3.0 },
-    { x: 16.0, y: 5.4, z: -2.0 },
-    { x: -16.0, y: 5.2, z: 6.0 },
-    { x: -5.0, y: 5.0, z: -2.0 },
-    { x: 0.0, y: 5.2, z: 10.0 },
-    { x: 10.0, y: 5.2, z: -10.0 }
+  const trainingGroundRunnerSpawns = [
+    { x: -18.0, y: 3.0, z: -18.0 },
+    { x: 18.0, y: 3.0, z: -18.0 },
+    { x: -18.0, y: 3.0, z: 18.0 },
+    { x: 18.0, y: 3.0, z: 18.0 },
+    { x: -20.0, y: 0.6, z: 0.0 },
+    { x: 20.0, y: 0.6, z: 0.0 },
+    { x: 0.0, y: 0.6, z: -18.0 },
+    { x: 0.0, y: 0.6, z: 18.0 }
   ];
 
   const voidParkourTaggerSpawns = [
@@ -1649,13 +1649,13 @@ function start3DRound(room: Active3DRoom) {
         p.x = sp.x; p.y = sp.y; p.z = sp.z;
         runnerSpawnIdx++;
       }
-    } else if (isLabyrinth) {
+    } else if (isTrainingGround) {
       if (p.role === "tagger") {
-        const sp = labyrinthTaggerSpawns[taggerSpawnIdx % labyrinthTaggerSpawns.length];
+        const sp = trainingGroundTaggerSpawns[taggerSpawnIdx % trainingGroundTaggerSpawns.length];
         p.x = sp.x; p.y = sp.y; p.z = sp.z;
         taggerSpawnIdx++;
       } else {
-        const sp = labyrinthRunnerSpawns[runnerSpawnIdx % labyrinthRunnerSpawns.length];
+        const sp = trainingGroundRunnerSpawns[runnerSpawnIdx % trainingGroundRunnerSpawns.length];
         p.x = sp.x; p.y = sp.y; p.z = sp.z;
         runnerSpawnIdx++;
       }
@@ -1716,14 +1716,17 @@ function start3DRound(room: Active3DRoom) {
       x = spot.x;
       y = spot.y;
       z = spot.z;
-    } else if (isLabyrinth) {
+    } else if (isTrainingGround) {
       const spots = [
-        { x: -4.0, y: 5.1, z: -2.0 },
-        { x: -14.0, y: 5.4, z: 15.0 },
-        { x: 8.0, y: 5.2, z: -6.0 },
-        { x: 12.0, y: 5.4, z: 10.0 },
-        { x: -10.0, y: 5.2, z: 5.0 },
-        { x: 5.0, y: 5.0, z: -12.0 }
+        { x: 0.0, y: 5.5, z: 0.0 },
+        { x: -14.0, y: 5.5, z: 0.0 },
+        { x: 14.0, y: 5.5, z: 0.0 },
+        { x: -16.0, y: 2.9, z: -14.0 },
+        { x: 16.0, y: 2.9, z: 14.0 },
+        { x: 0.0, y: 0.6, z: -10.0 },
+        { x: 0.0, y: 0.6, z: 10.0 },
+        { x: -6.0, y: 0.6, z: 6.0 },
+        { x: 6.0, y: 0.6, z: -6.0 }
       ];
       const spot = spots[i % spots.length];
       x = spot.x;
@@ -1806,14 +1809,17 @@ function start3DRound(room: Active3DRoom) {
       ];
       const spot = spots[Math.floor(Math.random() * spots.length)];
       x = spot.x; y = spot.y; z = spot.z;
-    } else if (isLabyrinth) {
+    } else if (isTrainingGround) {
       const spots = [
-        { x: -4.0, y: 5.1, z: -2.0 },
-        { x: -14.0, y: 5.4, z: 15.0 },
-        { x: 8.0, y: 5.2, z: -6.0 },
-        { x: 12.0, y: 5.4, z: 10.0 },
-        { x: -10.0, y: 5.2, z: 5.0 },
-        { x: 5.0, y: 5.0, z: -12.0 }
+        { x: 0.0, y: 5.5, z: 0.0 },
+        { x: -14.0, y: 5.5, z: 0.0 },
+        { x: 14.0, y: 5.5, z: 0.0 },
+        { x: -16.0, y: 2.9, z: -14.0 },
+        { x: 16.0, y: 2.9, z: 14.0 },
+        { x: 0.0, y: 0.6, z: -10.0 },
+        { x: 0.0, y: 0.6, z: 10.0 },
+        { x: -6.0, y: 0.6, z: 6.0 },
+        { x: 6.0, y: 0.6, z: -6.0 }
       ];
       const spot = spots[Math.floor(Math.random() * spots.length)];
       x = spot.x; y = spot.y; z = spot.z;

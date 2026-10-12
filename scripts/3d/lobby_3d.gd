@@ -1058,10 +1058,8 @@ func _update_map_preview_image(map_name: String) -> void:
 		map_preview_img.texture = load("res://assets/ui/buttons/btn_role_random.png")
 	elif upper.contains("SPACE"):
 		map_preview_img.texture = load("res://assets/maps/map_space_station.png")
-	elif upper.contains("TRAINING") or upper.contains("GROUND"):
+	elif upper.contains("TRAINING") or upper.contains("GROUND") or upper.contains("LABYRINTH") or upper.contains("MAZE") or upper.contains("เขาวงกต"):
 		map_preview_img.texture = load("res://assets/maps/map_training_ground.png")
-	elif upper.contains("LABYRINTH"):
-		map_preview_img.texture = load("res://assets/maps/map_labyrinth.png")
 	elif upper.contains("PARKOUR") or upper.contains("VOID"):
 		map_preview_img.texture = load("res://assets/maps/map_space_station.png")
 	else:
@@ -1225,7 +1223,7 @@ func _on_action_pressed() -> void:
 				Network.current_round = 1
 				Network.max_rounds = int(r.get("rounds", 3))
 				if selected_map.to_upper().contains("RANDOM"):
-					var maps_pool = ["SPACE STATION", "SNOW TOWN", "LABYRINTH", "VOID PARKOUR", "TRAINING GROUND"]
+					var maps_pool = ["SPACE STATION", "SNOW TOWN", "TRAINING GROUND", "VOID PARKOUR"]
 					Network.selected_map = maps_pool[randi() % maps_pool.size()]
 				else:
 					Network.selected_map = selected_map
