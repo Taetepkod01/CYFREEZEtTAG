@@ -372,20 +372,20 @@ theme_override_constants/separation = 3
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 17
-text = "Banana Gun · Peel Throw"
+text = "Banana Gun"
 
 [node name="SkillDescLbl" type="Label" parent="PreviewSection/DetailsVBox/SkillCard/HBox/InfoVBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.839, 0.937, 1, 1)
 theme_override_font_sizes/font_size = 13
-text = "Shoot banana peel forward making runners slip for 1.5s"
+text = "Fire a banana peel forward. Runners hit are stunned for 1.5s."
 autowrap_mode = 3
 
 [node name="SkillCdLbl" type="Label" parent="PreviewSection/DetailsVBox/SkillCard/HBox/InfoVBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.498, 0.847, 1, 1)
 theme_override_font_sizes/font_size = 12
-text = "cooldown 10s"
+text = "cooldown 15s"
 
 [node name="SelectionPanel" type="PanelContainer" parent="."]
 layout_mode = 1

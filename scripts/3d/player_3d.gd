@@ -53,6 +53,12 @@ var tackle_direction: Vector3 = Vector3.FORWARD
 var is_dizzy: bool = false
 var dizzy_timer: float = 0.0
 
+# Tagger Skill Status Effects on Runners
+var frost_slow_timer: float = 0.0
+var frost_slow_multiplier: float = 1.0
+var stumble_timer: float = 0.0
+var strawberry_blind_timer: float = 0.0
+
 # Teammate rescue scatter split
 var scatter_timer: float = 0.0
 var scatter_direction: Vector3 = Vector3.ZERO
@@ -417,8 +423,14 @@ func _physics_process(delta: float) -> void:
 		current_speed *= 1.1 # Taggers are slightly faster
 	if speed_boost_timer > 0.0:
 		current_speed = run_speed * 1.3
+	if frost_slow_timer > 0.0:
+		current_speed *= frost_slow_multiplier
 	
 	if move_dir != Vector3.ZERO:
+		if stumble_timer > 0.0:
+			var zigzag_angle = sin(Time.get_ticks_msec() * 0.02) * 1.35
+			move_dir = move_dir.rotated(Vector3.UP, zigzag_angle).normalized()
+		
 		velocity.x = move_dir.x * current_speed
 		velocity.z = move_dir.z * current_speed
 		
@@ -520,15 +532,9 @@ func _send_network_position(delta: float) -> void:
 
 # -- Item Pickup & Use -------------------------------------------------------
 func pick_up_item(type: String) -> void:
+	if role == "tagger":
+		return
 	if not held_item.is_empty():
-		return
-	
-	# REQUIREMENT: Chaser (Tagger) CANNOT pick up heater!
-	if type == "heater" and role == "tagger":
-		return
-	
-	# REQUIREMENT: Tackle is for Runners
-	if type == "tackle" and role == "tagger":
 		return
 	
 	held_item = type
@@ -653,6 +659,13 @@ func _process_buffs(delta: float) -> void:
 			if is_frozen:
 				unfreeze()
 	
+	if frost_slow_timer > 0.0:
+		frost_slow_timer -= delta
+	if stumble_timer > 0.0:
+		stumble_timer -= delta
+	if strawberry_blind_timer > 0.0:
+		strawberry_blind_timer -= delta
+	
 	if quack_bubble_timer > 0.0:
 		quack_bubble_timer -= delta
 		if quack_bubble_label:
@@ -661,6 +674,37 @@ func _process_buffs(delta: float) -> void:
 			quack_bubble_label.modulate.a = clamp(quack_bubble_timer / 0.3, 0.0, 1.0)
 		if quack_bubble_timer <= 0.0 and quack_bubble_label:
 			quack_bubble_label.visible = false
+
+func stun(duration: float = 1.5) -> void:
+	if is_frozen or invincible_timer > 0.0:
+		return
+	is_dizzy = true
+	dizzy_timer = duration
+	velocity.x = 0.0
+	velocity.z = 0.0
+	if dizzy_stars:
+		dizzy_stars.text = "*  *  *"
+		dizzy_stars.visible = true
+
+func apply_frost_slow(multiplier: float = 0.9, duration: float = 4.0) -> void:
+	if is_frozen or invincible_timer > 0.0:
+		return
+	frost_slow_timer = duration
+	frost_slow_multiplier = multiplier
+
+func apply_stumble(duration: float = 1.0) -> void:
+	if is_frozen or invincible_timer > 0.0:
+		return
+	stumble_timer = duration
+
+func blind_strawberry_splash(duration: float = 2.0) -> void:
+	if is_frozen or invincible_timer > 0.0:
+		return
+	strawberry_blind_timer = duration
+	if is_local_player():
+		var arena = get_tree().current_scene
+		if arena and arena.has_method("trigger_berry_splatter"):
+			arena.trigger_berry_splatter(duration)
 
 func trigger_quack() -> void:
 	quack_bubble_timer = 1.2

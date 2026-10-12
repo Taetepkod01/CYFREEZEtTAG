@@ -114,11 +114,8 @@ func _process(delta: float) -> void:
 
 func _on_body_entered(body: Node3D) -> void:
 	if body is CharacterBody3D and body.has_method("pick_up_item"):
-		# REQUIREMENT: Chaser (Tagger) CANNOT pick up heater!
-		if item_type == "heater" and body.role == "tagger":
-			return
-		# Tackle is for Runners only
-		if item_type == "tackle" and body.role == "tagger":
+		# REQUIREMENT: Taggers CANNOT pick up any items!
+		if body.role == "tagger":
 			return
 		
 		if body.held_item.is_empty():

@@ -40,6 +40,14 @@ var current_map_node: Node3D = null
 @onready var quack_skill_btn: TextureButton = $HUD/QuackSkillBtn
 @onready var quack_cd_overlay: Panel = $HUD/QuackSkillBtn/CooldownOverlay
 @onready var quack_cd_lbl: Label = $HUD/QuackSkillBtn/CooldownOverlay/CooldownLabel
+@onready var tagger_skill_btn: Button = $HUD/TaggerSkillBtn
+@onready var tagger_skill_name_lbl: Label = $HUD/TaggerSkillBtn/SkillContent/SkillName
+@onready var tagger_skill_key_lbl: Label = $HUD/TaggerSkillBtn/SkillContent/KeyBadge
+@onready var tagger_skill_cd_overlay: Panel = $HUD/TaggerSkillBtn/CooldownOverlay
+@onready var tagger_skill_cd_lbl: Label = $HUD/TaggerSkillBtn/CooldownOverlay/CooldownLabel
+@onready var berry_splatter_overlay: ColorRect = $HUD/BerrySplatterOverlay
+@onready var berry_splatter_lbl: Label = $HUD/BerrySplatterOverlay/SplatterLabel
+@onready var control_hint_lbl: Label = $HUD/ControlHint
 
 # Audio SFX
 const AUDIO_FREEZE_TAG = preload("res://assets/audio/sfx/freeze_tag.wav")
@@ -101,6 +109,12 @@ var exit_choice_from_game_over: bool = false
 var active_map_name: String = "SPACE STATION"
 var is_void_parkour: bool = false
 var is_space_station: bool = false
+var tagger_skill_cd: float = 0.0
+var tagger_skill_cd_max: float = 15.0
+var tagger_active_skill_name: String = "SKILL"
+var mirror_clone_node: Node3D = null
+var mirror_clone_timer: float = 0.0
+var berry_splatter_timer: float = 0.0
 
 func _play_freeze_sfx() -> void:
 	if sfx_freeze_player:
@@ -160,14 +174,11 @@ func _ready() -> void:
 	add_child(sfx_quack_player)
 	
 	if quack_skill_btn:
-		quack_skill_btn.pressed.connect(_on_quack_skill_pressed)
-		quack_skill_btn.mouse_entered.connect(func():
-			if not quack_skill_btn.disabled:
-				quack_skill_btn.modulate = Color(1.15, 1.15, 1.15)
-		)
-		quack_skill_btn.mouse_exited.connect(func():
-			quack_skill_btn.modulate = Color(1.0, 1.0, 1.0)
-		)
+		quack_skill_btn.visible = false
+	if tagger_skill_btn:
+		tagger_skill_btn.pressed.connect(_on_tagger_skill_pressed)
+	if berry_splatter_overlay:
+		berry_splatter_overlay.visible = false
 	
 	if Network and (Network.is_online_game() or Network.current_match_players.size() > 0):
 		# Match from lobby (online or offline test with bots)
@@ -354,6 +365,9 @@ func _unhandled_input(event: InputEvent) -> void:
 			_toggle_menu_modal()
 		elif event.keycode == KEY_F and event.pressed:
 			_on_quack_skill_pressed()
+		elif event.keycode == KEY_E and event.pressed:
+			if local_player and local_player.role == "tagger":
+				_on_tagger_skill_pressed()
 		elif event.keycode == KEY_TAB:
 			if is_instance_valid(status_panel):
 				if event.pressed:
@@ -393,6 +407,8 @@ func _process(delta: float) -> void:
 			item_spawn_timer = randf_range(8.0, 14.0)
 			_spawn_random_item()
 	
+	_process_tagger_skill(delta)
+	_process_berry_splatter(delta)
 	_process_quack_cooldown(delta)
 	if is_game_active and not is_void_parkour:
 		_check_round_end_condition()
@@ -980,42 +996,367 @@ func _on_item_button_pressed() -> void:
 	if local_player:
 		local_player.use_held_item()
 
-# -- Runner Quack Skill (Bottom Right HUD, Cooldown 3s) -----------------------
-func _process_quack_cooldown(delta: float) -> void:
-	if not quack_skill_btn:
-		return
-	var is_runner = (local_player != null and local_player.role == "runner")
-	quack_skill_btn.visible = is_runner
-	if not is_runner:
-		return
-	
-	if quack_cooldown > 0.0:
-		quack_cooldown -= delta
-		if quack_cooldown <= 0.0:
-			quack_cooldown = 0.0
-			quack_cd_overlay.visible = false
-			quack_skill_btn.disabled = (local_player != null and local_player.is_frozen)
-		else:
-			quack_cd_overlay.visible = true
-			quack_cd_lbl.text = "%.1fs" % quack_cooldown
-			quack_skill_btn.disabled = true
-	else:
-		quack_cd_overlay.visible = false
-		quack_skill_btn.disabled = (local_player != null and local_player.is_frozen)
+# -- Runner Skill (Disabled: Runners have no active skill) --------------------
+func _process_quack_cooldown(_delta: float) -> void:
+	if quack_skill_btn:
+		quack_skill_btn.visible = false
 
 func _on_quack_skill_pressed() -> void:
+	pass
+
+# -- Tagger Active Skills (Bottom Right Circle Button, [E]) ------------------
+func _process_tagger_skill(delta: float) -> void:
+	if not tagger_skill_btn:
+		return
+	if not local_player or local_player.role != "tagger":
+		tagger_skill_btn.visible = false
+		return
+	
+	tagger_skill_btn.visible = not is_void_parkour
+	
+	if mirror_clone_node != null and is_instance_valid(mirror_clone_node):
+		mirror_clone_timer -= delta
+		if mirror_clone_timer <= 0.0:
+			if is_instance_valid(mirror_clone_node):
+				mirror_clone_node.queue_free()
+			mirror_clone_node = null
+			tagger_skill_cd = 16.0
+			_update_hud()
+	
+	if tagger_skill_cd > 0.0:
+		tagger_skill_cd -= delta
+		if tagger_skill_cd <= 0.0:
+			tagger_skill_cd = 0.0
+			if tagger_skill_cd_overlay:
+				tagger_skill_cd_overlay.visible = false
+			tagger_skill_btn.disabled = local_player.is_frozen
+		else:
+			if tagger_skill_cd_overlay:
+				tagger_skill_cd_overlay.visible = true
+			if tagger_skill_cd_lbl:
+				tagger_skill_cd_lbl.text = "%.1fs" % tagger_skill_cd
+			tagger_skill_btn.disabled = true
+	else:
+		if mirror_clone_node != null and is_instance_valid(mirror_clone_node):
+			if tagger_skill_cd_overlay:
+				tagger_skill_cd_overlay.visible = false
+			tagger_skill_btn.disabled = local_player.is_frozen
+		else:
+			if tagger_skill_cd_overlay:
+				tagger_skill_cd_overlay.visible = false
+			tagger_skill_btn.disabled = local_player.is_frozen
+
+func _process_berry_splatter(delta: float) -> void:
+	if berry_splatter_timer > 0.0:
+		berry_splatter_timer -= delta
+		if berry_splatter_overlay:
+			berry_splatter_overlay.visible = true
+			berry_splatter_overlay.modulate.a = clamp(berry_splatter_timer / 0.4, 0.0, 1.0)
+		if berry_splatter_timer <= 0.0:
+			berry_splatter_timer = 0.0
+			if berry_splatter_overlay:
+				berry_splatter_overlay.visible = false
+
+func trigger_berry_splatter(duration: float = 2.0) -> void:
+	berry_splatter_timer = duration
+	if berry_splatter_overlay:
+		berry_splatter_overlay.visible = true
+		berry_splatter_overlay.modulate.a = 1.0
+
+func _on_tagger_skill_pressed() -> void:
 	if not is_game_active or game_over_panel.visible or menu_modal.visible:
 		return
-	if not local_player or local_player.role != "runner" or local_player.is_frozen:
-		return
-	if quack_cooldown > 0.0:
+	if not local_player or local_player.role != "tagger" or local_player.is_frozen:
 		return
 	
-	quack_cooldown = QUACK_COOLDOWN_MAX
-	_play_duck_quack(local_player)
+	var t_type = local_player.tagger_type.to_lower()
 	
-	if Network and Network.is_online_game():
-		Network.send_taunt("quack")
+	# Mumu recast to swap position with decoy
+	if t_type.contains("mumu") or t_type.contains("มุมุ"):
+		if mirror_clone_node != null and is_instance_valid(mirror_clone_node):
+			_cast_mirror_swap()
+			return
+	
+	if tagger_skill_cd > 0.0:
+		return
+	
+	if t_type.contains("ponpon") or t_type.contains("ป้อน"):
+		_cast_banana_gun()
+	elif t_type.contains("snowman") or t_type.contains("สโนว์"):
+		_cast_snow_domain()
+	elif t_type.contains("mafog") or t_type.contains("ฟ้อก"):
+		_cast_berry_bomb()
+	elif t_type.contains("mumu") or t_type.contains("มุมุ"):
+		_cast_mirror_swap()
+	elif t_type.contains("phoemphoon") or t_type.contains("เพิ่ม") or t_type.contains("phun"):
+		_cast_bass_drop()
+	else:
+		_cast_banana_gun()
+
+# Skill 1: PonPon - Banana Gun (Peel projectile, stuns 1.5s, cooldown 15s)
+func _cast_banana_gun() -> void:
+	tagger_skill_cd = 15.0
+	var forward_dir = -local_player.global_transform.basis.z.normalized()
+	var spawn_pos = local_player.global_position + Vector3(0, 0.8, 0) + forward_dir * 1.2
+	
+	var projectile = Area3D.new()
+	projectile.collision_layer = 8
+	projectile.collision_mask = 2
+	projectile.position = spawn_pos
+	
+	var col = CollisionShape3D.new()
+	var sphere = SphereShape3D.new()
+	sphere.radius = 0.8
+	col.shape = sphere
+	projectile.add_child(col)
+	
+	var banana_scene = preload("res://scenes/3d/banana_peel.tscn")
+	var banana_vis = banana_scene.instantiate()
+	banana_vis.scale = Vector3(1.6, 1.6, 1.6)
+	projectile.add_child(banana_vis)
+	
+	traps_container.add_child(projectile)
+	add_game_log("[color=#ffe066]PonPon fired Banana Gun! (Cooldown 15s)[/color]")
+	
+	var elapsed: float = 0.0
+	var hit: bool = false
+	var move_callable: Callable
+	move_callable = func():
+		if not is_instance_valid(projectile) or projectile.is_queued_for_deletion():
+			return
+		var d = get_process_delta_time()
+		elapsed += d
+		projectile.global_position += forward_dir * 24.0 * d
+		projectile.rotate_y(15.0 * d)
+		
+		for p in player_nodes:
+			if is_instance_valid(p) and p.role == "runner" and not p.is_frozen:
+				if projectile.global_position.distance_to(p.global_position + Vector3(0, 0.6, 0)) < 1.6:
+					hit = true
+					if p.has_method("stun"):
+						p.stun(1.5)
+					else:
+						p.freeze()
+					add_game_log("[color=#ffe066]Banana Gun hit %s! Stunned for 1.5s![/color]" % p.player_name)
+					_play_freeze_sfx()
+					break
+		
+		if hit or elapsed >= 2.0:
+			if get_tree() and get_tree().process_frame.is_connected(move_callable):
+				get_tree().process_frame.disconnect(move_callable)
+			if is_instance_valid(projectile):
+				projectile.queue_free()
+	
+	get_tree().process_frame.connect(move_callable)
+
+# Skill 2: Snowman - Snow Domain (Frost zone slows runners by 10% for 4s, cooldown 20s)
+func _cast_snow_domain() -> void:
+	tagger_skill_cd = 20.0
+	var center_pos = local_player.global_position
+	center_pos.y = 0.08
+	
+	var domain_node = Node3D.new()
+	domain_node.name = "SnowDomainVisual"
+	domain_node.position = center_pos
+	
+	var mesh_inst = MeshInstance3D.new()
+	var cyl = CylinderMesh.new()
+	cyl.top_radius = 7.0
+	cyl.bottom_radius = 7.0
+	cyl.height = 0.1
+	mesh_inst.mesh = cyl
+	
+	var frost_mat = StandardMaterial3D.new()
+	frost_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	frost_mat.albedo_color = Color(0.2, 0.8, 1.0, 0.35)
+	frost_mat.emission_enabled = true
+	frost_mat.emission = Color(0.1, 0.6, 1.0)
+	frost_mat.emission_energy_multiplier = 1.2
+	mesh_inst.set_surface_override_material(0, frost_mat)
+	domain_node.add_child(mesh_inst)
+	
+	traps_container.add_child(domain_node)
+	_play_freeze_sfx()
+	add_game_log("[color=#80d8ff]Snowman deployed Snow Domain! Runners in 7m slowed by 10% for 4s![/color]")
+	
+	var elapsed: float = 0.0
+	var domain_callable: Callable
+	domain_callable = func():
+		if not is_instance_valid(domain_node) or domain_node.is_queued_for_deletion():
+			return
+		var d = get_process_delta_time()
+		elapsed += d
+		domain_node.rotate_y(1.5 * d)
+		
+		for p in player_nodes:
+			if is_instance_valid(p) and p.role == "runner" and not p.is_frozen:
+				var dist = center_pos.distance_to(p.global_position)
+				if dist <= 7.0:
+					p.apply_frost_slow(0.9, 4.0)
+		
+		if elapsed >= 4.0:
+			if get_tree() and get_tree().process_frame.is_connected(domain_callable):
+				get_tree().process_frame.disconnect(domain_callable)
+			if is_instance_valid(domain_node):
+				domain_node.queue_free()
+	
+	get_tree().process_frame.connect(domain_callable)
+
+# Skill 3: Mafog - Berry Bomb (Explosive red juice blinds runners in 4m for 2s, cooldown 14s)
+func _cast_berry_bomb() -> void:
+	tagger_skill_cd = 14.0
+	var forward_dir = -local_player.global_transform.basis.z.normalized()
+	var spawn_pos = local_player.global_position + Vector3(0, 1.0, 0) + forward_dir * 0.8
+	
+	var bomb = Node3D.new()
+	bomb.position = spawn_pos
+	
+	var mesh_inst = MeshInstance3D.new()
+	var sphere = SphereMesh.new()
+	sphere.radius = 0.32
+	sphere.height = 0.64
+	mesh_inst.mesh = sphere
+	var berry_mat = StandardMaterial3D.new()
+	berry_mat.albedo_color = Color(0.95, 0.08, 0.22)
+	berry_mat.emission_enabled = true
+	berry_mat.emission = Color(0.8, 0.05, 0.15)
+	mesh_inst.set_surface_override_material(0, berry_mat)
+	bomb.add_child(mesh_inst)
+	
+	traps_container.add_child(bomb)
+	add_game_log("[color=#ff1744]Mafog launched Berry Bomb! (Cooldown 14s)[/color]")
+	
+	var vel = forward_dir * 18.0 + Vector3(0, 4.5, 0)
+	var elapsed: float = 0.0
+	var bomb_callable: Callable
+	bomb_callable = func():
+		if not is_instance_valid(bomb) or bomb.is_queued_for_deletion():
+			return
+		var d = get_process_delta_time()
+		elapsed += d
+		vel.y -= 9.8 * d
+		bomb.global_position += vel * d
+		bomb.rotate_x(10.0 * d)
+		
+		if bomb.global_position.y <= 0.2 or elapsed >= 0.9:
+			var expl_pos = bomb.global_position
+			expl_pos.y = max(0.1, expl_pos.y)
+			
+			if get_tree() and get_tree().process_frame.is_connected(bomb_callable):
+				get_tree().process_frame.disconnect(bomb_callable)
+			if is_instance_valid(bomb):
+				bomb.queue_free()
+			
+			var splash = MeshInstance3D.new()
+			var spl_sphere = SphereMesh.new()
+			spl_sphere.radius = 4.0
+			spl_sphere.height = 0.4
+			splash.mesh = spl_sphere
+			var spl_mat = StandardMaterial3D.new()
+			spl_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+			spl_mat.albedo_color = Color(0.9, 0.05, 0.15, 0.45)
+			splash.set_surface_override_material(0, spl_mat)
+			splash.position = expl_pos
+			traps_container.add_child(splash)
+			
+			var tw = splash.create_tween()
+			tw.tween_property(spl_mat, "albedo_color:a", 0.0, 0.6)
+			tw.tween_callback(splash.queue_free)
+			
+			for p in player_nodes:
+				if is_instance_valid(p) and p.role == "runner" and not p.is_frozen:
+					if expl_pos.distance_to(p.global_position) <= 4.0:
+						p.blind_strawberry_splash(2.0)
+						add_game_log("[color=#ff1744]🍓 %s blinded by strawberry splash for 2s![/color]" % p.player_name)
+	
+	get_tree().process_frame.connect(bomb_callable)
+
+# Skill 4: Mumu - Mirror Swap (Deploys shadow decoy, recast to swap positions, cooldown 16s)
+func _cast_mirror_swap() -> void:
+	if mirror_clone_node != null and is_instance_valid(mirror_clone_node):
+		var clone_pos = mirror_clone_node.global_position
+		local_player.global_position = clone_pos
+		
+		if is_instance_valid(mirror_clone_node):
+			mirror_clone_node.queue_free()
+		mirror_clone_node = null
+		
+		tagger_skill_cd = 16.0
+		_update_hud()
+		add_game_log("[color=#d500f9]✨ Mumu swapped positions with Mirror Shadow! (Cooldown 16s)[/color]")
+		_play_freeze_sfx()
+		return
+	
+	mirror_clone_timer = 10.0
+	
+	var decoy = Node3D.new()
+	decoy.name = "MirrorShadowDecoy"
+	decoy.position = local_player.global_position
+	decoy.rotation = local_player.visuals.rotation if "visuals" in local_player else local_player.rotation
+	
+	var mesh_inst = MeshInstance3D.new()
+	var cap = CapsuleMesh.new()
+	cap.radius = 0.5
+	cap.height = 1.6
+	mesh_inst.mesh = cap
+	mesh_inst.position.y = 0.8
+	var holo_mat = StandardMaterial3D.new()
+	holo_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	holo_mat.albedo_color = Color(0.7, 0.2, 1.0, 0.45)
+	holo_mat.emission_enabled = true
+	holo_mat.emission = Color(0.6, 0.1, 0.9)
+	mesh_inst.set_surface_override_material(0, holo_mat)
+	decoy.add_child(mesh_inst)
+	
+	var lbl = Label3D.new()
+	lbl.text = "MIRROR SHADOW"
+	lbl.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	lbl.font_size = 18
+	lbl.modulate = Color(0.85, 0.4, 1.0)
+	lbl.position = Vector3(0, 1.9, 0)
+	decoy.add_child(lbl)
+	
+	traps_container.add_child(decoy)
+	mirror_clone_node = decoy
+	_update_hud()
+	add_game_log("[color=#d500f9]🪞 Mumu left a Mirror Shadow decoy! Press [E] again to swap![/color]")
+
+# Skill 5: PhoemPhoon - Bass Drop (Ground shockwave stumbles runners zigzags 1s, cooldown 20s)
+func _cast_bass_drop() -> void:
+	tagger_skill_cd = 20.0
+	var center_pos = local_player.global_position
+	center_pos.y = 0.08
+	
+	var shockwave = MeshInstance3D.new()
+	var ring = TorusMesh.new()
+	ring.inner_radius = 8.0
+	ring.outer_radius = 8.5
+	shockwave.mesh = ring
+	var ring_mat = StandardMaterial3D.new()
+	ring_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	ring_mat.albedo_color = Color(1.0, 0.6, 0.1, 0.8)
+	ring_mat.emission_enabled = true
+	ring_mat.emission = Color(1.0, 0.5, 0.0)
+	ring_mat.emission_energy_multiplier = 2.0
+	shockwave.set_surface_override_material(0, ring_mat)
+	shockwave.position = center_pos
+	shockwave.scale = Vector3(0.05, 1.0, 0.05)
+	traps_container.add_child(shockwave)
+	
+	var tw = shockwave.create_tween()
+	tw.set_parallel(true)
+	tw.tween_property(shockwave, "scale", Vector3(1.0, 1.0, 1.0), 0.35)
+	tw.tween_property(ring_mat, "albedo_color:a", 0.0, 0.45)
+	tw.chain().tween_callback(shockwave.queue_free)
+	
+	for p in player_nodes:
+		if is_instance_valid(p) and p.role == "runner" and not p.is_frozen:
+			if center_pos.distance_to(p.global_position) <= 8.5:
+				p.apply_stumble(1.0)
+				add_game_log("[color=#ff9100]🔊 %s stumbled in zigzags from Bass Drop![/color]" % p.player_name)
+	
+	add_game_log("[color=#ff6d00]PhoemPhoon slammed Bass Drop! (Shockwave 8.5m, Cooldown 20s)[/color]")
+	_play_freeze_sfx()
 
 func _play_duck_quack(player: CharacterBody3D = null) -> void:
 	if sfx_quack_player:
@@ -1153,6 +1494,53 @@ func _update_hud() -> void:
 			row.add_child(name_lbl)
 			row.add_child(status_badge)
 			status_container.add_child(row)
+
+	# Update Tagger / Runner specific HUD controls
+	if local_player:
+		if local_player.role == "tagger":
+			if inventory_panel:
+				inventory_panel.visible = false
+			if quack_skill_btn:
+				quack_skill_btn.visible = false
+			if tagger_skill_btn:
+				tagger_skill_btn.visible = not is_void_parkour
+			
+			var t_type = local_player.tagger_type.to_lower()
+			if mirror_clone_node != null and is_instance_valid(mirror_clone_node):
+				tagger_active_skill_name = "SWAP"
+				tagger_skill_cd_max = 16.0
+			elif t_type.contains("ponpon") or t_type.contains("ป้อน"):
+				tagger_active_skill_name = "BANANA GUN"
+				tagger_skill_cd_max = 15.0
+			elif t_type.contains("snowman") or t_type.contains("สโนว์"):
+				tagger_active_skill_name = "SNOW DOMAIN"
+				tagger_skill_cd_max = 20.0
+			elif t_type.contains("mafog") or t_type.contains("ฟ้อก"):
+				tagger_active_skill_name = "BERRY BOMB"
+				tagger_skill_cd_max = 14.0
+			elif t_type.contains("mumu") or t_type.contains("มุมุ"):
+				tagger_active_skill_name = "MIRROR SWAP"
+				tagger_skill_cd_max = 16.0
+			elif t_type.contains("phoemphoon") or t_type.contains("เพิ่ม") or t_type.contains("phun"):
+				tagger_active_skill_name = "BASS DROP"
+				tagger_skill_cd_max = 20.0
+			else:
+				tagger_active_skill_name = "BANANA GUN"
+				tagger_skill_cd_max = 15.0
+			
+			if tagger_skill_name_lbl:
+				tagger_skill_name_lbl.text = tagger_active_skill_name
+			if control_hint_lbl:
+				control_hint_lbl.text = "[WASD] Move | [SPACE] Jump | [E] %s | [TAB] Players | [CLICK] Lock Camera | [ALT / ESC] Free Mouse" % tagger_active_skill_name
+		else:
+			if inventory_panel:
+				inventory_panel.visible = not is_void_parkour
+			if tagger_skill_btn:
+				tagger_skill_btn.visible = false
+			if quack_skill_btn:
+				quack_skill_btn.visible = false
+			if control_hint_lbl:
+				control_hint_lbl.text = "[WASD] Move | [SPACE] Jump | [E] Use Item | [TAB] Players | [CLICK] Lock Camera | [ALT / ESC] Free Mouse"
 
 # -- Win / Loss & MVP Summary (Offline / Practice Mode) ----------------------
 func _end_round(winner: String) -> void:

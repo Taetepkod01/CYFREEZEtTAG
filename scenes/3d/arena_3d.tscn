@@ -169,6 +169,34 @@ corner_radius_top_right = 44
 corner_radius_bottom_right = 44
 corner_radius_bottom_left = 44
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_tagger_skill_btn"]
+bg_color = Color(0.08, 0.22, 0.45, 0.88)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(1, 0.82, 0.25, 1)
+corner_radius_top_left = 44
+corner_radius_top_right = 44
+corner_radius_bottom_right = 44
+corner_radius_bottom_left = 44
+shadow_color = Color(1, 0.75, 0.15, 0.4)
+shadow_size = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_tagger_skill_hover"]
+bg_color = Color(0.12, 0.35, 0.65, 0.95)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(1, 0.92, 0.45, 1)
+corner_radius_top_left = 44
+corner_radius_top_right = 44
+corner_radius_bottom_right = 44
+corner_radius_bottom_left = 44
+shadow_color = Color(1, 0.85, 0.2, 0.6)
+shadow_size = 10
+
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_practice"]
 
 [node name="Arena3D" type="Node3D" unique_id=645494373]
@@ -638,6 +666,115 @@ theme_override_constants/shadow_offset_x = 1
 theme_override_constants/shadow_offset_y = 1
 theme_override_font_sizes/font_size = 20
 text = "3.0s"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="TaggerSkillBtn" type="Button" parent="HUD" unique_id=239482920]
+visible = false
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -118.0
+offset_top = -118.0
+offset_right = -30.0
+offset_bottom = -30.0
+grow_horizontal = 0
+grow_vertical = 0
+focus_mode = 0
+theme_override_styles/normal = SubResource("StyleBoxFlat_tagger_skill_btn")
+theme_override_styles/hover = SubResource("StyleBoxFlat_tagger_skill_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_tagger_skill_btn")
+theme_override_styles/disabled = SubResource("StyleBoxFlat_tagger_skill_btn")
+
+[node name="SkillContent" type="VBoxContainer" parent="HUD/TaggerSkillBtn" unique_id=239482921]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+alignment = 1
+
+[node name="SkillName" type="Label" parent="HUD/TaggerSkillBtn/SkillContent" unique_id=239482922]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_fonts/font = ExtResource("2_font_audio")
+theme_override_font_sizes/font_size = 11
+text = "SKILL"
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 2
+
+[node name="KeyBadge" type="Label" parent="HUD/TaggerSkillBtn/SkillContent" unique_id=239482923]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.85, 0.3, 1)
+theme_override_fonts/font = ExtResource("2_font_audio")
+theme_override_font_sizes/font_size = 13
+text = "[E]"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="CooldownOverlay" type="Panel" parent="HUD/TaggerSkillBtn" unique_id=239482924]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_quack_cd")
+
+[node name="CooldownLabel" type="Label" parent="HUD/TaggerSkillBtn/CooldownOverlay" unique_id=239482925]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -35.0
+offset_top = -14.0
+offset_right = 35.0
+offset_bottom = 14.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_fonts/font = ExtResource("2_font_audio")
+theme_override_font_sizes/font_size = 16
+text = "15.0s"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="BerrySplatterOverlay" type="ColorRect" parent="HUD" unique_id=239482930]
+visible = false
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.85, 0.05, 0.15, 0.58)
+
+[node name="SplatterLabel" type="Label" parent="HUD/BerrySplatterOverlay" unique_id=239482931]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -160.0
+offset_top = -20.0
+offset_right = 160.0
+offset_bottom = 20.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(1, 1, 1, 0.95)
+theme_override_fonts/font = ExtResource("2_font_audio")
+theme_override_font_sizes/font_size = 26
+text = "BLINDED BY BERRY!"
 horizontal_alignment = 1
 vertical_alignment = 1
 
