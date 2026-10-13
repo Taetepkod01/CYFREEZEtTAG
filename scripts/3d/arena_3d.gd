@@ -115,6 +115,9 @@ var tagger_active_skill_name: String = "SKILL"
 var mirror_clone_node: Node3D = null
 var mirror_clone_timer: float = 0.0
 var berry_splatter_timer: float = 0.0
+var active_snow_domains: Array[Dictionary] = []
+var active_thrown_bombs: Array[Dictionary] = []
+var active_banana_shots: Array[Dictionary] = []
 
 func _play_freeze_sfx() -> void:
 	if sfx_freeze_player:
@@ -408,6 +411,7 @@ func _process(delta: float) -> void:
 			_spawn_random_item()
 	
 	_process_tagger_skill(delta)
+	_process_active_skills(delta)
 	_process_berry_splatter(delta)
 	_process_quack_cooldown(delta)
 	if is_game_active and not is_void_parkour:
@@ -488,6 +492,9 @@ func _update_role_button_ui() -> void:
 
 # -- Spawning Players & Items ------------------------------------------------
 func _spawn_match_players() -> void:
+	active_snow_domains.clear()
+	active_thrown_bombs.clear()
+	active_banana_shots.clear()
 	for child in players_container.get_children():
 		child.queue_free()
 	player_nodes.clear()
@@ -1118,36 +1125,11 @@ func _cast_banana_gun() -> void:
 	traps_container.add_child(projectile)
 	add_game_log("[color=#ffe066]PonPon fired Banana Gun! (Cooldown 15s)[/color]")
 	
-	var elapsed: float = 0.0
-	var hit: bool = false
-	var move_callable: Callable
-	move_callable = func():
-		if not is_instance_valid(projectile) or projectile.is_queued_for_deletion():
-			return
-		var d = get_process_delta_time()
-		elapsed += d
-		projectile.global_position += forward_dir * 24.0 * d
-		projectile.rotate_y(15.0 * d)
-		
-		for p in player_nodes:
-			if is_instance_valid(p) and p.role == "runner" and not p.is_frozen:
-				if projectile.global_position.distance_to(p.global_position + Vector3(0, 0.6, 0)) < 1.6:
-					hit = true
-					if p.has_method("stun"):
-						p.stun(1.5)
-					else:
-						p.freeze()
-					add_game_log("[color=#ffe066]Banana Gun hit %s! Stunned for 1.5s![/color]" % p.player_name)
-					_play_freeze_sfx()
-					break
-		
-		if hit or elapsed >= 2.0:
-			if get_tree() and get_tree().process_frame.is_connected(move_callable):
-				get_tree().process_frame.disconnect(move_callable)
-			if is_instance_valid(projectile):
-				projectile.queue_free()
-	
-	get_tree().process_frame.connect(move_callable)
+	active_banana_shots.append({
+		"node": projectile,
+		"dir": forward_dir,
+		"timer": 2.0
+	})
 
 # Skill 2: Snowman - Snow Domain (Frost zone slows runners by 10% for 4s, cooldown 20s)
 func _cast_snow_domain() -> void:
@@ -1179,97 +1161,171 @@ func _cast_snow_domain() -> void:
 	_play_freeze_sfx()
 	add_game_log("[color=#80d8ff]Snowman deployed Snow Domain! Runners in 7m slowed by 10% for 4s![/color]")
 	
-	var elapsed: float = 0.0
-	var domain_callable: Callable
-	domain_callable = func():
-		if not is_instance_valid(domain_node) or domain_node.is_queued_for_deletion():
-			return
-		var d = get_process_delta_time()
-		elapsed += d
-		domain_node.rotate_y(1.5 * d)
-		
-		for p in player_nodes:
-			if is_instance_valid(p) and p.role == "runner" and not p.is_frozen:
-				var dist = center_pos.distance_to(p.global_position)
-				if dist <= 7.0:
-					p.apply_frost_slow(0.9, 4.0)
-		
-		if elapsed >= 4.0:
-			if get_tree() and get_tree().process_frame.is_connected(domain_callable):
-				get_tree().process_frame.disconnect(domain_callable)
-			if is_instance_valid(domain_node):
-				domain_node.queue_free()
-	
-	get_tree().process_frame.connect(domain_callable)
+	active_snow_domains.append({
+		"node": domain_node,
+		"mat": frost_mat,
+		"center": center_pos,
+		"timer": 4.0
+	})
 
-# Skill 3: Mafog - Berry Bomb (Explosive red juice blinds runners in 4m for 2s, cooldown 14s)
+# Skill 3: Mafog - Berry Bomb (Tossed forward in an arc, explodes into 4m red juice splash, cooldown 14s)
 func _cast_berry_bomb() -> void:
 	tagger_skill_cd = 14.0
 	var forward_dir = -local_player.global_transform.basis.z.normalized()
-	var spawn_pos = local_player.global_position + Vector3(0, 1.0, 0) + forward_dir * 0.8
+	var spawn_pos = local_player.global_position + Vector3(0, 1.2, 0) + forward_dir * 0.7
 	
 	var bomb = Node3D.new()
+	bomb.name = "ThrownBerryBomb"
 	bomb.position = spawn_pos
 	
-	var mesh_inst = MeshInstance3D.new()
+	# Berry Body (Red Sphere)
+	var body_mesh = MeshInstance3D.new()
 	var sphere = SphereMesh.new()
-	sphere.radius = 0.32
-	sphere.height = 0.64
-	mesh_inst.mesh = sphere
+	sphere.radius = 0.35
+	sphere.height = 0.6
+	body_mesh.mesh = sphere
 	var berry_mat = StandardMaterial3D.new()
 	berry_mat.albedo_color = Color(0.95, 0.08, 0.22)
 	berry_mat.emission_enabled = true
 	berry_mat.emission = Color(0.8, 0.05, 0.15)
-	mesh_inst.set_surface_override_material(0, berry_mat)
-	bomb.add_child(mesh_inst)
+	body_mesh.set_surface_override_material(0, berry_mat)
+	bomb.add_child(body_mesh)
+	
+	# Berry Green Leaves / Cap on top
+	var cap_mesh = MeshInstance3D.new()
+	var cap = CylinderMesh.new()
+	cap.top_radius = 0.04
+	cap.bottom_radius = 0.28
+	cap.height = 0.08
+	cap_mesh.mesh = cap
+	cap_mesh.position.y = 0.25
+	var cap_mat = StandardMaterial3D.new()
+	cap_mat.albedo_color = Color(0.18, 0.85, 0.22)
+	cap_mat.emission_enabled = true
+	cap_mat.emission = Color(0.12, 0.65, 0.15)
+	cap_mesh.set_surface_override_material(0, cap_mat)
+	bomb.add_child(cap_mesh)
 	
 	traps_container.add_child(bomb)
-	add_game_log("[color=#ff1744]Mafog launched Berry Bomb! (Cooldown 14s)[/color]")
+	add_game_log("[color=#ff1744]Mafog tossed Berry Bomb! (Cooldown 14s)[/color]")
 	
-	var vel = forward_dir * 18.0 + Vector3(0, 4.5, 0)
-	var elapsed: float = 0.0
-	var bomb_callable: Callable
-	bomb_callable = func():
-		if not is_instance_valid(bomb) or bomb.is_queued_for_deletion():
-			return
-		var d = get_process_delta_time()
-		elapsed += d
-		vel.y -= 9.8 * d
-		bomb.global_position += vel * d
-		bomb.rotate_x(10.0 * d)
-		
-		if bomb.global_position.y <= 0.2 or elapsed >= 0.9:
-			var expl_pos = bomb.global_position
-			expl_pos.y = max(0.1, expl_pos.y)
-			
-			if get_tree() and get_tree().process_frame.is_connected(bomb_callable):
-				get_tree().process_frame.disconnect(bomb_callable)
-			if is_instance_valid(bomb):
-				bomb.queue_free()
-			
-			var splash = MeshInstance3D.new()
-			var spl_sphere = SphereMesh.new()
-			spl_sphere.radius = 4.0
-			spl_sphere.height = 0.4
-			splash.mesh = spl_sphere
-			var spl_mat = StandardMaterial3D.new()
-			spl_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-			spl_mat.albedo_color = Color(0.9, 0.05, 0.15, 0.45)
-			splash.set_surface_override_material(0, spl_mat)
-			splash.position = expl_pos
-			traps_container.add_child(splash)
-			
-			var tw = splash.create_tween()
-			tw.tween_property(spl_mat, "albedo_color:a", 0.0, 0.6)
-			tw.tween_callback(splash.queue_free)
+	# Parabolic toss trajectory: forward ~10.5 m/s, upward arc ~6.2 m/s
+	var throw_vel = forward_dir * 10.5 + Vector3(0, 6.2, 0)
+	active_thrown_bombs.append({
+		"node": bomb,
+		"vel": throw_vel,
+		"timer": 1.4
+	})
+
+func _detonate_berry_bomb(expl_pos: Vector3) -> void:
+	# Expanding red splash ring
+	var splash = MeshInstance3D.new()
+	var spl_sphere = SphereMesh.new()
+	spl_sphere.radius = 4.0
+	spl_sphere.height = 0.5
+	splash.mesh = spl_sphere
+	var spl_mat = StandardMaterial3D.new()
+	spl_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	spl_mat.albedo_color = Color(0.92, 0.06, 0.18, 0.5)
+	splash.set_surface_override_material(0, spl_mat)
+	splash.position = expl_pos
+	traps_container.add_child(splash)
+	
+	var tw = splash.create_tween()
+	tw.tween_property(spl_mat, "albedo_color:a", 0.0, 0.55)
+	tw.tween_callback(splash.queue_free)
+	_play_freeze_sfx()
+	
+	var hit_count = 0
+	for p in player_nodes:
+		if is_instance_valid(p) and p.role == "runner" and not p.is_frozen:
+			if expl_pos.distance_to(p.global_position) <= 4.0:
+				p.blind_strawberry_splash(2.0)
+				hit_count += 1
+				add_game_log("[color=#ff1744]🍓 %s blinded by strawberry splash for 2s![/color]" % p.player_name)
+	
+	if hit_count == 0:
+		add_game_log("[color=#ff1744]Berry Bomb detonated! (4m red juice splash)[/color]")
+
+func _process_active_skills(delta: float) -> void:
+	# 1. Snow Domains (Frost zone lasting 4.0s, slows runners in 7m radius by 10%, fades out)
+	var d_idx = active_snow_domains.size() - 1
+	while d_idx >= 0:
+		var d = active_snow_domains[d_idx]
+		d["timer"] -= delta
+		if is_instance_valid(d.get("node")):
+			d["node"].rotate_y(1.2 * delta)
+			if d["timer"] < 0.8 and d.get("mat") != null:
+				d["mat"].albedo_color.a = clamp((d["timer"] / 0.8) * 0.35, 0.0, 0.35)
 			
 			for p in player_nodes:
 				if is_instance_valid(p) and p.role == "runner" and not p.is_frozen:
-					if expl_pos.distance_to(p.global_position) <= 4.0:
-						p.blind_strawberry_splash(2.0)
-						add_game_log("[color=#ff1744]🍓 %s blinded by strawberry splash for 2s![/color]" % p.player_name)
+					if d["center"].distance_to(p.global_position) <= 7.0:
+						p.apply_frost_slow(0.9, 4.0)
+		
+		if d["timer"] <= 0.0 or not is_instance_valid(d.get("node")):
+			if is_instance_valid(d.get("node")):
+				d["node"].queue_free()
+			active_snow_domains.remove_at(d_idx)
+		d_idx -= 1
 	
-	get_tree().process_frame.connect(bomb_callable)
+	# 2. Thrown Berry Bombs (Tossed forward in an arc, explodes into 4m red juice splash)
+	var b_idx = active_thrown_bombs.size() - 1
+	while b_idx >= 0:
+		var b = active_thrown_bombs[b_idx]
+		b["timer"] -= delta
+		var vel: Vector3 = b["vel"]
+		vel.y -= 13.5 * delta # Gravity pulling bomb downwards
+		b["vel"] = vel
+		
+		if is_instance_valid(b.get("node")):
+			b["node"].global_position += vel * delta
+			b["node"].rotate_x(12.0 * delta)
+			b["node"].rotate_z(8.0 * delta)
+			
+			# Detonate when hitting ground or time expires
+			if b["node"].global_position.y <= 0.18 or b["timer"] <= 0.0:
+				var expl_pos = b["node"].global_position
+				expl_pos.y = max(0.1, expl_pos.y)
+				b["node"].queue_free()
+				active_thrown_bombs.remove_at(b_idx)
+				_detonate_berry_bomb(expl_pos)
+				b_idx -= 1
+				continue
+		else:
+			active_thrown_bombs.remove_at(b_idx)
+			b_idx -= 1
+			continue
+		b_idx -= 1
+	
+	# 3. Banana Gun Projectiles (Fired forward, stuns runner on impact for 1.5s)
+	var s_idx = active_banana_shots.size() - 1
+	while s_idx >= 0:
+		var s = active_banana_shots[s_idx]
+		s["timer"] -= delta
+		if is_instance_valid(s.get("node")):
+			s["node"].global_position += s["dir"] * 24.0 * delta
+			s["node"].rotate_y(15.0 * delta)
+			
+			var hit = false
+			for p in player_nodes:
+				if is_instance_valid(p) and p.role == "runner" and not p.is_frozen:
+					if s["node"].global_position.distance_to(p.global_position + Vector3(0, 0.6, 0)) < 1.6:
+						hit = true
+						if p.has_method("stun"):
+							p.stun(1.5)
+						else:
+							p.freeze()
+						add_game_log("[color=#ffe066]Banana Gun hit %s! Stunned for 1.5s![/color]" % p.player_name)
+						_play_freeze_sfx()
+						break
+			
+			if hit or s["timer"] <= 0.0:
+				s["node"].queue_free()
+				active_banana_shots.remove_at(s_idx)
+		else:
+			active_banana_shots.remove_at(s_idx)
+		s_idx -= 1
 
 # Skill 4: Mumu - Mirror Swap (Deploys shadow decoy, recast to swap positions, cooldown 16s)
 func _cast_mirror_swap() -> void:
