@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" uid="uid://dfp4yef4jb1fp" path="res://scripts/3d/arena_3d.gd" id="1_arena3d"]
 [ext_resource type="Script" uid="uid://cs8rwamngp6g8" path="res://scripts/3d/minimap.gd" id="2_minimap"]
+[ext_resource type="FontFile" uid="uid://dnk82lv14wm8o" path="res://assets/fonts/Audiowide.ttf" id="2_font_audio"]
 [ext_resource type="Texture2D" uid="uid://dubwh3orgcdo" path="res://assets/ui/buttons/btn_leave_room.png" id="6_btn_leave"]
 [ext_resource type="Texture2D" uid="uid://ccy4ilwhdnu5d" path="res://assets/ui/buttons/btn_role_random.png" id="8_btn_role_random"]
 [ext_resource type="Texture2D" uid="uid://drvvkteqngjr0" path="res://assets/ui/buttons/btn_role_tagger.png" id="9_btn_role_tagger"]
